@@ -1,0 +1,554 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>360 Viewer</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+  
+    :root {
+      --gold:        #c9a23a;
+      --gold-light:  #e8c96a;
+      --gold-dim:    rgba(201,162,58,0.18);
+      --gold-border: rgba(201,162,58,0.35);
+      --dark:        #07060a;
+      --dark2:       #0f0d12;
+      --cream:       #f0ebe0;
+      --cream-dim:   rgba(240,235,224,0.55);
+    }
+
+    html, body {
+      width: 100%; height: 100%;
+      overflow: hidden;
+      background: var(--dark);
+      font-family: 'Montserrat', sans-serif;
+      color: var(--cream);
+    }
+
+    /* ══════════════════════════════════════════
+       GRAIN OVERLAY — subtle luxury texture
+    ══════════════════════════════════════════ */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: 1000;
+      pointer-events: none;
+      opacity: 0.032;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+
+    /* ══════════════════════════════════════════
+       PILL TOGGLE
+    ══════════════════════════════════════════ */
+    #view-switch {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 900;
+      display: flex;
+      align-items: center;
+      background: rgba(7,6,10,0.82);
+      border: 1px solid var(--gold-border);
+      border-radius: 999px;
+      padding: 4px;
+      gap: 0;
+      user-select: none;
+      backdrop-filter: blur(16px);
+      box-shadow: 0 4px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(201,162,58,0.1);
+    }
+
+    /* Sliding gold pill */
+    #vs-track {
+      position: absolute;
+      top: 4px;
+      height: calc(100% - 8px);
+      border-radius: 999px;
+      background: linear-gradient(135deg, var(--gold) 0%, var(--gold-light) 60%, var(--gold) 100%);
+      box-shadow: 0 2px 14px rgba(201,162,58,0.45);
+      transition: left 0.32s cubic-bezier(0.4,0,0.2,1),
+                  width 0.32s cubic-bezier(0.4,0,0.2,1);
+      pointer-events: none;
+    }
+
+    .vs-btn {
+      position: relative;
+      z-index: 1;
+      padding: 8px 22px;
+      border-radius: 999px;
+      border: none;
+      background: transparent;
+      color: rgba(240,235,224,0.38);
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: color 0.28s;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+      outline: none;
+    }
+
+    .vs-btn svg {
+      width: 12px; height: 12px;
+      fill: currentColor;
+      flex-shrink: 0;
+    }
+
+    .vs-btn.active {
+      color: var(--dark);
+    }
+
+    @media (max-width: 480px) {
+  /* Step 1 — Pill shrinks */
+        .vs-btn { padding: 6px 12px; font-size: 9px; letter-spacing: 1px; }
+        #view-switch { top: 12px; }
+
+  /* Step 2 — Panel goes full width */
+        #side-panel { width: 100%; }
+        #toggle.open { left: 100%; }
+      }
+      
+    /* ══════════════════════════════════════════
+       PANEL TOGGLE ARROW
+    ══════════════════════════════════════════ */
+    #toggle {
+      position: fixed;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      z-index: 700;
+      width: 28px;
+      height: 64px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(7,6,10,0.88);
+      border: 1px solid var(--gold-border);
+      border-left: none;
+      border-radius: 0 8px 8px 0;
+      cursor: pointer;
+      color: var(--gold);
+      font-size: 12px;
+      backdrop-filter: blur(10px);
+      transition: background 0.2s, border-color 0.2s;
+      box-shadow: 3px 0 16px rgba(0,0,0,0.4);
+    }
+
+    #toggle:hover {
+      background: rgba(201,162,58,0.12);
+      border-color: rgba(201,162,58,0.6);
+    }
+
+    #toggle.open { left: 260px; }
+
+    /* ══════════════════════════════════════════
+       SIDE PANEL
+    ══════════════════════════════════════════ */
+    #side-panel {
+      position: fixed;
+      left: 0; top: 0;
+      width: 260px; height: 100%;
+      background: rgba(7,6,10,0.94);
+      border-right: 1px solid var(--gold-border);
+      backdrop-filter: blur(20px);
+      transform: translateX(-100%);
+      transition: transform 0.32s cubic-bezier(0.4,0,0.2,1);
+      z-index: 650;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #side-panel.open { transform: translateX(0); }
+
+    /* Gold top accent line */
+    #side-panel::before {
+      content: '';
+      display: block;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--gold), transparent);
+      flex-shrink: 0;
+    }
+
+    /* Panel header */
+    #panel-header {
+      padding: 22px 16px 10px;
+      text-align: center;
+      flex-shrink: 0;
+    }
+
+    #panel-header .ph-eyebrow {
+      font-size: 8px;
+      font-weight: 600;
+      letter-spacing: 3.5px;
+      text-transform: uppercase;
+      color: var(--gold);
+      opacity: 0.7;
+      margin-bottom: 5px;
+    }
+
+    #panel-header .ph-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 18px;
+      font-weight: 300;
+      color: var(--cream);
+      letter-spacing: 1px;
+    }
+
+    /* Divider */
+    .panel-divider {
+      height: 1px;
+      margin: 8px 16px 10px;
+      background: linear-gradient(90deg, transparent, var(--gold-border), transparent);
+      flex-shrink: 0;
+    }
+
+    #room-list {
+      flex: 1;
+      padding: 0 8px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    /* ── Room buttons ── */
+    .room-btn {
+      position: relative;
+      height: 64px;
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: border-color 0.25s;
+      flex-shrink: 0;
+    }
+
+    .room-btn:hover { border-color: rgba(201,162,58,0.35); }
+    .room-btn.active { border-color: var(--gold); }
+
+    .room-btn .thumb {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      opacity: 0.32;
+      transition: opacity 0.3s, transform 0.4s;
+    }
+
+    .room-btn:hover .thumb { opacity: 0.55; transform: scale(1.05); }
+    .room-btn.active .thumb { opacity: 0.5; }
+
+    /* Gradient overlay on button */
+    .room-btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(100deg, rgba(7,6,10,0.75) 0%, rgba(7,6,10,0.1) 100%);
+    }
+
+    /* Gold left accent when active */
+    .room-btn.active::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, var(--gold-light), var(--gold));
+      z-index: 3;
+    }
+
+    .room-name {
+      position: absolute;
+      bottom: 8px; left: 12px;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: var(--cream);
+      z-index: 2;
+    }
+
+    .room-num {
+      position: absolute;
+      top: 9px; left: 12px;
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 1.5px;
+      color: var(--gold);
+      opacity: 0.75;
+      z-index: 2;
+    }
+
+    /* ── Panel footer ── */
+    #panel-footer {
+      padding: 12px 16px;
+      text-align: center;
+      font-size: 8px;
+      font-weight: 500;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+      color: rgba(201,162,58,0.35);
+      flex-shrink: 0;
+      border-top: 1px solid rgba(201,162,58,0.08);
+    }
+
+    #side-panel::-webkit-scrollbar { width: 0; }
+    #side-panel { scrollbar-width: none; }
+
+    /* ══════════════════════════════════════════
+       ROOM LABEL
+    ══════════════════════════════════════════ */
+    #room-label {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 800;
+      font-family: 'Montserrat', sans-serif;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 3.5px;
+      text-transform: uppercase;
+      color: var(--cream-dim);
+      background: rgba(7,6,10,0.72);
+      padding: 9px 22px;
+      border-radius: 999px;
+      border: 1px solid var(--gold-border);
+      backdrop-filter: blur(10px);
+      pointer-events: none;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    }
+
+    /* ══════════════════════════════════════════
+       FADE OVERLAY
+    ══════════════════════════════════════════ */
+    #fade-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: var(--dark);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.22s ease;
+    }
+
+    #fade-overlay.fading {
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    /* ══════════════════════════════════════════
+       CANVAS (Three.js)
+    ══════════════════════════════════════════ */
+    canvas {
+      position: fixed !important;
+      top: 0; left: 0;
+      width: 100% !important;
+      height: 100% !important;
+      z-index: 1;
+    }
+
+    /* ══════════════════════════════════════════
+       ROTATE WARNING
+    ══════════════════════════════════════════ */
+    #rotate-warning {
+      position: fixed;
+      inset: 0;
+      background: var(--dark);
+      color: var(--cream);
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 14px;
+      font-size: 13px;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      z-index: 9999;
+      text-align: center;
+      padding: 20px;
+      display: none;
+    }
+
+    #rotate-warning span {
+      font-size: 28px;
+    }
+
+    /* ══════════════════════════════════════════
+       CORNER ACCENTS (decorative)
+    ══════════════════════════════════════════ */
+    .corner-accent {
+      position: fixed;
+      width: 38px; height: 38px;
+      border-color: rgba(201,162,58,0.22);
+      border-style: solid;
+      pointer-events: none;
+      z-index: 800;
+    }
+    .corner-accent.tl { top: 14px; left: 14px; border-width: 1px 0 0 1px; }
+    .corner-accent.tr { top: 14px; right: 14px; border-width: 1px 1px 0 0; }
+    .corner-accent.bl { bottom: 14px; left: 14px; border-width: 0 0 1px 1px; }
+    .corner-accent.br { bottom: 14px; right: 14px; border-width: 0 1px 1px 0; }
+
+    @media (max-width: 768px) {
+      .corner-accent { display: none; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Corner Accents ── -->
+  <div class="corner-accent tl"></div>
+  <div class="corner-accent tr"></div>
+  <div class="corner-accent bl"></div>
+  <div class="corner-accent br"></div>
+
+  <!-- ── VIEW SWITCH PILL ── -->
+  <div id="view-switch">
+    <div id="vs-track"></div>
+
+    <button class="vs-btn active" id="btn-fp" onclick="AppView.switchTo('floorplan')" aria-label="Floor Plan view">
+      <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
+      Floor Plan
+    </button>
+
+    <button class="vs-btn" id="btn-360" onclick="AppView.switchTo('360')" aria-label="360° view">
+      <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><ellipse cx="8" cy="8" rx="3" ry="7" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
+      360° View
+    </button>
+  </div>
+
+  <!-- ── PANEL TOGGLE ARROW ── -->
+  <div id="toggle" aria-label="Toggle side panel">❯</div>
+
+  <!-- ── FADE OVERLAY ── -->
+  <div id="fade-overlay"></div>
+
+  <!-- ── SIDE PANEL ── -->
+  <div id="side-panel">
+    <div id="panel-header">
+      <div class="ph-eyebrow">3BHK Virtual Tour</div>
+      <div class="ph-title">Select a Room</div>
+    </div>
+    <div class="panel-divider"></div>
+    <div id="room-list"></div>
+    <div id="panel-footer">360° Virtual Tour</div>
+  </div>
+
+  <!-- ── ROOM LABEL ── -->
+  <div id="room-label">LOBBY</div>
+
+  <!-- ── ROTATE WARNING ── -->
+  <div id="rotate-warning">
+    <span>🔄</span>
+    Please rotate your device to landscape
+  </div>
+
+  <!-- ── ORIENTATION CHECK ── -->
+  <script>
+    function checkOrientation () {
+      const warn = document.getElementById('rotate-warning')
+      if (!warn) return
+      const isPortrait = window.innerHeight > window.innerWidth && window.innerWidth <= 768
+      warn.style.display = isPortrait ? 'flex' : 'none'
+    }
+    window.addEventListener('resize', checkOrientation)
+    window.addEventListener('orientationchange', checkOrientation)
+    checkOrientation()
+  </script>
+
+  <!-- ── APP VIEW CONTROLLER ── -->
+  <script>
+    window.AppView = (function () {
+      const viewer360Els = () => [
+        document.getElementById('room-label'),
+        document.getElementById('toggle'),
+        document.getElementById('side-panel'),
+      ]
+
+      function getCanvas () { return document.querySelector('canvas') }
+
+      let currentView = 'floorplan'
+
+      function switchTo (view) {
+        if (view === currentView) return
+        currentView = view
+
+        const pillFP  = document.getElementById('btn-fp')
+        const pill360 = document.getElementById('btn-360')
+        const track   = document.getElementById('vs-track')
+        const activeBtn = view === 'floorplan' ? pillFP : pill360
+
+        if (pillFP && pill360 && track) {
+          pillFP.classList.toggle('active', view === 'floorplan')
+          pill360.classList.toggle('active', view === '360')
+          const switchEl  = document.getElementById('view-switch')
+          const switchRect = switchEl.getBoundingClientRect()
+          const activeRect = activeBtn.getBoundingClientRect()
+          track.style.left  = (activeRect.left - switchRect.left) + 'px'
+          track.style.width = activeRect.width + 'px'
+        }
+
+        if (view === 'floorplan') {
+          const panel  = document.getElementById('side-panel')   // ← add
+          const toggle = document.getElementById('toggle')        // ← add
+          if (panel)  panel.classList.remove('open')              // ← add
+          if (toggle) { toggle.classList.remove('open'); toggle.innerHTML = '❯' }
+          viewer360Els().forEach(el => { if (el) el.style.visibility = 'hidden' })
+          const cvs = getCanvas()
+          if (cvs) cvs.style.display = 'none'
+          if (window.FloorPlan) window.FloorPlan.show()
+        } else {
+          if (window.FloorPlan) window.FloorPlan.hide()
+          viewer360Els().forEach(el => { if (el) el.style.visibility = 'visible' })
+          const cvs = getCanvas()
+          if (cvs) cvs.style.display = 'block'
+        }
+      }
+
+      function init () {
+        viewer360Els().forEach(el => { if (el) el.style.display = 'none' })
+        const cvs = getCanvas()
+        if (cvs) cvs.style.display = 'none'
+
+        requestAnimationFrame(() => {
+          const track    = document.getElementById('vs-track')
+          const btnFP    = document.getElementById('btn-fp')
+          const switchEl = document.getElementById('view-switch')
+          if (!track || !btnFP || !switchEl) return
+          const switchRect = switchEl.getBoundingClientRect()
+          const btnRect    = btnFP.getBoundingClientRect()
+          track.style.left  = (btnRect.left - switchRect.left) + 'px'
+          track.style.width = btnRect.width + 'px'
+        })
+      }
+
+      document.addEventListener('DOMContentLoaded', init)
+      setTimeout(init, 100)
+
+      return { switchTo, current: () => currentView }
+    })()
+  </script>
+
+  <!-- ── THREE.JS ── -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <!-- ── 360 VIEWER ── -->
+  <script src="main.js"></script>
+
+  <!-- ── FLOORPLAN ── -->
+  <script src="floorplan.js"></script>
+  <script>
+    window.FloorPlan.show()
+  </script>
+
+</body>
+</html>
