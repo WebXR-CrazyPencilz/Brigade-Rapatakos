@@ -4,27 +4,21 @@ function cloudThumb(url) {
 
 // ─── ROOMS ─────────────────────────────────────────────────────
 const rooms = {
-  foyer:                 { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702080/foyer_fuoeml.jpg',                     label: 'LOBBY' , startYaw: 1.55  },
-  foyertoliving1:        { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702030/foyertoliving1_zeafp8.jpg',           label: 'LOBBY TO LIVING 1', startYaw: 0.9 },
-  foyertoliving2:        { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702032/foyertoliving2_qzatxq.jpg',          label: 'LOBBY TO LIVING 2' },
-  livingtokitchen:       { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702042/livingtokitchen_vbhgqf.jpg',         label: 'LIVING TO KITCHEN' },
-  kitchen:               { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702040/kitchen_suq6ha.jpg',                   label: 'KITCHEN' },
-  utility:               { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702071/utility_vu3sqz.jpg',                   label: 'UTILITY' },
-  living:                { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779279823/living_and_dining_zrf7nk.jpg',               label: 'LIVING AND DINING' },
-  livingtobedroom:       { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702040/livingtobedrooms_teryyt.jpg',        label: 'LIVING TO BEDROOM' },
-  masterbedroomcorridor: { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702058/masterbedroomcorridor_mta2l5.jpg',   label: 'MASTER BEDROOM CORRIDOR' },
-  masterbedroom:         { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702049/masterbedroom_lzbzgq.jpg',            label: 'MASTER BEDROOM' },
-  masterbedroomtoilet:   { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702061/masterbedroomtoilet_vr1qqf.jpg',     label: 'MASTER BEDROOM TOILET' },
-  kidsbedroomcorridor:   { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779279656/kids_bedroom_corridor_tprzwb.jpg',     label: 'KIDS BEDROOM CORRIDOR',startYaw: .6 },
-  kidsbedroom:           { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779279741/kids_bedroom_lnnx20.jpg',             label: 'KIDS BEDROOM' },
-  kidsbedroomtoilet:     { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702069/kidsbedroomtoilet_vohcxo.jpg',       label: 'KIDS BEDROOM TOILET' },
-  guestbedroomcorridor:  { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702049/guestbedroomcorridor1_ikczlt.jpg',  label: 'GUEST BEDROOM CORRIDOR' },
-  guestbedroom:          { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702038/guestbedroom1_l9wnvg.jpg',            label: 'GUEST BEDROOM' },
-  guestbedroomtoilet:    { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702060/guestbedroomtoilet1_avdzas.jpg',     label: 'GUEST BEDROOM TOILET', startYaw: -0.9  },
-  bedroom3corridor:      { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702072/guestbedroomcorridor2_b12rmu.jpg',    label: 'BEDROOM 3 CORRIDOR' }, 
-  bedroom3:              { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702051/guestbedroom2_cdufxz.jpg',             label: 'BEDROOM 3' },
-  bedroom3toilet:        { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702053/guestbedroomtoilet2_b0ae1w.jpg',     label: 'BEDROOM 3 TOILET' },
-  staffroom:             { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702062/staffroom_sasyds.jpg',                label: "MAID'S ROOM" }
+  lobby:                 { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452949/Lobby_jghq0s.jpg',                     label: 'LOBBY', startYaw: 1.6 },
+  lobbytobedroom:        { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452950/lobby_to_bedroom_roap7j.jpg',           label: 'LOBBY TO BEDROOM' },
+  lobbytoliving:         { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452948/lobby_to_living_q2fovk.jpg',          label: 'LOBBY TO LIVING ' },
+  livinganddining:       { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452940/living_and_dinning_ffksm6.jpg',         label: 'LIVING AND DINING' },
+  dining:                { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452952/dinning_j4i7ee.jpg',                   label: 'DINING' },
+  commontoilet:          { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452951/common_toilet_jcuw0j.jpg',                   label: 'COMMON TOILET' },
+  kitchen:               { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452942/kitchen_eqqkax.jpg',                   label: 'KITCHEN' },
+  utility:               { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452959/utility_kxt7al.jpg',                   label: 'UTILITY' },
+  masterbedroomcorridor: { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452954/master_bedroom_corridor_asofvk.jpg',   label: 'MASTER BEDROOM CORRIDOR' },
+  masterbedroom:         { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452948/master_bedroom_l6vlvj.jpg',            label: 'MASTER BEDROOM' },
+  masterbedroomtoilet:   { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452955/master_bedroom_toilet_rjuw83.jpg',     label: 'MASTER BEDROOM TOILET' },
+  kidsbedroom:           { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452940/kids_bedroom_j6s0us.jpg',             label: 'KIDS BEDROOM' },
+  guestbedroomcorridor:  { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452934/guest_bedroom_corridor_itet77.jpg',  label: 'GUEST BEDROOM CORRIDOR' },
+  guestbedroom:          { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452942/guest_bedroom_wjb5du.jpg',            label: 'GUEST BEDROOM' },
+  guestbedroomtoilet:    { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452933/guest_bedroom_toilet_filqsa.jpg',     label: 'GUEST BEDROOM TOILET',  },
 }
 
 const thumbnails = Object.fromEntries(
@@ -34,134 +28,87 @@ const thumbnails = Object.fromEntries(
 
 // ─── HOTSPOTS ──────────────────────────────────────────────────
 const hotspots = {
- 
+
+  // ── lobby ──────────────────────────────────────────────────
+  lobby: [
+    { target: 'lobbytobedroom',  position: [0.10,  -2.2,  0 ] },
+    { target: 'lobbytoliving',  position: [0.1,  -2.2,  0 ] }
+  ],
   // ── Living Room ────────────────────────────────────────────
-  living: [
-    
-    { target: 'livingtokitchen',  position: [-3.0,  -2.2,  4.5 ] },
-    { target: 'foyertoliving2',   position: [-5.0,  -2.2, -3.0 ] }
+  livinganddining: [
+    { target: 'commontoilet',  position: [0.10,  -2.2,  0 ] },
+    { target: 'lobbytoliving',  position: [0.1,  -2.2,  0 ] }
   ],
 
-  livingtobedroom: [
-    { target: 'living',                position: [-5.5,  -2.3,  0.10] },
-    { target: 'masterbedroomcorridor',        position: [ 4.5,  -2.2,  0.0 ] },
-    { target: 'kidsbedroomcorridor',          position: [ 2.0,  -2.2, -4.5 ] },
-    { target: 'bedroom3corridor', position: [ 3.0,  -2.2, 2.20 ] }  // FIX: added second corridor
+  lobbytobedroom: [
+   { target: 'masterbedroom', position: [0.10,  -2.2,  0 ] }
   ],
 
   // ── Master Corridor ────────────────────────────────────────
   masterbedroomcorridor: [
-    { target: 'livingtobedroom', position: [-5.15, -2.2,  0.8 ] },
-    { target: 'masterbedroom',   position: [ 1.9,  -2.2, -9.0 ] },
-    { target: 'masterbedroomtoilet',    position: [ 3.0,  -2.2, -0.15] }
+ 
   ],
 
   // ── Master Bedroom ─────────────────────────────────────────
   masterbedroom: [
-    { target: 'masterbedroomcorridor',  position: [-1.3,  -2.2,  8.0 ] }
+    
   ],
 
   // ── Master Toilet ──────────────────────────────────────────
   masterbedroomtoilet: [
-    { target: 'masterbedroomcorridor',  position: [ 3.0,  -2.2, -1.0 ] }
-  ],
 
-  // ── Kids Corridor ──────────────────────────────────────────
-  kidsbedroomcorridor: [
-    { target: 'livingtobedroom',        position: [-5.0,  -2.2, -0.2 ] },
-    { target: 'kidsbedroom',            position: [ 5.0,  -2.2, -2. ] },
-    { target: 'kidsbedroomtoilet',      position: [-1, -2.2, -2.2 ] }
   ],
 
   // ── Kids Bedroom ───────────────────────────────────────────
   kidsbedroom: [
-    { target: 'kidsbedroomcorridor',    position: [-5.2,  -2.2,  1.2 ] }
+
   ],
 
-  // ── Kids Toilet ────────────────────────────────────────────
-  kidsbedroomtoilet: [
-    { target: 'kidsbedroomcorridor',    position: [ 2.25, -2.2, -2.0 ] }
-  ],
-
-  // ── Guest Corridor 1 ───────────────────────────────────────
-  // FIX BUG 3: back nav was 'foyerToLiving1' — wrong, should go back to
-  // livingToBedroom since that's the bedroom hub it belongs to
   guestbedroomcorridor: [
-    { target: 'foyertoliving1', position: [-0.0,  -2.2,  4.0 ] }, // FIX: was foyerToLiving1
-    { target: 'guestbedroom',   position: [ -2.5,  -2.2, -8.5 ] },
-    { target: 'guestbedroomtoilet',    position: [ -2.50,  -2.2,  1.50 ] }
+    
   ],
 
   // ── Guest Bedroom 1 ────────────────────────────────────────
   guestbedroom: [
-    { target: 'guestbedroomcorridor', position: [1.30, -2.2,  6.50] }
+
   ],
 
   // ── Guest Toilet 1 ─────────────────────────────────────────
   guestbedroomtoilet: [
-    { target: 'guestbedroomcorridor', position: [ 2.0, -2.2, -1.50] }
+
   ],
 
-  bedroom3corridor: [
-    { target: 'livingtobedroom', position: [0.90,  -2.2,  -3.0 ] }, // FIX: was [5.0,...]
-    { target: 'bedroom3',   position: [ 5.0,  -2.2, 3.0 ] },
-    { target: 'bedroom3toilet',    position: [ -1.2,  -2.2,  2.50 ] }
+  // ── lobby ──────────────────────────────────────────────────
+  lobby: [
+
   ],
 
-  // ── Guest Bedroom 2 ────────────────────────────────────────
-  bedroom3: [
-    { target: 'bedroom3corridor', position: [-4.0, -2.2,  -3] }
-  ],
+  // ── lobby to Living 1 ──────────────────────────────────────
+  lobbytoliving: [
 
-  // ── Guest Toilet 2 ─────────────────────────────────────────
-  bedroom3toilet: [
-    { target: 'bedroom3corridor', position: [ 2.0, -2.2, -2.0] }
-  ],
-
-  // ── Foyer ──────────────────────────────────────────────────
-  foyer: [
-    { target: 'foyertoliving1',  position: [ 2.5,  -2.2, -1.5 ] }
-  ],
-
-  // ── Foyer to Living 1 ──────────────────────────────────────
-  foyertoliving1: [
-    { target: 'foyertoliving2',        position: [ 3.5,  -2.2,  0. ] },
-    { target: 'foyer',                 position: [ -2.5,  -2.2,  1.80 ] },
-    { target: 'guestbedroomcorridor', position: [ 0.10, -2.2, -2.3 ] }
     
   ],
 
-  // ── Foyer to Living 2 ──────────────────────────────────────
-  foyertoliving2: [
-    { target: 'living',          position: [ 4.8,  -2.5, -5.35] },
-    { target: 'foyertoliving1',  position: [-4.0,  -2.2,  -.350 ] },
-    { target: 'livingtokitchen', position: [ 5.35, -2.2,  0.40] }
+  // ── lobby to Living 2 ──────────────────────────────────────
+  lobbytobedroom: [
+
   ],
 
   // ── Living to Kitchen ──────────────────────────────────────
   livingtokitchen: [
-    { target: 'kitchen',         position: [ 0.75, -2.2,  4.5 ] },
-    { target: 'foyertoliving2',  position: [ -7.5,  -2.2,  .40 ] },
-    { target: 'livingtobedroom', position: [ 5.2,  -2.2,  0.70] },
-    { target: 'living',          position: [-4.0,  -2.2, -3.0 ] }
+
   ],
 
   // ── Kitchen ────────────────────────────────────────────────
   kitchen: [
-    { target: 'utility',         position: [-6.8,  -2.2, -1.50 ] },
-    { target: 'livingtokitchen', position: [-0.4,  -2.2, -4.2 ] }
+
   ],
 
   // ── Utility ────────────────────────────────────────────────
   utility: [
-    { target: 'kitchen',         position: [4.5,  -2.2, -0.3 ] },
-    { target: 'staffroom',       position: [-3.0,  -2.2,  4.1 ] }
+
   ],
 
-  // ── Staff Room ─────────────────────────────────────────────
-  staffroom: [
-    { target: 'utility',         position: [ 3.1,  -2.2, -4. ] }
-  ]
 }
 
 // ─── SCENE ─────────────────────────────────────────────────────
@@ -212,7 +159,7 @@ function loadTexture(key, onDone) {
 }
 
 function preloadInitial() {
-  const priority = ['living', 'livingtobedroom', 'livingtokitchen', 'foyertoliving2', 'masterbedroomcorridor', 'kidsbedroomcorridor']
+  const priority = ['lobby', 'livingtobedroom', 'livingtokitchen', 'foyertoliving2', 'masterbedroomcorridor', 'kidsbedroomcorridor']
   priority.forEach((k, i) => setTimeout(() => loadTexture(k), i * 150))
 }
 
@@ -597,5 +544,5 @@ function animate(ts) {
 // ─── INIT ──────────────────────────────────────────────────────
 buildPanel()
 preloadInitial()
-loadRoom('foyer')
+loadRoom('lobby')
 animate(0)
