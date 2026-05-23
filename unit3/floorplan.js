@@ -11,13 +11,12 @@
 
   // ─── ZONES ──────────────────────────────────────────────────────
   const zones = [
-    { room: 'living',       label: 'LIVING ROOM',       points: '478,206 702,206 702,506 478,506',  fill: 'rgba(0,220,0,0)',    stroke: 'rgba(0,220,0,0)' },
-    { room: 'masterbedroom', label: 'MASTER BEDROOM', points: '235,184 356,184 356,455 235,455',  fill: 'rgba(255,200,0,0)',  stroke: 'rgba(255,200,0,0)' },
-    { room: 'kidsbedroom',   label: 'KIDS BEDROOM',   points: '360,248 475,248 475,506 360,506',  fill: 'rgba(60,140,255,0)', stroke: 'rgba(60,140,255,0)' },
-    { room: 'guestbedroom', label: 'GUEST BEDROOM', points: '704,248 820,248 820,455 704,455',  fill: 'rgba(255,80,140,0)', stroke: 'rgba(255,80,140,0)'},
-    { room: 'kitchen',        label: 'KITCHEN',       points: '482,70 705,70 705,205 482,205',    fill: 'rgba(255,80,80,0)',  stroke: 'rgba(255,80,80,0)' },
-    { room: 'bedroom3',       label: 'BEDROOM 3', points: '236,70 478,70 478,188 236,188',    fill: 'rgba(180,60,255,0)',     stroke: 'rgba(180,60,255,0)' },
-    { room: 'foyer',         label: 'LOBBY',         points: '705,67 820,67 820,248 705,248',    fill: 'rgba(0,204,204,0)',  stroke: 'rgba(0,204,204,0)' }
+    { room: 'lobby',           label: 'LOBBY',             points: '352,333 504,333 504,505 352,505',    fill: 'rgba(0,204,204,0)',  stroke: 'rgba(0,204,204,0)' },
+    { room: 'masterbedroom',   label: 'MASTER BEDROOM',    points: '200,140 350,140 350,505 200,505',  fill: 'rgba(255,200,0,0)',  stroke: 'rgba(255,200,0,0)' },
+    { room: 'kidsbedroom',     label: 'KIDS BEDROOM',      points: '354,140 504,140 504,332 354,332',  fill: 'rgba(60,140,255,0)', stroke: 'rgba(60,140,255,0)' },
+    { room: 'guestbedroom',    label: 'GUEST BEDROOM',     points: '666,70 810,70 810,390 666,390',  fill: 'rgba(255,80,140,0)', stroke: 'rgba(255,80,140,0)'},
+    { room: 'livinganddining', label: 'LIVING AND DINING', points: '505,70 665,70 665,332 505,332',    fill: 'rgba(255,80,80,0)',  stroke: 'rgba(255,80,8０,０)' },  
+    { room: 'kitchen',         label: 'KITCHEN',           points: '505,332 668,332 668,505 505,505',  fill: 'rgba(255,80,80,0)',  stroke: 'rgba(255,80,8０,０)' }
   ]
 
   // ─── INJECT LAYER ───────────────────────────────────────────────
@@ -172,7 +171,9 @@
     svg.addEventListener('mouseout', e => {
       const z = e.target.closest('.fpz')
       if (!z) return
-      z.setAttribute('stroke', 'rgba(0,0,0,0)')
+      const zone = zones.find(zn => zn.room === z.dataset.room)
+      z.setAttribute('stroke', zone ? zone.stroke : 'rgba(0,0,0,0)')  // ✅ restores original
+      z.setAttribute('stroke-width', '2')
       z.style.filter = ''
       hideTip()
     })
