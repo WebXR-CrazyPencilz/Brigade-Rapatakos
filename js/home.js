@@ -11,6 +11,14 @@ window.HomeModule = (function () {
   let manualYaw = 0, manualPitch = 0;
   let unitRowVisible = false;
 
+  // ─── UNIT URL MAP ────────────────────────────────────────────────
+  const unitURLs = {
+    1: 'unit1/index.html',
+    2: 'unit2/index.html',
+    3: 'unit3/index.html',
+    4: 'unit4/index.html',
+  }
+
   // ─── INJECT HTML & STYLES ────────────────────────────────────────
   function injectHTML() {
     if (document.getElementById('bottom-panel')) return;
@@ -67,13 +75,9 @@ window.HomeModule = (function () {
         position: relative;
       }
 
-<<<<<<< HEAD
-      .unit-btn:last-child { border-right: none; }
-=======
       .unit-btn:last-child {
         border-right: none;
       }
->>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
 
       .unit-btn::after {
         content: '';
@@ -248,11 +252,49 @@ window.HomeModule = (function () {
         transform: translateY(0);
       }
 
+      /* ── iframe fade transition ── */
       #unit-iframe {
         width: 100%;
         height: 100%;
         border: none;
         display: block;
+        opacity: 1;
+        transition: opacity 0.35s ease;
+      }
+
+      #unit-iframe.fading {
+        opacity: 0;
+      }
+
+      /* ── Unit switch loader ── */
+      #unit-loader {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(10, 8, 5, 0.55);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s ease;
+        z-index: 2;
+      }
+
+      #unit-loader.visible {
+        opacity: 1;
+      }
+
+      #unit-loader-ring {
+        width: 36px;
+        height: 36px;
+        border: 2.5px solid rgba(200, 190, 154, 0.25);
+        border-top-color: rgba(200, 190, 154, 0.9);
+        border-radius: 50%;
+        animation: spinRing 0.75s linear infinite;
+      }
+
+      @keyframes spinRing {
+        to { transform: rotate(360deg); }
       }
     `;
     document.head.appendChild(style);
@@ -308,33 +350,46 @@ window.HomeModule = (function () {
       </div>
     `);
 
-<<<<<<< HEAD
-    // Unit viewer overlay
-=======
-    // Unit viewer overlay — iframe sits below bottom panel
->>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
+    // Unit viewer overlay — with loader spinner inside
     document.body.insertAdjacentHTML('beforeend', `
       <div id="unit-viewer-overlay">
+        <div id="unit-loader"><div id="unit-loader-ring"></div></div>
         <iframe id="unit-iframe" src="" allow="fullscreen"></iframe>
       </div>
     `);
   }
 
   // ─── UNIT VIEWER ─────────────────────────────────────────────────
-  function openUnitViewer(url) {
+  function openUnitViewer(unit) {
     const overlay = document.getElementById('unit-viewer-overlay');
     const iframe  = document.getElementById('unit-iframe');
+    const loader  = document.getElementById('unit-loader');
     if (!overlay || !iframe) return;
-<<<<<<< HEAD
-    if (!iframe.src.endsWith(url)) iframe.src = url;
-=======
 
-    // Only reload src if switching to a different unit
-    if (!iframe.src.endsWith(url)) {
-      iframe.src = url;
+    const url = unitURLs[unit];
+    if (!url) return;
+
+    const isSameUnit = iframe.src.endsWith(url);
+
+    // Already open on same unit — nothing to do
+    if (overlay.classList.contains('open') && isSameUnit) return;
+
+    if (!isSameUnit) {
+      // Fade out iframe → swap src → fade back in
+      iframe.classList.add('fading');
+      if (loader) loader.classList.add('visible');
+
+      setTimeout(() => {
+        iframe.src = url;
+
+        iframe.onload = () => {
+          iframe.classList.remove('fading');
+          if (loader) loader.classList.remove('visible');
+          iframe.onload = null;
+        };
+      }, 350); // matches fade-out transition
     }
 
->>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
     overlay.classList.add('open');
   }
 
@@ -346,27 +401,12 @@ window.HomeModule = (function () {
   // ─── PANEL EVENTS ────────────────────────────────────────────────
   function bindPanelEvents() {
 
-<<<<<<< HEAD
     document.querySelectorAll('.panel-slot').forEach(el => {
       el.addEventListener('click', () => {
-        const slot     = el.dataset.slot;
         const isActive = el.classList.contains('active');
-=======
-    // Bottom panel slots — all slots show the unit row
-    document.querySelectorAll('.panel-slot').forEach(el => {
-      el.addEventListener('click', () => {
-        const slot      = el.dataset.slot;
-        const isActive  = el.classList.contains('active');
->>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
 
-        // Deactivate all slots
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
 
-<<<<<<< HEAD
-        // Clicking same slot again → toggle off
-=======
-        // If clicking same slot again → toggle off everything
->>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
         if (isActive) {
           unitRowVisible = false;
           document.getElementById('unit-row').classList.remove('visible');
@@ -375,69 +415,34 @@ window.HomeModule = (function () {
           return;
         }
 
-<<<<<<< HEAD
-        // Activate clicked slot
-        el.classList.add('active');
-
-        // ONLY 360view opens the unit row
-        if (slot === '360view') {
-          unitRowVisible = true;
-          document.getElementById('unit-row').classList.add('visible');
-          const activeUnit = document.querySelector('.unit-btn.active');
-          if (activeUnit) {
-            openUnitViewer(`unit${activeUnit.dataset.unit}/index.html`);
-          }
-        } else {
-          // All other buttons — close unit row and viewer
-          unitRowVisible = false;
-          document.getElementById('unit-row').classList.remove('visible');
-          closeUnitViewer();
-          document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
-=======
-        // Activate clicked slot + show unit row
         el.classList.add('active');
         unitRowVisible = true;
         document.getElementById('unit-row').classList.add('visible');
 
-        // If a unit is already selected, reopen the viewer with current slot context
+        // Only reopen viewer if a unit was already selected
         const activeUnit = document.querySelector('.unit-btn.active');
         if (activeUnit) {
-          const unit = parseInt(activeUnit.dataset.unit);
-          openUnitViewer(`unit${unit}/index.html`);
->>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
+          openUnitViewer(parseInt(activeUnit.dataset.unit));
         }
       });
     });
 
-    // Unit buttons
+    // Unit buttons — animated switch
     document.querySelectorAll('.unit-btn').forEach(el => {
       el.addEventListener('click', () => {
-<<<<<<< HEAD
+        const unit = parseInt(el.dataset.unit);
         document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
-        openUnitViewer(`unit${el.dataset.unit}/index.html`);
+        openUnitViewer(unit);
       });
     });
 
     // Click outside → collapse everything
-=======
-        const unit = parseInt(el.dataset.unit);
-        document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
-        el.classList.add('active');
-        openUnitViewer(`unit${unit}/index.html`);
-      });
-    });
-
-    // Click outside panel, unit row, and overlay → collapse everything
->>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
     document.addEventListener('click', (e) => {
       const bar     = document.getElementById('bottom-panel');
       const row     = document.getElementById('unit-row');
       const overlay = document.getElementById('unit-viewer-overlay');
-<<<<<<< HEAD
-=======
 
->>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
       if (
         bar && row &&
         !bar.contains(e.target) &&
@@ -494,7 +499,7 @@ window.HomeModule = (function () {
         towerMesh = gltf.scene;
         towerMesh.traverse(child => {
           if (child.isMesh) {
-            child.castShadow = true;
+            child.castShadow    = true;
             child.receiveShadow = true;
           }
         });
@@ -515,16 +520,16 @@ window.HomeModule = (function () {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled = true;
-    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.shadowMap.enabled   = true;
+    renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
+    renderer.toneMapping         = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 0.9;
 
     camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
     camera.position.set(0, 8, 22);
 
     raycaster = new THREE.Raycaster();
-    mouse = new THREE.Vector2();
+    mouse     = new THREE.Vector2();
   }
 
   // ─── CANVAS EVENTS ───────────────────────────────────────────────
@@ -575,6 +580,13 @@ window.HomeModule = (function () {
         unitRowVisible = true;
         document.getElementById('unit-row').classList.add('visible');
         document.querySelector('.panel-slot[data-slot="360view"]').classList.add('active');
+
+        const activeUnit = document.querySelector('.unit-btn.active');
+        if (!activeUnit) {
+          const firstBtn = document.querySelector('.unit-btn[data-unit="1"]');
+          if (firstBtn) firstBtn.classList.add('active');
+          openUnitViewer(1);
+        }
       }
     });
   }
