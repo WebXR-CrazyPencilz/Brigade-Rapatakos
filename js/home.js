@@ -398,36 +398,70 @@ window.HomeModule = (function () {
     if (overlay) overlay.classList.remove('open');
   }
 
+  // ─── COLLAPSE UNIT ROW ───────────────────────────────────────────
+  function collapseUnitRow() {
+    unitRowVisible = false;
+    document.getElementById('unit-row').classList.remove('visible');
+    document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+    closeUnitViewer();
+  }
+
   // ─── PANEL EVENTS ────────────────────────────────────────────────
   function bindPanelEvents() {
 
     document.querySelectorAll('.panel-slot').forEach(el => {
       el.addEventListener('click', () => {
+        const slot     = el.dataset.slot;
         const isActive = el.classList.contains('active');
 
+        // Deactivate all slots
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
 
+        // Always collapse the unit row & viewer first
+        collapseUnitRow();
+
         if (isActive) {
-          unitRowVisible = false;
-          document.getElementById('unit-row').classList.remove('visible');
-          closeUnitViewer();
-          document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+          // Clicking the already-active slot → just close, we're done
           return;
         }
 
+        // Activate the clicked slot
         el.classList.add('active');
-        unitRowVisible = true;
-        document.getElementById('unit-row').classList.add('visible');
 
-        // Only reopen viewer if a unit was already selected
-        const activeUnit = document.querySelector('.unit-btn.active');
-        if (activeUnit) {
-          openUnitViewer(parseInt(activeUnit.dataset.unit));
+        // ── Only 360view opens the unit sub-row ──────────────────
+        if (slot === '360view') {
+          unitRowVisible = true;
+          document.getElementById('unit-row').classList.add('visible');
+
+          // Reopen viewer if a unit was already selected
+          const activeUnit = document.querySelector('.unit-btn.active');
+          if (activeUnit) {
+            openUnitViewer(parseInt(activeUnit.dataset.unit));
+          }
+          return;
+        }
+
+        // ── Floor Plan — delegate to FloorplanModule ─────────────
+        if (slot === 'floorplan') {
+          if (window.FloorplanModule) FloorplanModule.open();
+          return;
+        }
+
+        // ── Gallery — delegate to GalleryModule ──────────────────
+        if (slot === 'gallery') {
+          if (window.GalleryModule) GalleryModule.open();
+          return;
+        }
+
+        // ── Location Map — delegate to MapModule ─────────────────
+        if (slot === 'map') {
+          if (window.MapModule) MapModule.open();
+          return;
         }
       });
     });
 
-    // Unit buttons — animated switch
+    // Unit buttons — animated switch (only relevant for 360view)
     document.querySelectorAll('.unit-btn').forEach(el => {
       el.addEventListener('click', () => {
         const unit = parseInt(el.dataset.unit);
