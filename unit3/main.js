@@ -10,7 +10,7 @@ const rooms = {
   livinganddining:       { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452940/living_and_dinning_ffksm6.jpg',         label: 'LIVING AND DINING' },
   dining:                { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452952/dinning_j4i7ee.jpg',                   label: 'DINING' },
   commontoilet:          { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452951/common_toilet_jcuw0j.jpg',                   label: 'COMMON TOILET' },
-  kitchen:               { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452942/kitchen_eqqkax.jpg',                   label: 'KITCHEN' },
+  kitchen:               { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452942/kitchen_eqqkax.jpg',                   label: 'KITCHEN', startYaw: -5},
   utility:               { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452959/utility_kxt7al.jpg',                   label: 'UTILITY' },
   masterbedroomcorridor: { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452954/master_bedroom_corridor_asofvk.jpg',   label: 'MASTER BEDROOM CORRIDOR' },
   masterbedroom:         { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452948/master_bedroom_l6vlvj.jpg',            label: 'MASTER BEDROOM' },
@@ -25,88 +25,85 @@ const thumbnails = Object.fromEntries(
   Object.entries(rooms).map(([key, val]) => [key, { image: cloudThumb(val.image) }])
 )
 
-
-// ─── HOTSPOTS ──────────────────────────────────────────────────
 const hotspots = {
 
-  // ── lobby ──────────────────────────────────────────────────
   lobby: [
-    { target: 'lobbytobedroom',  position: [0.10,  -2.2,  0 ] },
-    { target: 'lobbytoliving',  position: [0.1,  -2.2,  0 ] }
+    { target: 'lobbytobedroom', position: [ 2.80,   -2.2,  -3.8  ] },
+    { target: 'lobbytoliving',  position: [ 2.8,   -2.2, 3.2 ] }
   ],
-  // ── Living Room ────────────────────────────────────────────
-  livinganddining: [
-    { target: 'commontoilet',  position: [0.10,  -2.2,  0 ] },
-    { target: 'lobbytoliving',  position: [0.1,  -2.2,  0 ] }
+
+  lobbytoliving: [
+    { target: 'lobby',          position: [ -5.1,  -2.2, -2.0  ] },
+    { target: 'livinganddining',position: [ 3.9,  -2.2, 3.20  ] },
+    { target: 'dining',         position: [ 0,  -2.2,  7.5  ] },
+    { target: 'lobbytobedroom', position: [ 0,  -2.2,  -5.5  ] }
   ],
 
   lobbytobedroom: [
-   { target: 'masterbedroom', position: [0.10,  -2.2,  0 ] }
+    { target: 'lobbytoliving',                   position: [ -0.1,  -2.2,  6  ] },
+    { target: 'masterbedroomcorridor',   position: [-2.50,  -2.2,  -5.6 ] },
+    { target: 'kidsbedroom',             position: [ 6,  -2.2,  1.4  ] },
+    { target: 'masterbedroom',           position: [ 2.8,  -2.2,  -3.1 ] },
+    { target: 'commontoilet',            position: [ -4.0,  -2.2,  1.1 ] },
+    { target: 'lobby',                   position: [ -4.,  -2.2,  3.15 ] }
   ],
 
-  // ── Master Corridor ────────────────────────────────────────
-  masterbedroomcorridor: [
- 
-  ],
-
-  // ── Master Bedroom ─────────────────────────────────────────
-  masterbedroom: [
+  livinganddining: [
+    { target: 'lobbytoliving',  position: [ 4.0,  -2.2,  -4.1  ] },
+    { target: 'dining',         position: [-2.1,  -2.2,  -3.2 ] },
+    { target: 'kitchen',        position: [ -0.6,  -2.2,  -10  ] }
     
   ],
 
-  // ── Master Toilet ──────────────────────────────────────────
-  masterbedroomtoilet: [
-
+  dining: [
+    { target: 'livinganddining',              position: [ 3.1,  -2.2,  -1.8  ] },
+    { target: 'kitchen',                      position: [ -4.7,  -2.2,  -1.6  ] },
+    { target: 'guestbedroomcorridor',         position: [ .8,  -2.2,  2.9 ] }
   ],
 
-  // ── Kids Bedroom ───────────────────────────────────────────
-  kidsbedroom: [
+  kitchen: [
+    { target: 'livinganddining', position: [ 8.9,  -2.2,  0  ] },
+    { target: 'utility',         position: [1.1,  -2.2,  4.5  ] }
+  ],
 
+  utility: [
+    { target: 'kitchen',         position: [ -1.5,  -2.2,  -3.2  ] }
+  ],
+
+  commontoilet: [
+    { target: 'lobbytoliving', position: [ 3.3,  -2.2,  -2.2  ] }
+  ],
+
+  masterbedroomcorridor: [
+    { target: 'masterbedroomtoilet',  position: [ 0,  -2.2,  3.2 ] },
+    { target: 'masterbedroom',   position: [6.8,  -2.2,  4.1  ] }
+  ],
+
+  masterbedroom: [
+    { target: 'masterbedroomcorridor', position: [ -5.2,  -2.2,  -3.2] },
+    { target: 'lobbytoliving',   position: [-3.3,  -2.2,  3.2 ] },
+  ],
+
+  masterbedroomtoilet: [
+    { target: 'masterbedroomcorridor',   position: [ 0.95,  -2.2,  -2.5  ] }
+  ],
+
+  kidsbedroom: [
+    { target: 'lobbytobedroom',  position: [ -5.55,  -2.2,  -1.9 ] }
   ],
 
   guestbedroomcorridor: [
-    
+    { target: 'guestbedroom',  position: [ 4.8,  -2.2,  0.6 ] },
+    { target: 'guestbedroomtoilet',    position: [-0.4,  -2.2,  3.0  ] },
+    { target: 'dining',    position: [-1.4,  -2.2,  -3.2  ] }
   ],
 
-  // ── Guest Bedroom 1 ────────────────────────────────────────
   guestbedroom: [
-
+    { target: 'guestbedroomcorridor',  position: [ -4.5,  -2.2,  0  ] }
   ],
 
-  // ── Guest Toilet 1 ─────────────────────────────────────────
   guestbedroomtoilet: [
-
-  ],
-
-  // ── lobby ──────────────────────────────────────────────────
-  lobby: [
-
-  ],
-
-  // ── lobby to Living 1 ──────────────────────────────────────
-  lobbytoliving: [
-
-    
-  ],
-
-  // ── lobby to Living 2 ──────────────────────────────────────
-  lobbytobedroom: [
-
-  ],
-
-  // ── Living to Kitchen ──────────────────────────────────────
-  livingtokitchen: [
-
-  ],
-
-  // ── Kitchen ────────────────────────────────────────────────
-  kitchen: [
-
-  ],
-
-  // ── Utility ────────────────────────────────────────────────
-  utility: [
-
+    { target: 'guestbedroomcorridor',    position: [ 1.1,  -2.2,  -2.2  ] }
   ],
 
 }
@@ -130,7 +127,7 @@ const panoMaterial = new THREE.MeshBasicMaterial()
 scene.add(new THREE.Mesh(sGeo, panoMaterial))
 
 // ─── STATE ─────────────────────────────────────────────────────
-let currentRoom   = 'foyer'
+let currentRoom   = 'lobby'
 let hotspotMeshes = []
 let labelSprites  = []
 let camRX = 0, camRY = 0
@@ -159,7 +156,7 @@ function loadTexture(key, onDone) {
 }
 
 function preloadInitial() {
-  const priority = ['lobby', 'livingtobedroom', 'livingtokitchen', 'foyertoliving2', 'masterbedroomcorridor', 'kidsbedroomcorridor']
+  const priority = ['lobby', 'lobbytobedroom', 'livingtokitchen', 'masterbedroomcorridor', 'commontoilet', 'kidsbedroom']
   priority.forEach((k, i) => setTimeout(() => loadTexture(k), i * 150))
 }
 

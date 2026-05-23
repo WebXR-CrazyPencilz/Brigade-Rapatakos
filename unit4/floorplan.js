@@ -45,11 +45,16 @@
       position: relative;
       display: inline-block;
       line-height: 0;
+<<<<<<< HEAD
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 0 0 1px rgba(201,162,58,0.6), 0 0 40px rgba(201,162,58,0.15), 0 20px 60px rgba(0,0,0,0.5);
       outline: 1px solid rgba(201,162,58,0.2);
       outline-offset: 14px;
+=======
+      border-radius: 6px;
+      overflow: hidden;
+>>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
     `
 
     // ── The floorplan image
@@ -150,6 +155,7 @@
         transition: filter 0.15s;
       `
       svg.appendChild(poly)
+<<<<<<< HEAD
 
       // Label text in the center of each zone
       const pts = zone.points.trim().split(/\s+/).map(p => p.split(',').map(Number))
@@ -160,6 +166,10 @@
     })
 
     // ── Hover effect
+=======
+    })
+
+>>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
     svg.addEventListener('mouseover', e => {
       const z = e.target.closest('.fpz')
       if (!z) return

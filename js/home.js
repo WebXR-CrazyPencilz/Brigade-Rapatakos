@@ -67,7 +67,13 @@ window.HomeModule = (function () {
         position: relative;
       }
 
+<<<<<<< HEAD
       .unit-btn:last-child { border-right: none; }
+=======
+      .unit-btn:last-child {
+        border-right: none;
+      }
+>>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
 
       .unit-btn::after {
         content: '';
@@ -302,7 +308,11 @@ window.HomeModule = (function () {
       </div>
     `);
 
+<<<<<<< HEAD
     // Unit viewer overlay
+=======
+    // Unit viewer overlay — iframe sits below bottom panel
+>>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
     document.body.insertAdjacentHTML('beforeend', `
       <div id="unit-viewer-overlay">
         <iframe id="unit-iframe" src="" allow="fullscreen"></iframe>
@@ -315,7 +325,16 @@ window.HomeModule = (function () {
     const overlay = document.getElementById('unit-viewer-overlay');
     const iframe  = document.getElementById('unit-iframe');
     if (!overlay || !iframe) return;
+<<<<<<< HEAD
     if (!iframe.src.endsWith(url)) iframe.src = url;
+=======
+
+    // Only reload src if switching to a different unit
+    if (!iframe.src.endsWith(url)) {
+      iframe.src = url;
+    }
+
+>>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
     overlay.classList.add('open');
   }
 
@@ -327,15 +346,27 @@ window.HomeModule = (function () {
   // ─── PANEL EVENTS ────────────────────────────────────────────────
   function bindPanelEvents() {
 
+<<<<<<< HEAD
     document.querySelectorAll('.panel-slot').forEach(el => {
       el.addEventListener('click', () => {
         const slot     = el.dataset.slot;
         const isActive = el.classList.contains('active');
+=======
+    // Bottom panel slots — all slots show the unit row
+    document.querySelectorAll('.panel-slot').forEach(el => {
+      el.addEventListener('click', () => {
+        const slot      = el.dataset.slot;
+        const isActive  = el.classList.contains('active');
+>>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
 
         // Deactivate all slots
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
 
+<<<<<<< HEAD
         // Clicking same slot again → toggle off
+=======
+        // If clicking same slot again → toggle off everything
+>>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
         if (isActive) {
           unitRowVisible = false;
           document.getElementById('unit-row').classList.remove('visible');
@@ -344,6 +375,7 @@ window.HomeModule = (function () {
           return;
         }
 
+<<<<<<< HEAD
         // Activate clicked slot
         el.classList.add('active');
 
@@ -361,6 +393,18 @@ window.HomeModule = (function () {
           document.getElementById('unit-row').classList.remove('visible');
           closeUnitViewer();
           document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+=======
+        // Activate clicked slot + show unit row
+        el.classList.add('active');
+        unitRowVisible = true;
+        document.getElementById('unit-row').classList.add('visible');
+
+        // If a unit is already selected, reopen the viewer with current slot context
+        const activeUnit = document.querySelector('.unit-btn.active');
+        if (activeUnit) {
+          const unit = parseInt(activeUnit.dataset.unit);
+          openUnitViewer(`unit${unit}/index.html`);
+>>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
         }
       });
     });
@@ -368,6 +412,7 @@ window.HomeModule = (function () {
     // Unit buttons
     document.querySelectorAll('.unit-btn').forEach(el => {
       el.addEventListener('click', () => {
+<<<<<<< HEAD
         document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
         openUnitViewer(`unit${el.dataset.unit}/index.html`);
@@ -375,10 +420,24 @@ window.HomeModule = (function () {
     });
 
     // Click outside → collapse everything
+=======
+        const unit = parseInt(el.dataset.unit);
+        document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+        el.classList.add('active');
+        openUnitViewer(`unit${unit}/index.html`);
+      });
+    });
+
+    // Click outside panel, unit row, and overlay → collapse everything
+>>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
     document.addEventListener('click', (e) => {
       const bar     = document.getElementById('bottom-panel');
       const row     = document.getElementById('unit-row');
       const overlay = document.getElementById('unit-viewer-overlay');
+<<<<<<< HEAD
+=======
+
+>>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
       if (
         bar && row &&
         !bar.contains(e.target) &&
