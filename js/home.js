@@ -398,6 +398,32 @@ window.HomeModule = (function () {
     if (overlay) overlay.classList.remove('open');
   }
 
+  // ─── CLOSE ALL MODULES ───────────────────────────────────────────
+  // *** FIX: closes every open module before opening a new one ***
+  function closeAllModules() {
+    // Close 360 viewer
+    closeUnitViewer();
+    unitRowVisible = false;
+    const row = document.getElementById('unit-row');
+    if (row) row.classList.remove('visible');
+    document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+
+    // Close FloorplanModule if open
+    if (window.FloorplanModule && typeof FloorplanModule.close === 'function') {
+      FloorplanModule.close();
+    }
+
+    // Close GalleryModule if open
+    if (window.GalleryModule && typeof GalleryModule.close === 'function') {
+      GalleryModule.close();
+    }
+
+    // Close MapModule if open
+    if (window.MapModule && typeof MapModule.close === 'function') {
+      MapModule.close();
+    }
+  }
+
   // ─── COLLAPSE UNIT ROW ───────────────────────────────────────────
   function collapseUnitRow() {
     unitRowVisible = false;
@@ -417,8 +443,8 @@ window.HomeModule = (function () {
         // Deactivate all slots
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
 
-        // Always collapse the unit row & viewer first
-        collapseUnitRow();
+        // *** FIX: close ALL modules before doing anything else ***
+        closeAllModules();
 
         if (isActive) {
           // Clicking the already-active slot → just close, we're done
