@@ -32,6 +32,7 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
 <!-- 3. Modules -->
+<script type="module" src="js/firebase-auth.js"></script>
 <script src="js/home.js"></script>
 <script src="js/floorplan.js"></script>
 
@@ -46,16 +47,15 @@ window.App = {
     setTimeout(() => this.finishLoad(), 2400);
   },
 
-  finishLoad() {
-    const loader = document.getElementById('loader');
-    loader.classList.add('fade-out');
-    setTimeout(() => {
-       loader.style.display = 'none';
-       document.getElementById('home-view').classList.add('active');
-       if (window.HomeModule)      HomeModule.init();
-       if (window.FloorplanModule) FloorplanModule.init();
-      }, 900);
-  },
+ finishLoad() {
+  const loader = document.getElementById('loader');
+  loader.classList.add('fade-out');
+  setTimeout(() => {
+    loader.style.display = 'none';
+    document.getElementById('home-view').classList.add('active');
+    // HomeModule.init() removed — firebase-auth.js handles this after login
+  }, 900);
+},
 
   navigate(view, opts = {}) {
     const overlay = document.getElementById('transition-overlay');
