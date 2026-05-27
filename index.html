@@ -33,6 +33,7 @@
 
 <!-- 3. Modules -->
 <script src="js/home.js"></script>
+<script src="js/floorplan.js"></script>
 
 <!-- 4. App controller -->
 <script>
@@ -49,12 +50,11 @@ window.App = {
     const loader = document.getElementById('loader');
     loader.classList.add('fade-out');
     setTimeout(() => {
-      loader.style.display = 'none';
-      document.getElementById('home-view').classList.add('active');
-      if (window.HomeModule) {
-        HomeModule.init();
-      }
-    }, 900);
+       loader.style.display = 'none';
+       document.getElementById('home-view').classList.add('active');
+       if (window.HomeModule)      HomeModule.init();
+       if (window.FloorplanModule) FloorplanModule.init();
+      }, 900);
   },
 
   navigate(view, opts = {}) {
