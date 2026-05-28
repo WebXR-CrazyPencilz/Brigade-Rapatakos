@@ -764,13 +764,21 @@ window.FloorplanModule = (function () {
   }
 
   // ─── SITEMAP TILES ───────────────────────────────────────────
+  // Keep a single ResizeObserver so we never stack duplicates across open() calls.
+  let _sitemapRO = null;
+
   function buildSitemapTiles() {
     const wrap = document.getElementById('fp-sitemap-wrap');
-    wrap.querySelectorAll('.fp-tower-tile').forEach(t => t.remove());
-    const img = document.getElementById('fp-sitemap-img');
+    const img  = document.getElementById('fp-sitemap-img');
+
+    // Disconnect any previous observer before creating a new one.
+    if (_sitemapRO) { _sitemapRO.disconnect(); _sitemapRO = null; }
 
     function placeTiles() {
+      // Remove and re-draw tiles so we never accumulate duplicates.
+      wrap.querySelectorAll('.fp-tower-tile').forEach(t => t.remove());
       const iw = img.offsetWidth, ih = img.offsetHeight;
+      if (!iw || !ih) return; // image not yet laid out — observer will retry
       SITEMAP.towerTiles.forEach(tile => {
         const el = document.createElement('div');
         el.className = 'fp-tower-tile';
@@ -779,14 +787,19 @@ window.FloorplanModule = (function () {
         el.style.width  = (tile.w / 100 * iw) + 'px';
         el.style.height = (tile.h / 100 * ih) + 'px';
         el.innerHTML = `<span class="fp-tower-tile-label">${tile.label}</span><span class="fp-tower-tile-sub">Explore</span>`;
-        el.addEventListener('click', () => drillToCluster(tile.id));
+        // Capture tile.id in a const so the closure is stable.
+        const tileId = tile.id;
+        el.addEventListener('click', () => drillToCluster(tileId));
         wrap.appendChild(el);
       });
     }
 
     if (img.complete && img.naturalWidth > 0) placeTiles();
     else img.addEventListener('load', placeTiles, { once: true });
-    new ResizeObserver(placeTiles).observe(img);
+
+    // Single observer — disconnect stored above on next call.
+    _sitemapRO = new ResizeObserver(placeTiles);
+    _sitemapRO.observe(img);
   }
 
   // ─── SWAP PARITY ─────────────────────────────────────────────
@@ -796,37 +809,69 @@ window.FloorplanModule = (function () {
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
     });
-    const img = document.getElementById('fp-cluster-img');
+    const img    = document.getElementById('fp-cluster-img');
+    const newSrc = getClusterImage(activeTower, floorParity);
+
+    // Clear zones immediately so old ones can't be tapped during the fade.
+    document.getElementById('fp-zone-svg').innerHTML = '';
     img.classList.add('fading');
+
     setTimeout(() => {
-      img.src = getClusterImage(activeTower, floorParity);
-      img.onload  = () => { img.classList.remove('fading'); buildZones(activeTower, floorParity); };
-      img.onerror = () => { img.classList.remove('fading'); buildZones(activeTower, floorParity); };
+      let zonesBuilt = false;
+      function finishLoad() {
+        if (zonesBuilt) return;
+        zonesBuilt = true;
+        img.classList.remove('fading');
+        buildZones(activeTower, floorParity);
+      }
+      img.onload  = finishLoad;
+      img.onerror = () => { img.classList.remove('fading'); };
+      img.src = newSrc;
+      if (img.complete && img.naturalWidth > 0) finishLoad();
     }, 220);
   }
 
   // ─── DRILL TO CLUSTER ────────────────────────────────────────
   function drillToCluster(towerId) {
-    // ── BUG FIX: always reset unit state when entering cluster level ──
+    // Always reset unit state whenever we enter the cluster level.
     activeUnit = null;
     document.getElementById('fp-unit-info').classList.remove('visible');
-    // clear the unit image so stale image doesn't flash
     const planImg = document.getElementById('fp-plan-img');
     planImg.removeAttribute('src');
-    // clear any selected zone highlight
     document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
 
     activeTower = towerId;
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
     });
-    const img = document.getElementById('fp-cluster-img');
+
+    const img    = document.getElementById('fp-cluster-img');
+    const newSrc = getClusterImage(towerId, floorParity);
+
     img.classList.add('fading');
+
+    // Always clear old zones immediately so stale polygons can't be tapped.
+    document.getElementById('fp-zone-svg').innerHTML = '';
+
     setTimeout(() => {
-      img.src = getClusterImage(towerId, floorParity);
-      img.onload  = () => { img.classList.remove('fading'); buildZones(towerId, floorParity); };
-      img.onerror = () => { img.classList.remove('fading'); buildZones(towerId, floorParity); };
+      // Guard: only run buildZones once even if both onload and the
+      // already-cached branch fire (some browsers fire onload for cached imgs).
+      let zonesBuilt = false;
+      function finishLoad() {
+        if (zonesBuilt) return;
+        zonesBuilt = true;
+        img.classList.remove('fading');
+        buildZones(towerId, floorParity);
+      }
+
+      img.onload  = finishLoad;
+      img.onerror = () => { img.classList.remove('fading'); };
+      img.src = newSrc;
+
+      // If image was already cached the browser won't fire onload — handle it.
+      if (img.complete && img.naturalWidth > 0) finishLoad();
     }, 220);
+
     level = 1;
     showPanel('fp-panel-cluster', 'forward');
     updateTopbar();
