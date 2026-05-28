@@ -3,19 +3,57 @@
 // Level 1 → Tower Cluster image — ODD/EVEN toggle + polygon unit zones
 // Level 2 → Unit plan — Top View / Isometric toggle
 //
-// HOW TO ADD YOUR UNIT IMAGES:
-// Each unit has a 'top' and 'iso' key — paste your ImageKit URLs there.
-// Example:
-//   top: 'https://ik.imagekit.io/pwzaetheh/Units/unit05_3bhk_s(a)_tower_02_floor.jpg',
-//   iso: 'https://ik.imagekit.io/pwzaetheh/Units/unit05_3bhk_s(a)_tower_02_iso.jpg',
+// ─── SPREADSHEET REFERENCE ───────────────────────────────────────────────────
+// Image 1: Full file name mapping (26 rows) with tower assignments
+// Image 2: ODD/EVEN floor unit listing per tower
+//   BLUE  = unit appears in BOTH odd and even floor plans → listed in both oddUnits & evenUnits
+//   GREEN = unit appears in only ONE of odd or even → listed in that column only
+//
+// Tower A — all units are BLUE → oddUnits === evenUnits
+//   3BHK(L) Type C (Podium)   → unit01_3bhk_l(C)_podium_tower_02  [NOTE: tower_02 file, assigned Tower A]
+//   3BHK(L) Type B             → unit02_3bhk_l(b)_tower_02
+//   4BHK Type C                → unit03_4bhk_(c)_tower_01
+//   3BHK(L) Type D             → unit06_3bhk_l(d)_tower_02
+//   3BHK(S) Type A             → unit05_3bhk_s(a)_tower_02
+//   4BHK Type E                → unit04_4bhk_(e)_tower_04
+//
+// Tower B — all units are BLUE → oddUnits === evenUnits
+//   3BHK(L) Type C (Podium)   → unit01_3bhk_l(C)_podium_tower_02
+//   3BHK(L) Type B             → unit02_3bhk_l(b)_tower_02
+//   4BHK Type C                → unit03_4bhk_(c)_tower_01
+//   3BHK(L) Type D             → unit06_3bhk_l(d)_tower_02
+//   3BHK(S) Type A             → unit05_3bhk_s(a)_tower_02
+//   4BHK Type D                → unit04_4bhk_(d)_tower_02
+//
+// Tower C — mixed BLUE + GREEN (different units for odd/even)
+//   ODD:  4BHK-G(green=odd only), 3BHK(S)-B, 3BHK(S)-B(Podium), 4BHK-F(Podium), 3BHK(L)-G, 3BHK(L)-G(Podium), 3BHK(L)-F, 3BHK(L)-F(Podium), 3BHK(L)-E, 4BHK-F(Odd)
+//   EVEN: 3BHK-G(green=even only), 3BHK(S)-B, 3BHK(S)-B(Podium), 4BHK-F(Podium), 3BHK(L)-G, 3BHK(L)-G(Podium), 3BHK(L)-F, 3BHK(L)-F(Podium), 3BHK(L)-E, 4BHK-F(Even)
+//
+// Tower D — all units are BLUE → oddUnits === evenUnits
+//   4BHK Type A                → unit01_4bhk_(a)_tower_04
+//   3BHK(L) Type B             → unit02_3bhk_l(b)_tower_02  [shared file]
+//   3BHK(L) Type A             → unit03_3bhk_l(a)_tower_04
+//   4BHK Type B                → unit06_4bhk_(b)_tower_04
+//   3BHK(S) Type A             → unit05_3bhk_s(a)_tower_02  [shared file]
+//   4BHK Type E                → unit04_4bhk_(e)_tower_04
+// ─────────────────────────────────────────────────────────────────────────────
 
 window.FloorplanModule = (function () {
 
-  const IK = 'https://ik.imagekit.io/pwzaetheh';
+  const IK_BASE = 'https://ik.imagekit.io/pwzaetheh';
+
+  /**
+   * Build a full ImageKit URL from a relative path.
+   * @param {string} path — e.g. 'isometric/unit06_3bhk_l(g)_podium_tower_03.jpg'
+   * @returns {string}
+   */
+  function IK(path) {
+    return `${IK_BASE}/${path}`;
+  }
 
   // ─── LEVEL 0 — SITEMAP ────────────────────────────────────────
   const SITEMAP = {
-    image: `${IK}/Cluster/sitemap_cluster.jpg`,
+    image: IK('Cluster/sitemap_cluster.jpg'),
     towerTiles: [
       { id: 'tower-A', label: 'Tower A', x: 18, y: 30, w: 14, h: 22 },
       { id: 'tower-B', label: 'Tower B', x: 38, y: 28, w: 14, h: 22 },
@@ -26,44 +64,57 @@ window.FloorplanModule = (function () {
 
   // ─────────────────────────────────────────────────────────────
   // TOWERS CONFIG
-  // For each unit:
-  //   unitId  — unique id (any string, no spaces)
-  //   label   — display name shown in tooltip and info badge
-  //   type    — e.g. '3 BHK', '4 BHK'
-  //   area    — e.g. '1,450 sq ft'
-  //   top     — ImageKit URL for floor plan (top view) image  ← PASTE YOUR URL
-  //   iso     — ImageKit URL for isometric image              ← PASTE YOUR URL
-  //   points  — SVG polygon points as "x,y x,y x,y x,y"
-  //             values are 0-100 (% of cluster image size)
-  //             PLACEHOLDER values — tune after images are confirmed
+  //
+  // File naming convention from spreadsheet Image 1:
+  //   topview/  → IK('topview/<filename>.jpg')
+  //   isometric → IK('isometric/<filename>.jpg')
+  //
+  // All filenames follow the pattern in the "Updated File Names" column.
+  // The isometric folder already had one confirmed file in the original code:
+  //   isometric/unit06_3bhk_l(g)_podium_tower_03.jpg  (C-odd-06 / C-even-06)
+  //   isometric/unit06_3bhk_l(g)_tower_03.jpg         (C-odd-07 / C-even-07)
+  //
+  // For top-view files, the folder is 'topview/' and filenames follow the same
+  // naming pattern as the "Updated File Names" column but may use different
+  // extensions or subfolder structures — fill in as assets become available.
   // ─────────────────────────────────────────────────────────────
+
   const TOWERS = {
 
     // ══════════════════════════════════════════════════════════
-    // TOWER A  —  4 units  (rows 1,2,18,19 from your sheet)
+    // TOWER A
+    // From Image 2: ALL units are BLUE → identical oddUnits & evenUnits
+    //
+    // Units (6 total):
+    //   1. 3BHK(L) Type C — Podium   [row 7  in Image 1]  unit01_3bhk_l(C)_podium_tower_02
+    //   2. 3BHK(L) Type B             [row 6  in Image 1]  unit02_3bhk_l(b)_tower_02
+    //   3. 4BHK Type C                [row 18 in Image 1]  unit03_4bhk_(c)_tower_01
+    //   4. 3BHK(L) Type D             [row 8  in Image 1]  unit06_3bhk_l(d)_tower_02
+    //   5. 3BHK(S) Type A             [row 2  in Image 1]  unit05_3bhk_s(a)_tower_02
+    //   6. 4BHK Type E                [row 22 in Image 1]  unit04_4bhk_(e)_tower_04
     // ══════════════════════════════════════════════════════════
     'tower-A': {
       label: 'Tower A',
-      odd:  { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_01.jpg`  },
-      even: { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_01.jpg` },
+      odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_01.jpg')  },
+      even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_01.jpg') },
 
       oddUnits: [
         {
           unitId: 'A-odd-01',
-          label:  '3BHK (S) Type A — Podium',
+          label:  '3BHK (L) Type C — Podium',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'),
+          iso:    IK('isometric/unit01_3bhk_l(C)_podium_tower_02.jpg'),
           points: '10,15 35,15 35,45 10,45',
         },
         {
           unitId: 'A-odd-02',
-          label:  '3BHK (S) Type A',
+          label:  '3BHK (L) Type B',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),
+          iso:    IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),
           points: '40,15 65,15 65,45 40,45',
         },
         {
@@ -71,38 +122,57 @@ window.FloorplanModule = (function () {
           label:  '4BHK Type C',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit03_4bhk_(c)_tower_01.jpg'),
+          iso:    IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),
           points: '10,52 35,52 35,80 10,80',
         },
         {
           unitId: 'A-odd-04',
-          label:  '4BHK Type C — Podium',
+          label:  '3BHK (L) Type D',
+          type:   '3 BHK',
+          area:   '',
+          top:    IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),
+          iso:    IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),
+          points: '40,52 65,52 65,80 40,80',
+        },
+        {
+          unitId: 'A-odd-05',
+          label:  '3BHK (S) Type A',
+          type:   '3 BHK',
+          area:   '',
+          top:    IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),
+          iso:    IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),
+          points: '70,15 90,15 90,45 70,45',
+        },
+        {
+          unitId: 'A-odd-06',
+          label:  '4BHK Type E',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
-          points: '40,52 65,52 65,80 40,80',
+          top:    IK('topview/unit04_4bhk_(e)_tower_04.jpg'),
+          iso:    IK('isometric/unit04_4bhk_(e)_tower_04.jpg'),
+          points: '70,52 90,52 90,80 70,80',
         },
       ],
 
+      // BLUE = all same as oddUnits
       evenUnits: [
         {
           unitId: 'A-even-01',
-          label:  '3BHK (S) Type A — Podium',
+          label:  '3BHK (L) Type C — Podium',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'),
+          iso:    IK('isometric/unit01_3bhk_l(C)_podium_tower_02.jpg'),
           points: '10,15 35,15 35,45 10,45',
         },
         {
           unitId: 'A-even-02',
-          label:  '3BHK (S) Type A',
+          label:  '3BHK (L) Type B',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),
+          iso:    IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),
           points: '40,15 65,15 65,45 40,45',
         },
         {
@@ -110,74 +180,101 @@ window.FloorplanModule = (function () {
           label:  '4BHK Type C',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit03_4bhk_(c)_tower_01.jpg'),
+          iso:    IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),
           points: '10,52 35,52 35,80 10,80',
         },
         {
           unitId: 'A-even-04',
-          label:  '4BHK Type C — Podium',
+          label:  '3BHK (L) Type D',
+          type:   '3 BHK',
+          area:   '',
+          top:    IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),
+          iso:    IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),
+          points: '40,52 65,52 65,80 40,80',
+        },
+        {
+          unitId: 'A-even-05',
+          label:  '3BHK (S) Type A',
+          type:   '3 BHK',
+          area:   '',
+          top:    IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),
+          iso:    IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),
+          points: '70,15 90,15 90,45 70,45',
+        },
+        {
+          unitId: 'A-even-06',
+          label:  '4BHK Type E',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
-          points: '40,52 65,52 65,80 40,80',
+          top:    IK('topview/unit04_4bhk_(e)_tower_04.jpg'),
+          iso:    IK('isometric/unit04_4bhk_(e)_tower_04.jpg'),
+          points: '70,52 90,52 90,80 70,80',
         },
       ],
     },
 
     // ══════════════════════════════════════════════════════════
-    // TOWER B  —  7 units  (rows 6,7,8,16,17,20,21)
+    // TOWER B
+    // From Image 2: ALL units are BLUE → identical oddUnits & evenUnits
+    //
+    // Units (6 total):
+    //   1. 3BHK(L) Type C — Podium   [row 7  in Image 1]  unit01_3bhk_l(C)_podium_tower_02
+    //   2. 3BHK(L) Type B             [row 6  in Image 1]  unit02_3bhk_l(b)_tower_02
+    //   3. 4BHK Type C                [row 18 in Image 1]  unit03_4bhk_(c)_tower_01
+    //   4. 3BHK(L) Type D             [row 8  in Image 1]  unit06_3bhk_l(d)_tower_02
+    //   5. 3BHK(S) Type A             [row 2  in Image 1]  unit05_3bhk_s(a)_tower_02
+    //   6. 4BHK Type D                [row 20 in Image 1]  unit04_4bhk_(d)_tower_02
     // ══════════════════════════════════════════════════════════
     'tower-B': {
       label: 'Tower B',
-      odd:  { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_02.jpg`  },
-      even: { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_02.jpg` },
+      odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_02.jpg')  },
+      even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_02.jpg') },
 
       oddUnits: [
         {
           unitId: 'B-odd-01',
-          label:  '3BHK (L) Type B',
+          label:  '3BHK (L) Type C — Podium',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'),
+          iso:    IK('isometric/unit01_3bhk_l(C)_podium_tower_02.jpg'),
           points: '10,10 30,10 30,35 10,35',
         },
         {
           unitId: 'B-odd-02',
-          label:  '3BHK (L) Type C — Podium',
+          label:  '3BHK (L) Type B',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),
+          iso:    IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),
           points: '35,10 55,10 55,35 35,35',
         },
         {
           unitId: 'B-odd-03',
-          label:  '3BHK (L) Type D',
-          type:   '3 BHK',
+          label:  '4BHK Type C',
+          type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit03_4bhk_(c)_tower_01.jpg'),
+          iso:    IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),
           points: '60,10 80,10 80,35 60,35',
         },
         {
           unitId: 'B-odd-04',
-          label:  '4BHK Type B',
-          type:   '4 BHK',
+          label:  '3BHK (L) Type D',
+          type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),
+          iso:    IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),
           points: '10,42 30,42 30,68 10,68',
         },
         {
           unitId: 'B-odd-05',
-          label:  '4BHK Type B — Podium',
-          type:   '4 BHK',
+          label:  '3BHK (S) Type A',
+          type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),
+          iso:    IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),
           points: '35,42 55,42 55,68 35,68',
         },
         {
@@ -185,65 +282,57 @@ window.FloorplanModule = (function () {
           label:  '4BHK Type D',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit04_4bhk_(d)_tower_02.jpg'),
+          iso:    IK('isometric/unit04_4bhk_(d)_tower_02.jpg'),
           points: '60,42 80,42 80,68 60,68',
-        },
-        {
-          unitId: 'B-odd-07',
-          label:  '4BHK Type D — Podium',
-          type:   '4 BHK',
-          area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
-          points: '10,74 30,74 30,92 10,92',
         },
       ],
 
+      // BLUE = all same as oddUnits
       evenUnits: [
         {
           unitId: 'B-even-01',
-          label:  '3BHK (L) Type B',
+          label:  '3BHK (L) Type C — Podium',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'),
+          iso:    IK('isometric/unit01_3bhk_l(C)_podium_tower_02.jpg'),
           points: '10,10 30,10 30,35 10,35',
         },
         {
           unitId: 'B-even-02',
-          label:  '3BHK (L) Type C — Podium',
+          label:  '3BHK (L) Type B',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),
+          iso:    IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),
           points: '35,10 55,10 55,35 35,35',
         },
         {
           unitId: 'B-even-03',
-          label:  '3BHK (L) Type D',
-          type:   '3 BHK',
+          label:  '4BHK Type C',
+          type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit03_4bhk_(c)_tower_01.jpg'),
+          iso:    IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),
           points: '60,10 80,10 80,35 60,35',
         },
         {
           unitId: 'B-even-04',
-          label:  '4BHK Type B',
-          type:   '4 BHK',
+          label:  '3BHK (L) Type D',
+          type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),
+          iso:    IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),
           points: '10,42 30,42 30,68 10,68',
         },
         {
           unitId: 'B-even-05',
-          label:  '4BHK Type B — Podium',
-          type:   '4 BHK',
+          label:  '3BHK (S) Type A',
+          type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),
+          iso:    IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),
           points: '35,42 55,42 55,68 35,68',
         },
         {
@@ -251,206 +340,208 @@ window.FloorplanModule = (function () {
           label:  '4BHK Type D',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit04_4bhk_(d)_tower_02.jpg'),
+          iso:    IK('isometric/unit04_4bhk_(d)_tower_02.jpg'),
           points: '60,42 80,42 80,68 60,68',
-        },
-        {
-          unitId: 'B-even-07',
-          label:  '4BHK Type D — Podium',
-          type:   '4 BHK',
-          area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
-          points: '10,74 30,74 30,92 10,92',
         },
       ],
     },
 
     // ══════════════════════════════════════════════════════════
-    // TOWER C  —  11 units  (rows 3,4,9,10,11,12,13,23,24,25,26)
-    // NOTE: rows 24 & 25 are explicitly Even/Odd for 4BHK Type F
+    // TOWER C
+    // From Image 2: MIXED — some units BLUE (both), some GREEN (one only)
+    //
+    // SHARED units (BLUE = in both ODD and EVEN, 9 units):
+    //   3BHK(S) Type B             [row 4  in Image 1]  unit02_3bhk_s(b)_tower_03
+    //   3BHK(S) Type B — Podium    [row 3  in Image 1]  unit02_3bhk_s(b)_podium_tower_03
+    //   4BHK Type F — Podium       [row 23 in Image 1]  unit07_4bhk_(f)_podium_tower_03
+    //   3BHK(L) Type G             [row 13 in Image 1]  unit06_3bhk_l(g)_tower_03
+    //   3BHK(L) Type G — Podium    [row 12 in Image 1]  unit06_3bhk_l(g)_podium_tower_03
+    //   3BHK(L) Type F             [row 11 in Image 1]  unit04_3bhk_l(f)_tower_03
+    //   3BHK(L) Type F — Podium    [row 10 in Image 1]  unit04_3bhk_l(f)_podium_tower_03
+    //   3BHK(L) Type E             [row 9  in Image 1]  unit05_3bhk_l(e)_tower_03
+    //
+    // ODD-ONLY unit (GREEN in ODD column):
+    //   4BHK Type F — Odd Floors   [row 25 in Image 1]  unit07_4bhk_(f)_odd_tower_03
+    //
+    // EVEN-ONLY unit (GREEN in EVEN column):
+    //   4BHK Type F — Even Floors  [row 24 in Image 1]  unit07_4bhk_(f)_even_tower_03
+    //   4BHK Type G                [row 26 in Image 1]  unit01_4bhk_(g)_tower_03
+    //     NOTE: 4BHK-G is green in EVEN column of Tower C in Image 2
     // ══════════════════════════════════════════════════════════
     'tower-C': {
       label: 'Tower C',
-      odd:  { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_03.jpg`  },
-      even: { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_03.jpg` },
+      odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_03.jpg')  },
+      even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_03.jpg') },
 
       oddUnits: [
+        // ── BLUE (shared with even) ──
         {
           unitId: 'C-odd-01',
-          label:  '3BHK (S) Type B — Podium',
+          label:  '3BHK (S) Type B',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit02_3bhk_s(b)_tower_03.jpg'),
+          iso:    IK('isometric/unit02_3bhk_s(b)_tower_03.jpg'),
           points: '5,8 25,8 25,30 5,30',
         },
         {
           unitId: 'C-odd-02',
-          label:  '3BHK (S) Type B',
+          label:  '3BHK (S) Type B — Podium',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit02_3bhk_s(b)_podium_tower_03.jpg'),
+          iso:    IK('isometric/unit02_3bhk_s(b)_podium_tower_03.jpg'),
           points: '28,8 48,8 48,30 28,30',
         },
         {
           unitId: 'C-odd-03',
-          label:  '3BHK (L) Type E',
-          type:   '3 BHK',
+          label:  '4BHK Type F — Podium',
+          type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit07_4bhk_(f)_podium_tower_03.jpg'),
+          iso:    IK('isometric/unit07_4bhk_(f)_podium_tower_03.jpg'),
           points: '51,8 71,8 71,30 51,30',
         },
         {
           unitId: 'C-odd-04',
-          label:  '3BHK (L) Type F — Podium',
+          label:  '3BHK (L) Type G',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),
+          iso:    IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'),
           points: '74,8 94,8 94,30 74,30',
         },
         {
           unitId: 'C-odd-05',
-          label:  '3BHK (L) Type F',
+          label:  '3BHK (L) Type G — Podium',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit06_3bhk_l(g)_podium_tower_03.jpg'),
+          iso:    IK('isometric/unit06_3bhk_l(g)_podium_tower_03.jpg'),
           points: '5,34 25,34 25,56 5,56',
         },
         {
           unitId: 'C-odd-06',
-          label:  '3BHK (L) Type G — Podium',
+          label:  '3BHK (L) Type F',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit04_3bhk_l(f)_tower_03.jpg'),
+          iso:    IK('isometric/unit04_3bhk_l(f)_tower_03.jpg'),
           points: '28,34 48,34 48,56 28,56',
         },
         {
           unitId: 'C-odd-07',
-          label:  '3BHK (L) Type G',
+          label:  '3BHK (L) Type F — Podium',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit04_3bhk_l(f)_podium_tower_03.jpg'),
+          iso:    IK('isometric/unit04_3bhk_l(f)_podium_tower_03.jpg'),
           points: '51,34 71,34 71,56 51,56',
         },
         {
           unitId: 'C-odd-08',
-          label:  '4BHK Type F — Podium',
-          type:   '4 BHK',
+          label:  '3BHK (L) Type E',
+          type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit05_3bhk_l(e)_tower_03.jpg'),
+          iso:    IK('isometric/unit05_3bhk_l(e)_tower_03.jpg'),
           points: '74,34 94,34 94,56 74,56',
         },
-        // Row 25 — explicitly ODD floors
+        // ── GREEN — ODD only ──
         {
           unitId: 'C-odd-09',
           label:  '4BHK Type F — Odd Floors',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL  (unit07_4bhk_(f)_odd_tower_03)
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit07_4bhk_(f)_odd_tower_03.jpg'),
+          iso:    IK('isometric/unit07_4bhk_(f)_odd_tower_03.jpg'),
           points: '5,60 25,60 25,82 5,82',
-        },
-        {
-          unitId: 'C-odd-10',
-          label:  '4BHK Type G',
-          type:   '4 BHK',
-          area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
-          points: '28,60 48,60 48,82 28,82',
         },
       ],
 
       evenUnits: [
+        // ── BLUE (shared with odd) ──
         {
           unitId: 'C-even-01',
-          label:  '3BHK (S) Type B — Podium',
+          label:  '3BHK (S) Type B',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit02_3bhk_s(b)_tower_03.jpg'),
+          iso:    IK('isometric/unit02_3bhk_s(b)_tower_03.jpg'),
           points: '5,8 25,8 25,30 5,30',
         },
         {
           unitId: 'C-even-02',
-          label:  '3BHK (S) Type B',
+          label:  '3BHK (S) Type B — Podium',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit02_3bhk_s(b)_podium_tower_03.jpg'),
+          iso:    IK('isometric/unit02_3bhk_s(b)_podium_tower_03.jpg'),
           points: '28,8 48,8 48,30 28,30',
         },
         {
           unitId: 'C-even-03',
-          label:  '3BHK (L) Type E',
-          type:   '3 BHK',
+          label:  '4BHK Type F — Podium',
+          type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit07_4bhk_(f)_podium_tower_03.jpg'),
+          iso:    IK('isometric/unit07_4bhk_(f)_podium_tower_03.jpg'),
           points: '51,8 71,8 71,30 51,30',
         },
         {
           unitId: 'C-even-04',
-          label:  '3BHK (L) Type F — Podium',
+          label:  '3BHK (L) Type G',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),
+          iso:    IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'),
           points: '74,8 94,8 94,30 74,30',
         },
         {
           unitId: 'C-even-05',
-          label:  '3BHK (L) Type F',
+          label:  '3BHK (L) Type G — Podium',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit06_3bhk_l(g)_podium_tower_03.jpg'),
+          iso:    IK('isometric/unit06_3bhk_l(g)_podium_tower_03.jpg'),
           points: '5,34 25,34 25,56 5,56',
         },
         {
           unitId: 'C-even-06',
-          label:  '3BHK (L) Type G — Podium',
+          label:  '3BHK (L) Type F',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit04_3bhk_l(f)_tower_03.jpg'),
+          iso:    IK('isometric/unit04_3bhk_l(f)_tower_03.jpg'),
           points: '28,34 48,34 48,56 28,56',
         },
         {
           unitId: 'C-even-07',
-          label:  '3BHK (L) Type G',
+          label:  '3BHK (L) Type F — Podium',
           type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit04_3bhk_l(f)_podium_tower_03.jpg'),
+          iso:    IK('isometric/unit04_3bhk_l(f)_podium_tower_03.jpg'),
           points: '51,34 71,34 71,56 51,56',
         },
         {
           unitId: 'C-even-08',
-          label:  '4BHK Type F — Podium',
-          type:   '4 BHK',
+          label:  '3BHK (L) Type E',
+          type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit05_3bhk_l(e)_tower_03.jpg'),
+          iso:    IK('isometric/unit05_3bhk_l(e)_tower_03.jpg'),
           points: '74,34 94,34 94,56 74,56',
         },
-        // Row 24 — explicitly EVEN floors
+        // ── GREEN — EVEN only ──
         {
           unitId: 'C-even-09',
           label:  '4BHK Type F — Even Floors',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL  (unit07_4bhk_(f)_even_tower_03)
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit07_4bhk_(f)_even_tower_03.jpg'),
+          iso:    IK('isometric/unit07_4bhk_(f)_even_tower_03.jpg'),
           points: '5,60 25,60 25,82 5,82',
         },
         {
@@ -458,121 +549,148 @@ window.FloorplanModule = (function () {
           label:  '4BHK Type G',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit01_4bhk_(g)_tower_03.jpg'),
+          iso:    IK('isometric/unit01_4bhk_(g)_tower_03.jpg'),
           points: '28,60 48,60 48,82 28,82',
         },
       ],
     },
 
     // ══════════════════════════════════════════════════════════
-    // TOWER D  —  5 units  (rows 5,14,15,22 + shared)
+    // TOWER D
+    // From Image 2: ALL units are BLUE → identical oddUnits & evenUnits
+    //
+    // Units (6 total):
+    //   1. 4BHK Type A             [row 14 in Image 1]  unit01_4bhk_(a)_tower_04
+    //   2. 3BHK(L) Type B          [row 6  in Image 1]  unit02_3bhk_l(b)_tower_02  (shared file)
+    //   3. 3BHK(L) Type A          [row 5  in Image 1]  unit03_3bhk_l(a)_tower_04
+    //   4. 4BHK Type B             [row 16 in Image 1]  unit06_4bhk_(b)_tower_04
+    //   5. 3BHK(S) Type A          [row 2  in Image 1]  unit05_3bhk_s(a)_tower_02  (shared file)
+    //   6. 4BHK Type E             [row 22 in Image 1]  unit04_4bhk_(e)_tower_04
     // ══════════════════════════════════════════════════════════
     'tower-D': {
       label: 'Tower D',
-      odd:  { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_04.jpg`  },
-      even: { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_04.jpg` },
+      odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_04.jpg')  },
+      even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_04.jpg') },
 
       oddUnits: [
         {
           unitId: 'D-odd-01',
-          label:  '3BHK (L) Type A',
-          type:   '3 BHK',
+          label:  '4BHK Type A',
+          type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit01_4bhk_(a)_tower_04.jpg'),
+          iso:    IK('isometric/unit01_4bhk_(a)_tower_04.jpg'),
           points: '10,12 35,12 35,42 10,42',
         },
         {
           unitId: 'D-odd-02',
-          label:  '4BHK Type A',
-          type:   '4 BHK',
+          label:  '3BHK (L) Type B',
+          type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),
+          iso:    IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),
           points: '40,12 65,12 65,42 40,42',
         },
         {
           unitId: 'D-odd-03',
-          label:  '4BHK Type A — Podium',
-          type:   '4 BHK',
+          label:  '3BHK (L) Type A',
+          type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit03_3bhk_l(a)_tower_04.jpg'),
+          iso:    IK('isometric/unit03_3bhk_l(a)_tower_04.jpg'),
           points: '70,12 90,12 90,42 70,42',
         },
         {
           unitId: 'D-odd-04',
-          label:  '4BHK Type E',
+          label:  '4BHK Type B',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit06_4bhk_(b)_tower_04.jpg'),
+          iso:    IK('isometric/unit06_4bhk_(b)_tower_04.jpg'),
           points: '10,48 35,48 35,78 10,78',
         },
         {
           unitId: 'D-odd-05',
-          label:  '4BHK Type B — Podium',
+          label:  '3BHK (S) Type A',
+          type:   '3 BHK',
+          area:   '',
+          top:    IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),
+          iso:    IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),
+          points: '40,48 65,48 65,78 40,78',
+        },
+        {
+          unitId: 'D-odd-06',
+          label:  '4BHK Type E',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
-          points: '40,48 65,48 65,78 40,78',
+          top:    IK('topview/unit04_4bhk_(e)_tower_04.jpg'),
+          iso:    IK('isometric/unit04_4bhk_(e)_tower_04.jpg'),
+          points: '70,48 90,48 90,78 70,78',
         },
       ],
 
+      // BLUE = all same as oddUnits
       evenUnits: [
         {
           unitId: 'D-even-01',
-          label:  '3BHK (L) Type A',
-          type:   '3 BHK',
+          label:  '4BHK Type A',
+          type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit01_4bhk_(a)_tower_04.jpg'),
+          iso:    IK('isometric/unit01_4bhk_(a)_tower_04.jpg'),
           points: '10,12 35,12 35,42 10,42',
         },
         {
           unitId: 'D-even-02',
-          label:  '4BHK Type A',
-          type:   '4 BHK',
+          label:  '3BHK (L) Type B',
+          type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),
+          iso:    IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),
           points: '40,12 65,12 65,42 40,42',
         },
         {
           unitId: 'D-even-03',
-          label:  '4BHK Type A — Podium',
-          type:   '4 BHK',
+          label:  '3BHK (L) Type A',
+          type:   '3 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit03_3bhk_l(a)_tower_04.jpg'),
+          iso:    IK('isometric/unit03_3bhk_l(a)_tower_04.jpg'),
           points: '70,12 90,12 90,42 70,42',
         },
         {
           unitId: 'D-even-04',
-          label:  '4BHK Type E',
+          label:  '4BHK Type B',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
+          top:    IK('topview/unit06_4bhk_(b)_tower_04.jpg'),
+          iso:    IK('isometric/unit06_4bhk_(b)_tower_04.jpg'),
           points: '10,48 35,48 35,78 10,78',
         },
         {
           unitId: 'D-even-05',
-          label:  '4BHK Type B — Podium',
+          label:  '3BHK (S) Type A',
+          type:   '3 BHK',
+          area:   '',
+          top:    IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),
+          iso:    IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),
+          points: '40,48 65,48 65,78 40,78',
+        },
+        {
+          unitId: 'D-even-06',
+          label:  '4BHK Type E',
           type:   '4 BHK',
           area:   '',
-          top:    '', // ← paste floor plan image URL
-          iso:    '', // ← paste isometric image URL
-          points: '40,48 65,48 65,78 40,78',
+          top:    IK('topview/unit04_4bhk_(e)_tower_04.jpg'),
+          iso:    IK('isometric/unit04_4bhk_(e)_tower_04.jpg'),
+          points: '70,48 90,48 90,78 70,78',
         },
       ],
     },
   };
 
   // ─── LEVEL 2 — UNIT IMAGE  ───────────────────────────────────
-  // Reads top/iso directly from the unit object — no auto-naming
   function unitImagePath(unitData, view) {
     return view === 'iso' ? unitData.iso : unitData.top;
   }
@@ -663,7 +781,6 @@ window.FloorplanModule = (function () {
       .fp-crumb-sep { font-family:'Cormorant Garamond',serif; font-size:14px; color:rgba(200,190,154,.28); flex-shrink:0; opacity:0; transition:opacity 0.22s; }
       .fp-crumb-sep.visible { opacity:1; }
 
-      /* ODD / EVEN TOGGLE */
       #fp-parity-toggle {
         flex-shrink:0; display:flex;
         border:1px solid rgba(200,190,154,.30); border-radius:7px; overflow:hidden;
@@ -680,7 +797,6 @@ window.FloorplanModule = (function () {
       .fp-parity-btn.active { background:rgba(200,190,154,.14); color:rgba(245,242,235,.90); }
       .fp-parity-btn:not(.active):hover { background:rgba(200,190,154,.07); color:rgba(200,190,154,.80); }
 
-      /* TOP VIEW / ISO TOGGLE */
       #fp-view-toggle {
         flex-shrink:0; display:flex;
         border:1px solid rgba(200,190,154,.30); border-radius:7px; overflow:hidden;
@@ -965,7 +1081,6 @@ window.FloorplanModule = (function () {
     const src     = unitImagePath(activeUnit, viewMode);
 
     if (!src) {
-      // No image URL set yet — show a placeholder message instead of broken image
       img.removeAttribute('src');
       spinner.classList.remove('visible');
       return;
@@ -1114,6 +1229,7 @@ window.FloorplanModule = (function () {
     },
     TOWERS,
     SITEMAP,
+    IK, // expose so external code can also build IK URLs
   };
 
 })();
