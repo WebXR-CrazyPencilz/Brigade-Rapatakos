@@ -978,7 +978,7 @@ window.FloorplanModule = (function () {
     if (activeZone) {
     activeZone.classList.add('selected');
     }
-    
+
     level = 2;
     showPanel('fp-panel-unit', 'forward');
     updateTopbar();
@@ -1028,6 +1028,9 @@ window.FloorplanModule = (function () {
 
       document.querySelectorAll('.fp-zone.selected')
       .forEach(z => z.classList.remove('selected'));
+
+      document.getElementById('fp-zone-svg').innerHTML = '';
+      
       showPanel('fp-panel-sitemap', 'back');
       updateTopbar();
     }
@@ -1101,7 +1104,24 @@ window.FloorplanModule = (function () {
     if (!overlayOpen) return;
     overlayOpen = false;
     document.getElementById('fp-overlay').classList.remove('open');
-    setTimeout(() => { level = 0; activeTower = null; activeUnit = null; viewMode = 'top'; }, 420);
+    setTimeout(() => {
+
+  level = 0;
+
+  activeTower = null;
+  activeUnit  = null;
+
+  viewMode = 'top';
+
+  document.getElementById('fp-zone-svg').innerHTML = '';
+
+  document.getElementById('fp-unit-info')
+    .classList.remove('visible');
+
+  document.getElementById('fp-plan-img')
+    .removeAttribute('src');
+
+}, 420);
   }
 
   // ─── BIND EVENTS ─────────────────────────────────────────────
