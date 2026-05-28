@@ -458,14 +458,19 @@ window.FloorplanModule = (function () {
       }
       #fp-overlay.open { opacity: 1; pointer-events: all; transform: translateY(0); }
 
+      /* ── TOPBAR ── */
       #fp-topbar {
-        flex-shrink: 0; height: 56px;
+        flex-shrink: 0;
         display: flex; align-items: center;
-        padding: 0 20px;
+        padding: 0 12px;
+        min-height: 56px; height: auto;
         border-bottom: 1px solid rgba(200,190,154,.18);
         background: rgba(10,8,5,.92);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-        gap: 14px; position: relative; z-index: 2;
+        gap: 10px; position: relative; z-index: 2;
+        flex-wrap: wrap;
+        row-gap: 6px;
+        padding-top: 8px; padding-bottom: 8px;
       }
       #fp-topbar::after {
         content: ''; position: absolute; bottom: -1px; left: 50%;
@@ -488,28 +493,45 @@ window.FloorplanModule = (function () {
       }
       #fp-back:hover #fp-back-arrow { background: rgba(200,190,154,.18); border-color: rgba(200,190,154,.65); }
       #fp-back-arrow svg { width:13px; height:13px; stroke:rgba(200,190,154,.80); fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
-      #fp-back-label { font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:rgba(200,190,154,.65); transition:color 0.2s; }
+      #fp-back-label {
+        font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+        color:rgba(200,190,154,.65); transition:color 0.2s;
+        /* hide text on very small screens, keep icon */
+        display: none;
+      }
+      @media (min-width: 400px) { #fp-back-label { display: block; } }
       #fp-back:hover #fp-back-label { color:rgba(200,190,154,.95); }
 
       .fp-pipe { width:1px; height:18px; background:rgba(200,190,154,.20); flex-shrink:0; opacity:0; transition:opacity 0.22s; }
       .fp-pipe.visible { opacity:1; }
 
-      #fp-breadcrumb { flex:1; display:flex; align-items:center; gap:8px; min-width:0; overflow:hidden; }
-      .fp-crumb { font-family:'Cormorant Garamond',serif; font-size:16px; font-weight:400; color:rgba(200,190,154,.55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; transition:color 0.2s; }
+      #fp-breadcrumb {
+        flex:1; display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;
+      }
+      .fp-crumb {
+        font-family:'Cormorant Garamond',serif; font-size:15px; font-weight:400;
+        color:rgba(200,190,154,.55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+        cursor:pointer; transition:color 0.2s;
+      }
       .fp-crumb.active { color:rgba(245,242,235,.90); cursor:default; }
       .fp-crumb:not(.active):hover { color:rgba(200,190,154,.85); }
       .fp-crumb-sep { font-family:'Cormorant Garamond',serif; font-size:14px; color:rgba(200,190,154,.28); flex-shrink:0; opacity:0; transition:opacity 0.22s; }
       .fp-crumb-sep.visible { opacity:1; }
 
+      /* toggles row — on mobile they move below the main bar row */
+      #fp-toggles-row {
+        display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+      }
+
       #fp-parity-toggle {
-        flex-shrink:0; display:flex;
+        display:flex;
         border:1px solid rgba(200,190,154,.30); border-radius:7px; overflow:hidden;
         opacity:0; pointer-events:none; transition:opacity 0.28s;
       }
       #fp-parity-toggle.visible { opacity:1; pointer-events:all; }
       .fp-parity-btn {
-        padding:6px 16px; font-family:'Syne',sans-serif; font-size:9.5px; font-weight:700;
-        letter-spacing:.13em; text-transform:uppercase; color:rgba(200,190,154,.55);
+        padding:5px 11px; font-family:'Syne',sans-serif; font-size:9px; font-weight:700;
+        letter-spacing:.11em; text-transform:uppercase; color:rgba(200,190,154,.55);
         cursor:pointer; background:transparent; border:none; outline:none;
         border-right:1px solid rgba(200,190,154,.20); transition:background 0.2s, color 0.2s; white-space:nowrap;
       }
@@ -518,14 +540,14 @@ window.FloorplanModule = (function () {
       .fp-parity-btn:not(.active):hover { background:rgba(200,190,154,.07); color:rgba(200,190,154,.80); }
 
       #fp-view-toggle {
-        flex-shrink:0; display:flex;
+        display:flex;
         border:1px solid rgba(200,190,154,.30); border-radius:7px; overflow:hidden;
         opacity:0; pointer-events:none; transition:opacity 0.28s;
       }
       #fp-view-toggle.visible { opacity:1; pointer-events:all; }
       .fp-toggle-btn {
-        padding:6px 14px; font-family:'Syne',sans-serif; font-size:9.5px; font-weight:700;
-        letter-spacing:.13em; text-transform:uppercase; color:rgba(200,190,154,.55);
+        padding:5px 11px; font-family:'Syne',sans-serif; font-size:9px; font-weight:700;
+        letter-spacing:.11em; text-transform:uppercase; color:rgba(200,190,154,.55);
         cursor:pointer; background:transparent; border:none; outline:none;
         border-right:1px solid rgba(200,190,154,.20); transition:background 0.2s, color 0.2s; white-space:nowrap;
       }
@@ -537,7 +559,7 @@ window.FloorplanModule = (function () {
         flex-shrink:0; width:30px; height:30px; border-radius:7px;
         border:1px solid rgba(200,190,154,.25); background:rgba(200,190,154,.06);
         display:flex; align-items:center; justify-content:center; cursor:pointer;
-        transition:background 0.2s, border-color 0.2s; margin-left:6px;
+        transition:background 0.2s, border-color 0.2s;
       }
       #fp-close:hover { background:rgba(200,190,154,.16); border-color:rgba(200,190,154,.55); }
       #fp-close svg { width:12px; height:12px; stroke:rgba(200,190,154,.70); fill:none; stroke-width:2; stroke-linecap:round; }
@@ -549,51 +571,108 @@ window.FloorplanModule = (function () {
       .fp-panel.exit-l { opacity:0; transform:translateX(-32px); }
       .fp-panel.exit-r { opacity:0; transform:translateX( 32px); }
 
+      /* ── SITEMAP ── */
       #fp-panel-sitemap { display:flex; align-items:center; justify-content:center; background:#0a0805; transform:translateX(0); }
       #fp-sitemap-wrap { position:relative; display:inline-block; max-width:100%; max-height:100%; }
-      #fp-sitemap-img { display:block; max-width:100%; max-height:calc(100vh - 56px - 62px); object-fit:contain; border:1px solid rgba(200,190,154,.12); }
+      #fp-sitemap-img {
+        display:block; max-width:100%; max-height:calc(100dvh - 56px - 62px);
+        object-fit:contain; border:1px solid rgba(200,190,154,.12);
+      }
 
       .fp-tower-tile {
         position:absolute; border:1px solid rgba(200,190,154,.40); background:rgba(200,190,154,.06);
         backdrop-filter:blur(2px); border-radius:4px; display:flex; flex-direction:column;
         align-items:center; justify-content:center; cursor:pointer;
         transition:background 0.22s, border-color 0.22s, transform 0.22s;
-        gap:4px; padding:8px; box-sizing:border-box;
+        gap:3px; padding:6px; box-sizing:border-box;
       }
       .fp-tower-tile:hover { background:rgba(200,190,154,.18); border-color:rgba(200,190,154,.75); transform:scale(1.04); }
-      .fp-tower-tile-label { font-family:'Cormorant Garamond',serif; font-size:13px; font-weight:500; color:rgba(245,242,235,.85); white-space:nowrap; text-align:center; }
-      .fp-tower-tile-sub { font-family:'Syne',sans-serif; font-size:7.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:rgba(200,190,154,.55); white-space:nowrap; }
-      #fp-sitemap-hint { position:absolute; bottom:18px; left:50%; transform:translateX(-50%); font-family:'Cormorant Garamond',serif; font-size:12px; font-style:italic; color:rgba(200,190,154,.38); pointer-events:none; white-space:nowrap; }
+      /* larger tap target on touch */
+      @media (hover: none) { .fp-tower-tile { padding: 8px; } }
+      .fp-tower-tile-label { font-family:'Cormorant Garamond',serif; font-size:12px; font-weight:500; color:rgba(245,242,235,.85); white-space:nowrap; text-align:center; }
+      .fp-tower-tile-sub { font-family:'Syne',sans-serif; font-size:7px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:rgba(200,190,154,.55); white-space:nowrap; }
+      #fp-sitemap-hint {
+        position:absolute; bottom:12px; left:50%; transform:translateX(-50%);
+        font-family:'Cormorant Garamond',serif; font-size:11px; font-style:italic;
+        color:rgba(200,190,154,.38); pointer-events:none; white-space:nowrap;
+      }
 
+      /* ── CLUSTER ── */
       #fp-panel-cluster { display:flex; align-items:center; justify-content:center; background:#0a0805; transform:translateX(32px); }
       #fp-cluster-wrap { position:relative; display:inline-block; max-width:100%; max-height:100%; }
-      #fp-cluster-img { display:block; max-width:100%; max-height:calc(100vh - 56px - 62px); object-fit:contain; border:1px solid rgba(200,190,154,.12); transition:opacity 0.28s; }
+      #fp-cluster-img {
+        display:block; max-width:100%; max-height:calc(100dvh - 56px - 62px);
+        object-fit:contain; border:1px solid rgba(200,190,154,.12); transition:opacity 0.28s;
+        /* ensure touch events pass through to SVG zones */
+        pointer-events: none;
+      }
       #fp-cluster-img.fading { opacity:0; }
 
-      #fp-zone-svg { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
-      .fp-zone { fill:rgba(200,190,154,.12); stroke:rgba(200,190,154,.55); stroke-width:1.5; cursor:pointer; pointer-events:all; transition:fill 0.20s, stroke 0.20s; }
+      #fp-zone-svg { position:absolute; top:0; left:0; width:100%; height:100%; overflow:visible; }
+      .fp-zone {
+        fill:rgba(200,190,154,.12); stroke:rgba(200,190,154,.55); stroke-width:1.5;
+        cursor:pointer; pointer-events:all;
+        transition:fill 0.20s, stroke 0.20s;
+        /* larger touch area via stroke trick on mobile */
+        stroke-linejoin: round;
+      }
       .fp-zone:hover { fill:rgba(200,190,154,.30); stroke:rgba(200,190,154,.95); }
       .fp-zone.selected { fill:rgba(200,190,154,.22); stroke:#e8dfc0; stroke-width:2; }
+      /* touch-specific highlight */
+      .fp-zone:active { fill:rgba(200,190,154,.40); }
 
-      #fp-zone-tip { position:absolute; padding:6px 12px; background:rgba(10,8,5,.88); border:1px solid rgba(200,190,154,.40); border-radius:4px; backdrop-filter:blur(8px); pointer-events:none; opacity:0; transition:opacity 0.18s; z-index:10; white-space:nowrap; }
+      #fp-zone-tip {
+        position:absolute; padding:6px 12px;
+        background:rgba(10,8,5,.88); border:1px solid rgba(200,190,154,.40);
+        border-radius:4px; backdrop-filter:blur(8px);
+        pointer-events:none; opacity:0; transition:opacity 0.18s; z-index:10; white-space:nowrap;
+        /* keep tip on screen */
+        max-width: calc(100vw - 24px);
+      }
       #fp-zone-tip.visible { opacity:1; }
       #fp-zone-tip-name { font-family:'Cormorant Garamond',serif; font-size:14px; font-weight:500; color:rgba(245,242,235,.90); display:block; }
       #fp-zone-tip-type { font-family:'Syne',sans-serif; font-size:8.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(200,190,154,.60); display:block; margin-top:2px; }
 
+      /* ── UNIT PANEL ── */
       #fp-panel-unit { display:flex; flex-direction:column; transform:translateX(32px); }
-      #fp-plan-area { flex:1; display:flex; align-items:center; justify-content:center; position:relative; overflow:hidden; padding:24px; box-sizing:border-box; }
-      #fp-plan-img { max-width:100%; max-height:100%; object-fit:contain; border:1px solid rgba(200,190,154,.15); border-radius:3px; box-shadow:0 12px 60px rgba(0,0,0,.7); opacity:1; transition:opacity 0.28s; background:rgba(200,190,154,.03); }
+      #fp-plan-area {
+        flex:1; display:flex; align-items:center; justify-content:center;
+        position:relative; overflow:hidden; padding:16px; box-sizing:border-box;
+      }
+      #fp-plan-img {
+        max-width:100%; max-height:100%; object-fit:contain;
+        border:1px solid rgba(200,190,154,.15); border-radius:3px;
+        box-shadow:0 12px 60px rgba(0,0,0,.7);
+        opacity:1; transition:opacity 0.28s; background:rgba(200,190,154,.03);
+      }
       #fp-plan-img.fading { opacity:0; }
 
-      #fp-unit-info { position:absolute; bottom:28px; left:32px; display:flex; flex-direction:column; gap:4px; opacity:0; transform:translateY(6px); transition:opacity 0.30s ease 0.12s, transform 0.30s ease 0.12s; pointer-events:none; }
+      #fp-unit-info {
+        position:absolute; bottom:20px; left:20px;
+        display:flex; flex-direction:column; gap:3px;
+        opacity:0; transform:translateY(6px);
+        transition:opacity 0.30s ease 0.12s, transform 0.30s ease 0.12s;
+        pointer-events:none;
+        /* don't overflow on very small screens */
+        max-width: calc(100vw - 40px);
+      }
       #fp-unit-info.visible { opacity:1; transform:translateY(0); }
-      #fp-unit-info-name { font-family:'Cormorant Garamond',serif; font-size:22px; font-weight:300; font-style:italic; color:rgba(245,242,235,.75); line-height:1; }
+      #fp-unit-info-name { font-family:'Cormorant Garamond',serif; font-size:18px; font-weight:300; font-style:italic; color:rgba(245,242,235,.75); line-height:1.1; }
       #fp-unit-info-type { font-family:'Syne',sans-serif; font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:rgba(200,190,154,.55); }
       #fp-unit-info-area { font-family:'Syne',sans-serif; font-size:9px; font-weight:400; letter-spacing:.10em; color:rgba(200,190,154,.38); }
 
-      #fp-spinner { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,8,5,.50); opacity:0; pointer-events:none; transition:opacity 0.22s; z-index:5; }
+      /* ── SPINNER ── */
+      #fp-spinner {
+        position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+        background:rgba(10,8,5,.50); opacity:0; pointer-events:none;
+        transition:opacity 0.22s; z-index:5;
+      }
       #fp-spinner.visible { opacity:1; }
-      #fp-spinner-ring { width:34px; height:34px; border:2px solid rgba(200,190,154,.20); border-top-color:rgba(200,190,154,.85); border-radius:50%; animation:fpSpin 0.72s linear infinite; }
+      #fp-spinner-ring {
+        width:34px; height:34px; border:2px solid rgba(200,190,154,.20);
+        border-top-color:rgba(200,190,154,.85); border-radius:50%;
+        animation:fpSpin 0.72s linear infinite;
+      }
       @keyframes fpSpin { to { transform:rotate(360deg); } }
     `;
     document.head.appendChild(style);
@@ -619,14 +698,16 @@ window.FloorplanModule = (function () {
             <span class="fp-crumb"        id="fp-crumb-2"></span>
           </div>
 
-          <div id="fp-parity-toggle">
-            <button class="fp-parity-btn active" data-parity="odd">Odd Floors</button>
-            <button class="fp-parity-btn"        data-parity="even">Even Floors</button>
-          </div>
+          <div id="fp-toggles-row">
+            <div id="fp-parity-toggle">
+              <button class="fp-parity-btn active" data-parity="odd">Odd</button>
+              <button class="fp-parity-btn"        data-parity="even">Even</button>
+            </div>
 
-          <div id="fp-view-toggle">
-            <button class="fp-toggle-btn active" data-view="top">Floor Plan</button>
-            <button class="fp-toggle-btn"        data-view="iso">Isometric</button>
+            <div id="fp-view-toggle">
+              <button class="fp-toggle-btn active" data-view="top">Plan</button>
+              <button class="fp-toggle-btn"        data-view="iso">Iso</button>
+            </div>
           </div>
 
           <div id="fp-close">
@@ -726,6 +807,15 @@ window.FloorplanModule = (function () {
 
   // ─── DRILL TO CLUSTER ────────────────────────────────────────
   function drillToCluster(towerId) {
+    // ── BUG FIX: always reset unit state when entering cluster level ──
+    activeUnit = null;
+    document.getElementById('fp-unit-info').classList.remove('visible');
+    // clear the unit image so stale image doesn't flash
+    const planImg = document.getElementById('fp-plan-img');
+    planImg.removeAttribute('src');
+    // clear any selected zone highlight
+    document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
+
     activeTower = towerId;
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
@@ -746,15 +836,34 @@ window.FloorplanModule = (function () {
   function buildZones(towerId, parity) {
     const svg = document.getElementById('fp-zone-svg');
     svg.innerHTML = '';
+
     getUnits(towerId, parity).forEach(u => {
       const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
       poly.setAttribute('class', 'fp-zone');
       poly.setAttribute('points', u.points);
       poly.dataset.unitId = u.unitId;
+
+      // mouse events (desktop)
       poly.addEventListener('mouseenter', (e) => showZoneTip(u, e));
       poly.addEventListener('mousemove',  (e) => moveZoneTip(e));
       poly.addEventListener('mouseleave', hideZoneTip);
       poly.addEventListener('click', () => drillToUnit(u));
+
+      // touch events (mobile) — show tip briefly then navigate on tap
+      let touchMoved = false;
+      poly.addEventListener('touchstart', (e) => {
+        touchMoved = false;
+        showZoneTipTouch(u, e);
+      }, { passive: true });
+      poly.addEventListener('touchmove', () => { touchMoved = true; hideZoneTip(); }, { passive: true });
+      poly.addEventListener('touchend', (e) => {
+        if (!touchMoved) {
+          e.preventDefault();
+          hideZoneTip();
+          drillToUnit(u);
+        }
+      });
+
       svg.appendChild(poly);
     });
   }
@@ -766,12 +875,37 @@ window.FloorplanModule = (function () {
     document.getElementById('fp-zone-tip').classList.add('visible');
     moveZoneTip(e);
   }
+
+  function showZoneTipTouch(u, e) {
+    document.getElementById('fp-zone-tip-name').textContent = u.label;
+    document.getElementById('fp-zone-tip-type').textContent = `${u.type}${u.area ? '  ·  ' + u.area : ''}`;
+    const tip  = document.getElementById('fp-zone-tip');
+    tip.classList.add('visible');
+    // position near touch point
+    const rect = document.getElementById('fp-cluster-wrap').getBoundingClientRect();
+    const t = e.touches[0];
+    let left = t.clientX - rect.left + 14;
+    let top  = t.clientY - rect.top  - 40;
+    // clamp so tip stays inside wrap
+    const tw = tip.offsetWidth || 120;
+    if (left + tw > rect.width - 8) left = rect.width - tw - 8;
+    if (left < 4) left = 4;
+    if (top < 4) top = 4;
+    tip.style.left = left + 'px';
+    tip.style.top  = top  + 'px';
+  }
+
   function moveZoneTip(e) {
     const rect = document.getElementById('fp-cluster-wrap').getBoundingClientRect();
     const tip  = document.getElementById('fp-zone-tip');
-    tip.style.left = (e.clientX - rect.left + 14) + 'px';
-    tip.style.top  = (e.clientY - rect.top  - 14) + 'px';
+    let left = e.clientX - rect.left + 14;
+    let top  = e.clientY - rect.top  - 14;
+    const tw = tip.offsetWidth || 120;
+    if (left + tw > rect.width - 8) left = rect.width - tw - 8;
+    tip.style.left = left + 'px';
+    tip.style.top  = top  + 'px';
   }
+
   function hideZoneTip() {
     document.getElementById('fp-zone-tip').classList.remove('visible');
   }
@@ -818,12 +952,17 @@ window.FloorplanModule = (function () {
   // ─── BACK NAV ────────────────────────────────────────────────
   function goBack() {
     if (level === 2) {
-      level = 1; activeUnit = null;
+      level = 1;
+      // ── BUG FIX: clear activeUnit when leaving unit panel ──
+      activeUnit = null;
       document.getElementById('fp-unit-info').classList.remove('visible');
       showPanel('fp-panel-cluster', 'back');
       updateTopbar();
     } else if (level === 1) {
-      level = 0; activeTower = null;
+      level = 0;
+      // ── BUG FIX: clear both tower and unit when going to sitemap ──
+      activeTower = null;
+      activeUnit  = null;
       showPanel('fp-panel-sitemap', 'back');
       updateTopbar();
     }
@@ -906,7 +1045,11 @@ window.FloorplanModule = (function () {
     document.getElementById('fp-back').addEventListener('click', goBack);
 
     document.getElementById('fp-crumb-0').addEventListener('click', () => {
-      if (level > 0) { level = 0; showPanel('fp-panel-sitemap','back'); updateTopbar(); }
+      if (level > 0) {
+        // ── BUG FIX: clear tower + unit when jumping directly to sitemap via breadcrumb ──
+        level = 0; activeTower = null; activeUnit = null;
+        showPanel('fp-panel-sitemap','back'); updateTopbar();
+      }
     });
     document.getElementById('fp-crumb-1').addEventListener('click', () => {
       if (level === 2) goBack();
