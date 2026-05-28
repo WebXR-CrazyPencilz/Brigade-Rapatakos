@@ -1,32 +1,15 @@
 // floorplan.js — 3-Level Floor Plan Viewer
 // Level 0 → Sitemap (default) — 4 tower tiles overlaid
-// Level 1 → Tower Cluster image — polygon unit zones overlaid
+// Level 1 → Tower Cluster image — ODD/EVEN toggle + polygon unit zones
 // Level 2 → Unit plan — Top View / Isometric toggle
-//
-// IMAGE NAMES (replace placeholder URLs with real ImageKit paths):
-//   Sitemap  : sitemap_cluster.jpg
-//   Clusters : cluster_tower_A_odd.jpg  / cluster_tower_A_even.jpg
-//              cluster_tower_B_odd.jpg  / cluster_tower_B_even.jpg
-//              cluster_tower_C_odd.jpg  / cluster_tower_C_even.jpg
-//              cluster_tower_D_odd.jpg  / cluster_tower_D_even.jpg
-//   Units    : unit_<id>_top.jpg  /  unit_<id>_iso.jpg
-//
-// HOW ODD / EVEN WORKS:
-//   Pass a floor number to FloorplanModule.open(floorNumber).
-//   If floorNumber is odd  → loads the tower's odd-floor cluster image.
-//   If floorNumber is even → loads the tower's even-floor cluster image.
-//   Default (no floor number passed) → shows Level 0 sitemap.
 
 window.FloorplanModule = (function () {
 
-  // ─── IMAGE BASE ────────────────────────────────────────────────
   const IK = 'https://ik.imagekit.io/pwzaetheh';
 
   // ─── LEVEL 0 — SITEMAP ────────────────────────────────────────
   const SITEMAP = {
-    image: `${IK}/Cluster/sitemap_cluster.jpg`,   // ← replace with real path
-    // 4 tower tiles: { id, label, x, y, w, h } as % of image natural size
-    // Coordinates are PLACEHOLDERS — supply real values once image is confirmed
+    image: `${IK}/Cluster/sitemap_cluster.jpg`,
     towerTiles: [
       { id: 'tower-A', label: 'Tower A', x: 18, y: 30, w: 14, h: 22 },
       { id: 'tower-B', label: 'Tower B', x: 38, y: 28, w: 14, h: 22 },
@@ -35,151 +18,108 @@ window.FloorplanModule = (function () {
     ],
   };
 
-  // ─── LEVEL 1 — TOWERS / CLUSTERS ──────────────────────────────
-  // Each tower has an odd-floor cluster image and an even-floor cluster image.
-  // unitZones: SVG polygon points as percentage strings ("x,y x,y …")
-  //   — expressed as % of the cluster image's rendered size so they scale
-  //     with the image at any viewport. PLACEHOLDERS — tune after images arrive.
+  // ─── LEVEL 1 — TOWERS / CLUSTERS ─────────────────────────────
   const TOWERS = {
     'tower-A': {
       label: 'Tower A',
-      odd:  { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_01.jpg`  },   // ← real path
-      even: { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_01.jpg` },   // ← real path
-      // Units that appear on ODD floors
+      odd:  { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_01.jpg`  },
+      even: { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_01.jpg` },
       oddUnits: [
-        { unitId: 'A01', label: 'Unit A-01', type: '3 BHK', area: '1,450 sq ft',
-          points: '12,20 28,20 28,45 12,45' },  // placeholder polygon
-        { unitId: 'A03', label: 'Unit A-03', type: '3 BHK', area: '1,480 sq ft',
-          points: '32,20 48,20 48,45 32,45' },
-        { unitId: 'A05', label: 'Unit A-05', type: '4 BHK', area: '1,820 sq ft',
-          points: '52,20 72,20 72,45 52,45' },
-        { unitId: 'A07', label: 'Unit A-07', type: '2 BHK', area: '1,150 sq ft',
-          points: '12,52 28,52 28,76 12,76' },
+        { unitId: 'A01', label: 'Unit A-01', type: '3 BHK', area: '1,450 sq ft', points: '12,20 28,20 28,45 12,45' },
+        { unitId: 'A03', label: 'Unit A-03', type: '3 BHK', area: '1,480 sq ft', points: '32,20 48,20 48,45 32,45' },
+        { unitId: 'A05', label: 'Unit A-05', type: '4 BHK', area: '1,820 sq ft', points: '52,20 72,20 72,45 52,45' },
+        { unitId: 'A07', label: 'Unit A-07', type: '2 BHK', area: '1,150 sq ft', points: '12,52 28,52 28,76 12,76' },
       ],
-      // Units that appear on EVEN floors
       evenUnits: [
-        { unitId: 'A02', label: 'Unit A-02', type: '2 BHK', area: '1,120 sq ft',
-          points: '12,20 28,20 28,45 12,45' },
-        { unitId: 'A04', label: 'Unit A-04', type: '2 BHK', area: '1,090 sq ft',
-          points: '32,20 48,20 48,45 32,45' },
-        { unitId: 'A06', label: 'Unit A-06', type: '3 BHK', area: '1,390 sq ft',
-          points: '52,20 72,20 72,45 52,45' },
-        { unitId: 'A08', label: 'Unit A-08', type: '4 BHK', area: '1,760 sq ft',
-          points: '12,52 28,52 28,76 12,76' },
+        { unitId: 'A02', label: 'Unit A-02', type: '2 BHK', area: '1,120 sq ft', points: '12,20 28,20 28,45 12,45' },
+        { unitId: 'A04', label: 'Unit A-04', type: '2 BHK', area: '1,090 sq ft', points: '32,20 48,20 48,45 32,45' },
+        { unitId: 'A06', label: 'Unit A-06', type: '3 BHK', area: '1,390 sq ft', points: '52,20 72,20 72,45 52,45' },
+        { unitId: 'A08', label: 'Unit A-08', type: '4 BHK', area: '1,760 sq ft', points: '12,52 28,52 28,76 12,76' },
       ],
     },
-
     'tower-B': {
       label: 'Tower B',
       odd:  { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_02.jpg`  },
       even: { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_02.jpg` },
       oddUnits: [
-        { unitId: 'B01', label: 'Unit B-01', type: '3 BHK', area: '1,450 sq ft',
-          points: '12,20 28,20 28,45 12,45' },
-        { unitId: 'B03', label: 'Unit B-03', type: '3 BHK', area: '1,480 sq ft',
-          points: '32,20 48,20 48,45 32,45' },
-        { unitId: 'B05', label: 'Unit B-05', type: '4 BHK', area: '1,820 sq ft',
-          points: '52,20 72,20 72,45 52,45' },
-        { unitId: 'B07', label: 'Unit B-07', type: '2 BHK', area: '1,150 sq ft',
-          points: '12,52 28,52 28,76 12,76' },
+        { unitId: 'B01', label: 'Unit B-01', type: '3 BHK', area: '1,450 sq ft', points: '12,20 28,20 28,45 12,45' },
+        { unitId: 'B03', label: 'Unit B-03', type: '3 BHK', area: '1,480 sq ft', points: '32,20 48,20 48,45 32,45' },
+        { unitId: 'B05', label: 'Unit B-05', type: '4 BHK', area: '1,820 sq ft', points: '52,20 72,20 72,45 52,45' },
+        { unitId: 'B07', label: 'Unit B-07', type: '2 BHK', area: '1,150 sq ft', points: '12,52 28,52 28,76 12,76' },
       ],
       evenUnits: [
-        { unitId: 'B02', label: 'Unit B-02', type: '2 BHK', area: '1,120 sq ft',
-          points: '12,20 28,20 28,45 12,45' },
-        { unitId: 'B04', label: 'Unit B-04', type: '2 BHK', area: '1,090 sq ft',
-          points: '32,20 48,20 48,45 32,45' },
-        { unitId: 'B06', label: 'Unit B-06', type: '3 BHK', area: '1,390 sq ft',
-          points: '52,20 72,20 72,45 52,45' },
-        { unitId: 'B08', label: 'Unit B-08', type: '4 BHK', area: '1,760 sq ft',
-          points: '12,52 28,52 28,76 12,76' },
+        { unitId: 'B02', label: 'Unit B-02', type: '2 BHK', area: '1,120 sq ft', points: '12,20 28,20 28,45 12,45' },
+        { unitId: 'B04', label: 'Unit B-04', type: '2 BHK', area: '1,090 sq ft', points: '32,20 48,20 48,45 32,45' },
+        { unitId: 'B06', label: 'Unit B-06', type: '3 BHK', area: '1,390 sq ft', points: '52,20 72,20 72,45 52,45' },
+        { unitId: 'B08', label: 'Unit B-08', type: '4 BHK', area: '1,760 sq ft', points: '12,52 28,52 28,76 12,76' },
       ],
     },
-
     'tower-C': {
       label: 'Tower C',
       odd:  { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_03.jpg`  },
       even: { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_03.jpg` },
       oddUnits: [
-        { unitId: 'C01', label: 'Unit C-01', type: '3 BHK', area: '1,450 sq ft',
-          points: '12,20 28,20 28,45 12,45' },
-        { unitId: 'C03', label: 'Unit C-03', type: '3 BHK', area: '1,480 sq ft',
-          points: '32,20 48,20 48,45 32,45' },
-        { unitId: 'C05', label: 'Unit C-05', type: '4 BHK', area: '1,820 sq ft',
-          points: '52,20 72,20 72,45 52,45' },
-        { unitId: 'C07', label: 'Unit C-07', type: '2 BHK', area: '1,150 sq ft',
-          points: '12,52 28,52 28,76 12,76' },
+        { unitId: 'C01', label: 'Unit C-01', type: '3 BHK', area: '1,450 sq ft', points: '12,20 28,20 28,45 12,45' },
+        { unitId: 'C03', label: 'Unit C-03', type: '3 BHK', area: '1,480 sq ft', points: '32,20 48,20 48,45 32,45' },
+        { unitId: 'C05', label: 'Unit C-05', type: '4 BHK', area: '1,820 sq ft', points: '52,20 72,20 72,45 52,45' },
+        { unitId: 'C07', label: 'Unit C-07', type: '2 BHK', area: '1,150 sq ft', points: '12,52 28,52 28,76 12,76' },
       ],
       evenUnits: [
-        { unitId: 'C02', label: 'Unit C-02', type: '2 BHK', area: '1,120 sq ft',
-          points: '12,20 28,20 28,45 12,45' },
-        { unitId: 'C04', label: 'Unit C-04', type: '2 BHK', area: '1,090 sq ft',
-          points: '32,20 48,20 48,45 32,45' },
-        { unitId: 'C06', label: 'Unit C-06', type: '3 BHK', area: '1,390 sq ft',
-          points: '52,20 72,20 72,45 52,45' },
-        { unitId: 'C08', label: 'Unit C-08', type: '4 BHK', area: '1,760 sq ft',
-          points: '12,52 28,52 28,76 12,76' },
+        { unitId: 'C02', label: 'Unit C-02', type: '2 BHK', area: '1,120 sq ft', points: '12,20 28,20 28,45 12,45' },
+        { unitId: 'C04', label: 'Unit C-04', type: '2 BHK', area: '1,090 sq ft', points: '32,20 48,20 48,45 32,45' },
+        { unitId: 'C06', label: 'Unit C-06', type: '3 BHK', area: '1,390 sq ft', points: '52,20 72,20 72,45 52,45' },
+        { unitId: 'C08', label: 'Unit C-08', type: '4 BHK', area: '1,760 sq ft', points: '12,52 28,52 28,76 12,76' },
       ],
     },
-
     'tower-D': {
       label: 'Tower D',
       odd:  { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_04.jpg`  },
       even: { image: `${IK}/Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_04.jpg` },
       oddUnits: [
-        { unitId: 'D01', label: 'Unit D-01', type: '3 BHK', area: '1,450 sq ft',
-          points: '12,20 28,20 28,45 12,45' },
-        { unitId: 'D03', label: 'Unit D-03', type: '3 BHK', area: '1,480 sq ft',
-          points: '32,20 48,20 48,45 32,45' },
-        { unitId: 'D05', label: 'Unit D-05', type: '4 BHK', area: '1,820 sq ft',
-          points: '52,20 72,20 72,45 52,45' },
-        { unitId: 'D07', label: 'Unit D-07', type: '2 BHK', area: '1,150 sq ft',
-          points: '12,52 28,52 28,76 12,76' },
+        { unitId: 'D01', label: 'Unit D-01', type: '3 BHK', area: '1,450 sq ft', points: '12,20 28,20 28,45 12,45' },
+        { unitId: 'D03', label: 'Unit D-03', type: '3 BHK', area: '1,480 sq ft', points: '32,20 48,20 48,45 32,45' },
+        { unitId: 'D05', label: 'Unit D-05', type: '4 BHK', area: '1,820 sq ft', points: '52,20 72,20 72,45 52,45' },
+        { unitId: 'D07', label: 'Unit D-07', type: '2 BHK', area: '1,150 sq ft', points: '12,52 28,52 28,76 12,76' },
       ],
       evenUnits: [
-        { unitId: 'D02', label: 'Unit D-02', type: '2 BHK', area: '1,120 sq ft',
-          points: '12,20 28,20 28,45 12,45' },
-        { unitId: 'D04', label: 'Unit D-04', type: '2 BHK', area: '1,090 sq ft',
-          points: '32,20 48,20 48,45 32,45' },
-        { unitId: 'D06', label: 'Unit D-06', type: '3 BHK', area: '1,390 sq ft',
-          points: '52,20 72,20 72,45 52,45' },
-        { unitId: 'D08', label: 'Unit D-08', type: '4 BHK', area: '1,760 sq ft',
-          points: '12,52 28,52 28,76 12,76' },
+        { unitId: 'D02', label: 'Unit D-02', type: '2 BHK', area: '1,120 sq ft', points: '12,20 28,20 28,45 12,45' },
+        { unitId: 'D04', label: 'Unit D-04', type: '2 BHK', area: '1,090 sq ft', points: '32,20 48,20 48,45 32,45' },
+        { unitId: 'D06', label: 'Unit D-06', type: '3 BHK', area: '1,390 sq ft', points: '52,20 72,20 72,45 52,45' },
+        { unitId: 'D08', label: 'Unit D-08', type: '4 BHK', area: '1,760 sq ft', points: '12,52 28,52 28,76 12,76' },
       ],
     },
   };
 
-  // ─── LEVEL 2 — UNITS ───────────────────────────────────────────
-  // Keyed by unitId (e.g. 'A01').  top/iso are the two view images.
+  // ─── LEVEL 2 — UNIT IMAGE PATH ───────────────────────────────
   function unitImagePath(unitId, view) {
-    // Convention: unit_A01_top.jpg / unit_A01_iso.jpg
-    // Place all unit images in /Units/ folder on ImageKit
     return `${IK}/Units/unit_${unitId}_${view}.jpg`;
   }
 
-  // ─── STATE ─────────────────────────────────────────────────────
-  let level        = 0;        // 0 | 1 | 2
-  let activeTower  = null;     // tower id string
-  let activeFloor  = null;     // floor number (odd/even resolves cluster)
-  let activeUnit   = null;     // unitId string
-  let viewMode     = 'top';    // 'top' | 'iso'
+  // ─── STATE ───────────────────────────────────────────────────
+  let level        = 0;
+  let activeTower  = null;
+  let activeFloor  = null;
+  let activeUnit   = null;
+  let floorParity  = 'odd';   // ← NEW: 'odd' | 'even' — controlled by toggle
+  let viewMode     = 'top';
   let overlayOpen  = false;
 
-  // ─── HELPERS ───────────────────────────────────────────────────
+  // ─── HELPERS ─────────────────────────────────────────────────
   function isOdd(n)  { return n % 2 !== 0; }
-  function getUnits(towerId, floor) {
+
+  function getUnits(towerId, parity) {
     const t = TOWERS[towerId];
     if (!t) return [];
-    if (floor === null) return t.evenUnits; // default to even when no floor given
-    return isOdd(floor) ? t.oddUnits : t.evenUnits;
-  }
-  function getClusterImage(towerId, floor) {
-    const t = TOWERS[towerId];
-    if (!t) return '';
-    if (floor === null) return t.even.image;
-    return isOdd(floor) ? t.odd.image : t.even.image;
+    return parity === 'odd' ? t.oddUnits : t.evenUnits;
   }
 
-  // ─── INJECT HTML & STYLES ──────────────────────────────────────
+  function getClusterImage(towerId, parity) {
+    const t = TOWERS[towerId];
+    if (!t) return '';
+    return parity === 'odd' ? t.odd.image : t.even.image;
+  }
+
+  // ─── INJECT HTML & STYLES ────────────────────────────────────
   function injectHTML() {
     if (document.getElementById('fp-overlay')) return;
 
@@ -187,7 +127,6 @@ window.FloorplanModule = (function () {
     style.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap');
 
-      /* ══ OVERLAY SHELL ══════════════════════════════════════════ */
       #fp-overlay {
         position: fixed;
         inset: 0;
@@ -209,7 +148,7 @@ window.FloorplanModule = (function () {
         transform: translateY(0);
       }
 
-      /* ── TOPBAR ─────────────────────────────────────────────── */
+      /* ── TOPBAR ── */
       #fp-topbar {
         flex-shrink: 0;
         height: 56px;
@@ -233,7 +172,6 @@ window.FloorplanModule = (function () {
         background: linear-gradient(to right, transparent, rgba(200,190,154,.55), transparent);
       }
 
-      /* Back button */
       #fp-back {
         display: flex; align-items: center; gap: 7px;
         cursor: pointer;
@@ -267,7 +205,6 @@ window.FloorplanModule = (function () {
       }
       #fp-back:hover #fp-back-label { color: rgba(200,190,154,.95); }
 
-      /* Pipe divider */
       .fp-pipe {
         width: 1px; height: 18px;
         background: rgba(200,190,154,.20);
@@ -276,7 +213,6 @@ window.FloorplanModule = (function () {
       }
       .fp-pipe.visible { opacity: 1; }
 
-      /* Breadcrumb */
       #fp-breadcrumb {
         flex: 1;
         display: flex; align-items: center; gap: 8px;
@@ -290,10 +226,7 @@ window.FloorplanModule = (function () {
         cursor: pointer;
         transition: color 0.2s ease;
       }
-      .fp-crumb.active {
-        color: rgba(245,242,235,.90);
-        cursor: default;
-      }
+      .fp-crumb.active { color: rgba(245,242,235,.90); cursor: default; }
       .fp-crumb:not(.active):hover { color: rgba(200,190,154,.85); }
       .fp-crumb-sep {
         font-family: 'Cormorant Garamond', serif;
@@ -304,22 +237,44 @@ window.FloorplanModule = (function () {
       }
       .fp-crumb-sep.visible { opacity: 1; }
 
-      /* Floor badge */
-      #fp-floor-badge {
+      /* ── ODD / EVEN TOGGLE (NEW) ── */
+      #fp-parity-toggle {
         flex-shrink: 0;
-        padding: 4px 10px;
-        border: 1px solid rgba(200,190,154,.22);
-        border-radius: 4px;
-        background: rgba(200,190,154,.07);
-        font-family: 'Syne', sans-serif;
-        font-size: 9px; font-weight: 700;
-        letter-spacing: .14em; text-transform: uppercase;
-        color: rgba(200,190,154,.55);
-        opacity: 0; transition: opacity 0.22s ease;
+        display: flex;
+        border: 1px solid rgba(200,190,154,.30);
+        border-radius: 7px;
+        overflow: hidden;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.28s ease;
       }
-      #fp-floor-badge.visible { opacity: 1; }
+      #fp-parity-toggle.visible {
+        opacity: 1;
+        pointer-events: all;
+      }
+      .fp-parity-btn {
+        padding: 6px 16px;
+        font-family: 'Syne', sans-serif;
+        font-size: 9.5px; font-weight: 700;
+        letter-spacing: .13em; text-transform: uppercase;
+        color: rgba(200,190,154,.55);
+        cursor: pointer; background: transparent;
+        border: none; outline: none;
+        border-right: 1px solid rgba(200,190,154,.20);
+        transition: background 0.2s ease, color 0.2s ease;
+        white-space: nowrap;
+      }
+      .fp-parity-btn:last-child { border-right: none; }
+      .fp-parity-btn.active {
+        background: rgba(200,190,154,.14);
+        color: rgba(245,242,235,.90);
+      }
+      .fp-parity-btn:not(.active):hover {
+        background: rgba(200,190,154,.07);
+        color: rgba(200,190,154,.80);
+      }
 
-      /* View toggle */
+      /* View toggle (Top / Iso) */
       #fp-view-toggle {
         flex-shrink: 0;
         display: flex;
@@ -351,7 +306,6 @@ window.FloorplanModule = (function () {
         color: rgba(200,190,154,.80);
       }
 
-      /* Close */
       #fp-close {
         flex-shrink: 0;
         width: 30px; height: 30px;
@@ -373,14 +327,13 @@ window.FloorplanModule = (function () {
         stroke-width: 2; stroke-linecap: round;
       }
 
-      /* ══ CONTENT PANE ══════════════════════════════════════════ */
+      /* ── CONTENT ── */
       #fp-content {
         flex: 1;
         position: relative;
         overflow: hidden;
       }
 
-      /* shared panel base */
       .fp-panel {
         position: absolute;
         inset: 0;
@@ -388,23 +341,20 @@ window.FloorplanModule = (function () {
         pointer-events: none;
         transition: opacity 0.30s ease, transform 0.30s cubic-bezier(0.22,1,0.36,1);
       }
-      .fp-panel.enter  { opacity: 1; pointer-events: all; transform: translateX(0)  !important; }
+      .fp-panel.enter  { opacity: 1; pointer-events: all; transform: translateX(0) !important; }
       .fp-panel.exit-l { opacity: 0; transform: translateX(-32px); }
       .fp-panel.exit-r { opacity: 0; transform: translateX( 32px); }
 
-      /* ── LEVEL 0 — SITEMAP ──────────────────────────────────── */
+      /* ── LEVEL 0 — SITEMAP ── */
       #fp-panel-sitemap {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
         background: #0a0805;
         transform: translateX(0);
       }
       #fp-sitemap-wrap {
         position: relative;
         display: inline-block;
-        max-width: 100%;
-        max-height: 100%;
+        max-width: 100%; max-height: 100%;
       }
       #fp-sitemap-img {
         display: block;
@@ -413,21 +363,17 @@ window.FloorplanModule = (function () {
         object-fit: contain;
         border: 1px solid rgba(200,190,154,.12);
       }
-      /* Tower tiles overlaid on sitemap */
       .fp-tower-tile {
         position: absolute;
         border: 1px solid rgba(200,190,154,.40);
         background: rgba(200,190,154,.06);
         backdrop-filter: blur(2px);
         border-radius: 4px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
         cursor: pointer;
         transition: background 0.22s ease, border-color 0.22s ease, transform 0.22s ease;
-        gap: 4px;
-        padding: 8px;
+        gap: 4px; padding: 8px;
         box-sizing: border-box;
       }
       .fp-tower-tile:hover {
@@ -439,8 +385,7 @@ window.FloorplanModule = (function () {
         font-family: 'Cormorant Garamond', serif;
         font-size: 13px; font-weight: 500;
         color: rgba(245,242,235,.85);
-        white-space: nowrap;
-        text-align: center;
+        white-space: nowrap; text-align: center;
       }
       .fp-tower-tile-sub {
         font-family: 'Syne', sans-serif;
@@ -449,7 +394,6 @@ window.FloorplanModule = (function () {
         color: rgba(200,190,154,.55);
         white-space: nowrap;
       }
-      /* Hint label at bottom of sitemap */
       #fp-sitemap-hint {
         position: absolute;
         bottom: 18px; left: 50%;
@@ -457,23 +401,19 @@ window.FloorplanModule = (function () {
         font-family: 'Cormorant Garamond', serif;
         font-size: 12px; font-style: italic;
         color: rgba(200,190,154,.38);
-        pointer-events: none;
-        white-space: nowrap;
+        pointer-events: none; white-space: nowrap;
       }
 
-      /* ── LEVEL 1 — CLUSTER ──────────────────────────────────── */
+      /* ── LEVEL 1 — CLUSTER ── */
       #fp-panel-cluster {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
         background: #0a0805;
         transform: translateX(32px);
       }
       #fp-cluster-wrap {
         position: relative;
         display: inline-block;
-        max-width: 100%;
-        max-height: 100%;
+        max-width: 100%; max-height: 100%;
       }
       #fp-cluster-img {
         display: block;
@@ -485,7 +425,6 @@ window.FloorplanModule = (function () {
       }
       #fp-cluster-img.fading { opacity: 0; }
 
-      /* SVG zone overlay — sits on top of the cluster image */
       #fp-zone-svg {
         position: absolute;
         top: 0; left: 0;
@@ -501,7 +440,7 @@ window.FloorplanModule = (function () {
         pointer-events: all;
         transition: fill 0.20s ease, stroke 0.20s ease;
       }
-      .fp-zone:hover, .fp-zone.hovered {
+      .fp-zone:hover {
         fill: rgba(200,190,154,.30);
         stroke: rgba(200,190,154,.95);
       }
@@ -511,7 +450,6 @@ window.FloorplanModule = (function () {
         stroke-width: 2;
       }
 
-      /* Zone tooltip */
       #fp-zone-tip {
         position: absolute;
         padding: 6px 12px;
@@ -541,19 +479,16 @@ window.FloorplanModule = (function () {
         margin-top: 2px;
       }
 
-      /* ── LEVEL 2 — UNIT ─────────────────────────────────────── */
+      /* ── LEVEL 2 — UNIT ── */
       #fp-panel-unit {
-        display: flex;
-        flex-direction: column;
+        display: flex; flex-direction: column;
         transform: translateX(32px);
       }
       #fp-plan-area {
         flex: 1;
         display: flex; align-items: center; justify-content: center;
-        position: relative;
-        overflow: hidden;
-        padding: 24px;
-        box-sizing: border-box;
+        position: relative; overflow: hidden;
+        padding: 24px; box-sizing: border-box;
       }
       #fp-plan-img {
         max-width: 100%; max-height: 100%;
@@ -565,7 +500,7 @@ window.FloorplanModule = (function () {
         background: rgba(200,190,154,.03);
       }
       #fp-plan-img.fading { opacity: 0; }
-      /* Unit info badge */
+
       #fp-unit-info {
         position: absolute;
         bottom: 28px; left: 32px;
@@ -593,10 +528,9 @@ window.FloorplanModule = (function () {
         color: rgba(200,190,154,.38);
       }
 
-      /* ── Spinner ──────────────────────────────────────────────── */
+      /* ── Spinner ── */
       #fp-spinner {
-        position: absolute;
-        inset: 0;
+        position: absolute; inset: 0;
         display: flex; align-items: center; justify-content: center;
         background: rgba(10,8,5,.50);
         opacity: 0; pointer-events: none;
@@ -618,7 +552,6 @@ window.FloorplanModule = (function () {
     document.body.insertAdjacentHTML('beforeend', `
       <div id="fp-overlay">
 
-        <!-- TOPBAR -->
         <div id="fp-topbar">
 
           <div id="fp-back">
@@ -631,15 +564,20 @@ window.FloorplanModule = (function () {
           <div class="fp-pipe" id="fp-pipe1"></div>
 
           <div id="fp-breadcrumb">
-            <span class="fp-crumb active" id="fp-crumb-0" data-level="0">Site Plan</span>
-            <span class="fp-crumb-sep" id="fp-sep-1">›</span>
-            <span class="fp-crumb"      id="fp-crumb-1" data-level="1"></span>
-            <span class="fp-crumb-sep" id="fp-sep-2">›</span>
-            <span class="fp-crumb"      id="fp-crumb-2" data-level="2"></span>
+            <span class="fp-crumb active" id="fp-crumb-0">Site Plan</span>
+            <span class="fp-crumb-sep"    id="fp-sep-1">›</span>
+            <span class="fp-crumb"        id="fp-crumb-1"></span>
+            <span class="fp-crumb-sep"    id="fp-sep-2">›</span>
+            <span class="fp-crumb"        id="fp-crumb-2"></span>
           </div>
 
-          <div id="fp-floor-badge"></div>
+          <!-- ODD / EVEN TOGGLE — shown at Level 1 -->
+          <div id="fp-parity-toggle">
+            <button class="fp-parity-btn active" data-parity="odd">Odd Floors</button>
+            <button class="fp-parity-btn"        data-parity="even">Even Floors</button>
+          </div>
 
+          <!-- TOP VIEW / ISOMETRIC TOGGLE — shown at Level 2 -->
           <div id="fp-view-toggle">
             <button class="fp-toggle-btn active" data-view="top">Top View</button>
             <button class="fp-toggle-btn"        data-view="iso">Isometric</button>
@@ -651,7 +589,6 @@ window.FloorplanModule = (function () {
 
         </div>
 
-        <!-- CONTENT -->
         <div id="fp-content">
           <div id="fp-spinner"><div id="fp-spinner-ring"></div></div>
 
@@ -660,7 +597,6 @@ window.FloorplanModule = (function () {
             <div id="fp-sitemap-wrap">
               <img id="fp-sitemap-img" src="${SITEMAP.image}" alt="Site Plan" />
               <div id="fp-sitemap-hint">Select a tower to explore floor plans</div>
-              <!-- tower tiles injected by JS -->
             </div>
           </div>
 
@@ -693,8 +629,7 @@ window.FloorplanModule = (function () {
     `);
   }
 
-  // ─── PANEL TRANSITIONS ─────────────────────────────────────────
-  // direction: 'forward' (drill in) | 'back' (drill out)
+  // ─── PANEL TRANSITIONS ───────────────────────────────────────
   function showPanel(id, direction) {
     const panels = ['fp-panel-sitemap', 'fp-panel-cluster', 'fp-panel-unit'];
     panels.forEach(pid => {
@@ -709,18 +644,15 @@ window.FloorplanModule = (function () {
     });
   }
 
-  // ─── BUILD SITEMAP TOWER TILES ─────────────────────────────────
+  // ─── BUILD SITEMAP TILES ─────────────────────────────────────
   function buildSitemapTiles() {
     const wrap = document.getElementById('fp-sitemap-wrap');
-    // Remove existing tiles
     wrap.querySelectorAll('.fp-tower-tile').forEach(t => t.remove());
-
     const img = document.getElementById('fp-sitemap-img');
 
     function placeTiles() {
       const iw = img.offsetWidth;
       const ih = img.offsetHeight;
-
       SITEMAP.towerTiles.forEach(tile => {
         const el = document.createElement('div');
         el.className = 'fp-tower-tile';
@@ -743,33 +675,63 @@ window.FloorplanModule = (function () {
     } else {
       img.addEventListener('load', placeTiles, { once: true });
     }
-
-    // Re-place on resize
     const ro = new ResizeObserver(placeTiles);
     ro.observe(img);
   }
 
-  // ─── LEVEL 0 → 1 : DRILL TO CLUSTER ──────────────────────────
-  function drillToCluster(towerId, floorNum) {
-    activeTower = towerId;
-    activeFloor = (floorNum !== undefined) ? floorNum : null;
+  // ─── SWAP PARITY (ODD ↔ EVEN) — stays on Level 1 ────────────
+  // Called when the toggle is clicked while already at Level 1.
+  function swapParity(newParity) {
+    if (!activeTower || newParity === floorParity) return;
+    floorParity = newParity;
 
-    const tower = TOWERS[towerId];
-    if (!tower) return;
+    // Update toggle button states
+    document.querySelectorAll('.fp-parity-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.parity === floorParity);
+    });
 
-    // Load cluster image
+    // Fade-swap the cluster image then rebuild zones
     const clusterImg = document.getElementById('fp-cluster-img');
     clusterImg.classList.add('fading');
-    const newSrc = getClusterImage(towerId, activeFloor);
+    const newSrc = getClusterImage(activeTower, floorParity);
     setTimeout(() => {
       clusterImg.src = newSrc;
       clusterImg.onload = () => {
         clusterImg.classList.remove('fading');
-        buildZones(towerId, activeFloor);
+        buildZones(activeTower, floorParity);
       };
       clusterImg.onerror = () => {
         clusterImg.classList.remove('fading');
-        buildZones(towerId, activeFloor);
+        buildZones(activeTower, floorParity);
+      };
+    }, 220);
+  }
+
+  // ─── LEVEL 0 → 1 : DRILL TO CLUSTER ─────────────────────────
+  function drillToCluster(towerId) {
+    activeTower = towerId;
+    // Keep whatever parity was last selected (default 'odd')
+
+    const tower = TOWERS[towerId];
+    if (!tower) return;
+
+    // Sync parity toggle UI
+    document.querySelectorAll('.fp-parity-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.parity === floorParity);
+    });
+
+    const clusterImg = document.getElementById('fp-cluster-img');
+    clusterImg.classList.add('fading');
+    const newSrc = getClusterImage(towerId, floorParity);
+    setTimeout(() => {
+      clusterImg.src = newSrc;
+      clusterImg.onload = () => {
+        clusterImg.classList.remove('fading');
+        buildZones(towerId, floorParity);
+      };
+      clusterImg.onerror = () => {
+        clusterImg.classList.remove('fading');
+        buildZones(towerId, floorParity);
       };
     }, 220);
 
@@ -778,93 +740,75 @@ window.FloorplanModule = (function () {
     updateTopbar();
   }
 
-  // ─── BUILD ZONE POLYGONS ON CLUSTER SVG ───────────────────────
-  function buildZones(towerId, floorNum) {
+  // ─── BUILD ZONE POLYGONS ─────────────────────────────────────
+  function buildZones(towerId, parity) {
     const svg = document.getElementById('fp-zone-svg');
     svg.innerHTML = '';
-
-    const units = getUnits(towerId, floorNum);
+    const units = getUnits(towerId, parity);
     units.forEach(u => {
       const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
       poly.setAttribute('class', 'fp-zone');
       poly.setAttribute('points', u.points);
       poly.dataset.unitId = u.unitId;
-
-      // Tooltip
       poly.addEventListener('mouseenter', (e) => showZoneTip(u, e));
       poly.addEventListener('mousemove',  (e) => moveZoneTip(e));
       poly.addEventListener('mouseleave', hideZoneTip);
-
       poly.addEventListener('click', () => drillToUnit(u));
       svg.appendChild(poly);
     });
   }
 
-  // ─── ZONE TOOLTIP ─────────────────────────────────────────────
+  // ─── ZONE TOOLTIP ────────────────────────────────────────────
   function showZoneTip(u, e) {
     document.getElementById('fp-zone-tip-name').textContent = u.label;
     document.getElementById('fp-zone-tip-type').textContent = `${u.type}  ·  ${u.area}`;
-    const tip = document.getElementById('fp-zone-tip');
-    tip.classList.add('visible');
+    document.getElementById('fp-zone-tip').classList.add('visible');
     moveZoneTip(e);
   }
   function moveZoneTip(e) {
     const wrap = document.getElementById('fp-cluster-wrap');
     const rect = wrap.getBoundingClientRect();
     const tip  = document.getElementById('fp-zone-tip');
-    const x = e.clientX - rect.left + 14;
-    const y = e.clientY - rect.top  - 14;
-    tip.style.left = x + 'px';
-    tip.style.top  = y + 'px';
+    tip.style.left = (e.clientX - rect.left + 14) + 'px';
+    tip.style.top  = (e.clientY - rect.top  - 14) + 'px';
   }
   function hideZoneTip() {
     document.getElementById('fp-zone-tip').classList.remove('visible');
   }
 
-  // ─── LEVEL 1 → 2 : DRILL TO UNIT ─────────────────────────────
+  // ─── LEVEL 1 → 2 : DRILL TO UNIT ────────────────────────────
   function drillToUnit(unitData) {
     activeUnit = unitData;
     viewMode   = 'top';
-
     document.querySelectorAll('.fp-toggle-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.view === 'top');
     });
-
     document.getElementById('fp-unit-info-name').textContent = unitData.label;
     document.getElementById('fp-unit-info-type').textContent = unitData.type;
     document.getElementById('fp-unit-info-area').textContent = unitData.area;
     document.getElementById('fp-unit-info').classList.add('visible');
-
     level = 2;
     showPanel('fp-panel-unit', 'forward');
     updateTopbar();
     loadUnitImage();
   }
 
-  // ─── LOAD UNIT PLAN IMAGE ─────────────────────────────────────
+  // ─── LOAD UNIT IMAGE ─────────────────────────────────────────
   function loadUnitImage() {
     if (!activeUnit) return;
     const img     = document.getElementById('fp-plan-img');
     const spinner = document.getElementById('fp-spinner');
     const src     = unitImagePath(activeUnit.unitId, viewMode);
-
     img.classList.add('fading');
     spinner.classList.add('visible');
-
     setTimeout(() => {
       img.src = src;
-      img.onload = () => {
-        img.classList.remove('fading');
-        spinner.classList.remove('visible');
-      };
-      img.onerror = () => {
-        img.classList.remove('fading');
-        spinner.classList.remove('visible');
-      };
+      img.onload  = () => { img.classList.remove('fading'); spinner.classList.remove('visible'); };
+      img.onerror = () => { img.classList.remove('fading'); spinner.classList.remove('visible'); };
     }, 280);
   }
 
-  // ─── BACK NAV ─────────────────────────────────────────────────
+  // ─── BACK NAV ────────────────────────────────────────────────
   function goBack() {
     if (level === 2) {
       level = 1;
@@ -875,25 +819,23 @@ window.FloorplanModule = (function () {
     } else if (level === 1) {
       level = 0;
       activeTower = null;
-      activeFloor = null;
       showPanel('fp-panel-sitemap', 'back');
       updateTopbar();
     }
   }
 
-  // ─── UPDATE TOPBAR FOR CURRENT LEVEL ──────────────────────────
+  // ─── UPDATE TOPBAR ───────────────────────────────────────────
   function updateTopbar() {
-    const back        = document.getElementById('fp-back');
-    const pipe1       = document.getElementById('fp-pipe1');
-    const crumb0      = document.getElementById('fp-crumb-0');
-    const sep1        = document.getElementById('fp-sep-1');
-    const crumb1      = document.getElementById('fp-crumb-1');
-    const sep2        = document.getElementById('fp-sep-2');
-    const crumb2      = document.getElementById('fp-crumb-2');
-    const floorBadge  = document.getElementById('fp-floor-badge');
-    const viewToggle  = document.getElementById('fp-view-toggle');
+    const back         = document.getElementById('fp-back');
+    const pipe1        = document.getElementById('fp-pipe1');
+    const crumb0       = document.getElementById('fp-crumb-0');
+    const sep1         = document.getElementById('fp-sep-1');
+    const crumb1       = document.getElementById('fp-crumb-1');
+    const sep2         = document.getElementById('fp-sep-2');
+    const crumb2       = document.getElementById('fp-crumb-2');
+    const parityToggle = document.getElementById('fp-parity-toggle');
+    const viewToggle   = document.getElementById('fp-view-toggle');
 
-    // Reset all
     [crumb0, crumb1, crumb2].forEach(c => c.classList.remove('active'));
     [sep1, sep2].forEach(s => s.classList.remove('visible'));
     crumb1.textContent = '';
@@ -903,63 +845,54 @@ window.FloorplanModule = (function () {
       back.classList.remove('visible');
       pipe1.classList.remove('visible');
       crumb0.classList.add('active');
-      floorBadge.classList.remove('visible');
+      parityToggle.classList.remove('visible');
       viewToggle.classList.remove('visible');
-      document.getElementById('fp-back-label').textContent = 'Back';
 
     } else if (level === 1) {
       back.classList.add('visible');
       pipe1.classList.add('visible');
       document.getElementById('fp-back-label').textContent = 'Site Plan';
-
       crumb0.classList.remove('active');
       sep1.classList.add('visible');
       crumb1.textContent = TOWERS[activeTower]?.label || '';
       crumb1.classList.add('active');
-
-      // Floor badge
-      if (activeFloor !== null) {
-        const parity = isOdd(activeFloor) ? 'Odd' : 'Even';
-        floorBadge.textContent = `Floor ${activeFloor}  ·  ${parity}`;
-        floorBadge.classList.add('visible');
-      } else {
-        floorBadge.classList.remove('visible');
-      }
-
+      // Show ODD/EVEN toggle, hide Top/Iso toggle
+      parityToggle.classList.add('visible');
       viewToggle.classList.remove('visible');
 
     } else if (level === 2) {
       back.classList.add('visible');
       pipe1.classList.add('visible');
       document.getElementById('fp-back-label').textContent = TOWERS[activeTower]?.label || 'Cluster';
-
       sep1.classList.add('visible');
       crumb1.textContent = TOWERS[activeTower]?.label || '';
-
       sep2.classList.add('visible');
       crumb2.textContent = activeUnit?.label || '';
       crumb2.classList.add('active');
-
+      // Hide ODD/EVEN toggle, show Top/Iso toggle
+      parityToggle.classList.remove('visible');
       viewToggle.classList.add('visible');
     }
   }
 
-  // ─── OPEN / CLOSE ─────────────────────────────────────────────
+  // ─── OPEN / CLOSE ────────────────────────────────────────────
   function open(floorNum) {
     if (overlayOpen) return;
     overlayOpen = true;
-
-    // Reset to level 0 (sitemap) always
-    level = 0;
+    level       = 0;
     activeTower = null;
-    activeFloor = (floorNum !== undefined) ? floorNum : null;
     activeUnit  = null;
     viewMode    = 'top';
-
-    // If a floor number was supplied, we can skip sitemap and go straight
-    // to tower selection — but since tile positions aren't known yet we stay at 0.
-    // To auto-open a specific tower: FloorplanModule.openTower('tower-A', 3);
-
+    // Set initial parity from floor number if provided
+    if (floorNum !== undefined) {
+      floorParity = isOdd(floorNum) ? 'odd' : 'even';
+    } else {
+      floorParity = 'odd';
+    }
+    // Sync parity button UI
+    document.querySelectorAll('.fp-parity-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.parity === floorParity);
+    });
     buildSitemapTiles();
     showPanel('fp-panel-sitemap', 'forward');
     updateTopbar();
@@ -971,20 +904,16 @@ window.FloorplanModule = (function () {
     overlayOpen = false;
     document.getElementById('fp-overlay').classList.remove('open');
     setTimeout(() => {
-      level = 0;
-      activeTower = null;
-      activeFloor = null;
-      activeUnit  = null;
-      viewMode    = 'top';
+      level = 0; activeTower = null; activeUnit = null; viewMode = 'top';
     }, 420);
   }
 
-  // ─── BIND EVENTS ──────────────────────────────────────────────
+  // ─── BIND EVENTS ─────────────────────────────────────────────
   function bindEvents() {
     document.getElementById('fp-close').addEventListener('click', close);
     document.getElementById('fp-back').addEventListener('click', goBack);
 
-    // Breadcrumb clicks
+    // Breadcrumb
     document.getElementById('fp-crumb-0').addEventListener('click', () => {
       if (level > 0) { level = 0; showPanel('fp-panel-sitemap', 'back'); updateTopbar(); }
     });
@@ -992,7 +921,12 @@ window.FloorplanModule = (function () {
       if (level === 2) goBack();
     });
 
-    // View toggle
+    // ODD / EVEN toggle
+    document.querySelectorAll('.fp-parity-btn').forEach(btn => {
+      btn.addEventListener('click', () => swapParity(btn.dataset.parity));
+    });
+
+    // TOP VIEW / ISOMETRIC toggle
     document.querySelectorAll('.fp-toggle-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const v = btn.dataset.view;
@@ -1006,46 +940,38 @@ window.FloorplanModule = (function () {
     });
   }
 
-  // ─── PUBLIC API ────────────────────────────────────────────────
+  // ─── PUBLIC API ──────────────────────────────────────────────
   return {
     init() {
       injectHTML();
       bindEvents();
     },
-
-    // Default open — shows sitemap (Level 0)
     open,
     close,
     toggle() { overlayOpen ? close() : open(); },
 
-    // Jump straight to a tower's cluster (skips sitemap)
-    // floorNum optional — determines odd/even cluster image
     openTower(towerId, floorNum) {
       if (!overlayOpen) {
-        open();
-        setTimeout(() => drillToCluster(towerId, floorNum), 50);
+        open(floorNum);
+        setTimeout(() => drillToCluster(towerId), 50);
       } else {
-        drillToCluster(towerId, floorNum);
+        drillToCluster(towerId);
       }
     },
 
-    // Jump straight to a unit (skips sitemap + cluster)
     openUnit(towerId, unitData, floorNum) {
       if (!overlayOpen) {
-        open();
+        open(floorNum);
         setTimeout(() => {
           activeTower = towerId;
-          activeFloor = floorNum ?? null;
           drillToUnit(unitData);
         }, 50);
       } else {
         activeTower = towerId;
-        activeFloor = floorNum ?? null;
         drillToUnit(unitData);
       }
     },
 
-    // Expose config for external updates
     TOWERS,
     SITEMAP,
   };
