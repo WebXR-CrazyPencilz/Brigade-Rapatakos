@@ -966,6 +966,19 @@ window.FloorplanModule = (function () {
     document.getElementById('fp-unit-info-type').textContent = unitData.type;
     document.getElementById('fp-unit-info-area').textContent = unitData.area || '';
     document.getElementById('fp-unit-info').classList.add('visible');
+    // clear previous selected zone
+    document.querySelectorAll('.fp-zone')
+    .forEach(z => z.classList.remove('selected'));
+
+    // highlight current selected zone
+    const activeZone = document.querySelector(
+    `.fp-zone[data-unit-id="${unitData.unitId}"]`
+    );
+
+    if (activeZone) {
+    activeZone.classList.add('selected');
+    }
+    
     level = 2;
     showPanel('fp-panel-unit', 'forward');
     updateTopbar();
@@ -1008,6 +1021,13 @@ window.FloorplanModule = (function () {
       // ── BUG FIX: clear both tower and unit when going to sitemap ──
       activeTower = null;
       activeUnit  = null;
+      document.getElementById('fp-unit-info').classList.remove('visible');
+
+      const planImg = document.getElementById('fp-plan-img');
+      planImg.removeAttribute('src');
+
+      document.querySelectorAll('.fp-zone.selected')
+      .forEach(z => z.classList.remove('selected'));
       showPanel('fp-panel-sitemap', 'back');
       updateTopbar();
     }
