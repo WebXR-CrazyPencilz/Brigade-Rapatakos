@@ -859,7 +859,7 @@ window.FloorplanModule = (function () {
     if (_sitemapRO) { _sitemapRO.disconnect(); _sitemapRO = null; }
 
     function placeTiles() {
-      if (_transitioning) return;
+
       const iw = img.offsetWidth;
       const ih = img.offsetHeight;
       if (!iw || !ih) return;
@@ -1323,11 +1323,11 @@ window.FloorplanModule = (function () {
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
     });
-    buildSitemapTiles();
     showPanel('fp-panel-sitemap', 'forward');
     updateTopbar();
     updateTitle();
     document.getElementById('fp-overlay').classList.add('open');
+    setTimeout(buildSitemapTiles, 360);
   }
 
   let _closeResetTimer = null;
