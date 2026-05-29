@@ -463,7 +463,7 @@ window.FloorplanModule = (function () {
         background: rgba(10,8,5,.92);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         gap: 10px; position: relative; z-index: 2;
-        flex-wrap: wrap; row-gap: 6px;
+
       }
       #fp-topbar::after {
         content: ''; position: absolute; bottom: -1px; left: 50%;
@@ -498,7 +498,7 @@ window.FloorplanModule = (function () {
 
       /* ── TITLE — shows current level name in the topbar ── */
       #fp-title {
-        flex: 1; min-width: 0;
+        flex: 0;
         font-family: 'Cormorant Garamond', serif;
         font-size: 15px; font-weight: 400;
         color: rgba(245,242,235,.85);
