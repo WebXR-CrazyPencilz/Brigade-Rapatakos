@@ -506,7 +506,10 @@ window.FloorplanModule = (function () {
       }
 
       /* ── TOGGLES ── */
-      #fp-toggles-row { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; flex-shrink: 0; }
+      #fp-toggles-row { 
+      position: absolute; left: 50%; transform: translateX(-50%);
+      display: flex; align-items: center; gap: 8px;
+      }
 
       /* ── TOGGLES — pill style ── */
       #fp-parity-toggle,
