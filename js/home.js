@@ -422,6 +422,9 @@ window.HomeModule = (function () {
         const slot     = el.dataset.slot;
         const isActive = el.classList.contains('active');
 
+        const previouslyActiveUnit = document.querySelector('.unit-btn.active');
+        const targetUnit = previouslyActiveUnit ? parseInt(previouslyActiveUnit.dataset.unit) : 1;
+
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
         const fpWasOpen = closeAllModules();
 
@@ -439,11 +442,10 @@ window.HomeModule = (function () {
             : 1;
 
           const open360 = () => {
-            unitRowVisible = true;
-            const unitRow = document.getElementById('unit-row');
-            if (unitRow) unitRow.classList.add('visible');
-            // Re-apply the active class to the correct unit button
-            const targetBtn = document.querySelector(`.unit-btn[data-unit="${targetUnit}"]`);
+  unitRowVisible = true;
+  const unitRow = document.getElementById('unit-row');
+  if (unitRow) unitRow.classList.add('visible');
+  const targetBtn = document.querySelector(`.unit-btn[data-unit="${targetUnit}"]`);
             if (targetBtn) targetBtn.classList.add('active');
             openUnitViewer(targetUnit);
           };
