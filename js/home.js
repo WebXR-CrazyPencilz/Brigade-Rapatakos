@@ -392,10 +392,10 @@ window.HomeModule = (function () {
     if (window.FloorplanModule && typeof FloorplanModule.close === 'function') {
       const fpOverlay = document.getElementById('fp-overlay');
       if (fpOverlay) {
-        // Kill pointer-events immediately so fp-overlay can't intercept the next click
+        // fp-overlay uses opacity/pointer-events, NOT display:none.
+        // The only reliable indicator it is open is the 'open' class.
+        floorplanWasOpen = fpOverlay.classList.contains('open');
         fpOverlay.style.pointerEvents = 'none';
-        floorplanWasOpen = fpOverlay.classList.contains('open') ||
-                           fpOverlay.style.display !== 'none';
       }
       FloorplanModule.close();
     }
@@ -430,23 +430,26 @@ window.HomeModule = (function () {
         el.classList.add('active');
 
         if (slot === '360view') {
-          // If floorplan was open, defer opening the viewer until after its
-          // close animation completes (typically ~300–400 ms) so fp-overlay
-          // doesn't sit on top and block the iframe interaction.
+          // Capture the currently active unit BEFORE closeAllModules() clears it.
+          // closeAllModules() strips all .unit-btn.active classes, so we must
+          // read the selection first and re-apply it inside open360().
+          const previouslyActiveUnit = document.querySelector('.unit-btn.active');
+          const targetUnit = previouslyActiveUnit
+            ? parseInt(previouslyActiveUnit.dataset.unit)
+            : 1;
+
           const open360 = () => {
             unitRowVisible = true;
             const unitRow = document.getElementById('unit-row');
             if (unitRow) unitRow.classList.add('visible');
-            const activeUnit = document.querySelector('.unit-btn.active');
-            if (activeUnit) {
-              openUnitViewer(parseInt(activeUnit.dataset.unit));
-            } else {
-              const firstBtn = document.querySelector('.unit-btn[data-unit="1"]');
-              if (firstBtn) firstBtn.classList.add('active');
-              openUnitViewer(1);
-            }
+            // Re-apply the active class to the correct unit button
+            const targetBtn = document.querySelector(`.unit-btn[data-unit="${targetUnit}"]`);
+            if (targetBtn) targetBtn.classList.add('active');
+            openUnitViewer(targetUnit);
           };
-          fpWasOpen ? setTimeout(open360, 350) : open360();
+          // If floorplan was open, defer until its close animation finishes
+          // so fp-overlay (z-index 200) doesn't sit above the iframe.
+          fpWasOpen ? setTimeout(open360, 420) : open360();
           return;
         }
 
@@ -636,15 +639,24 @@ window.HomeModule = (function () {
 
     canvas.addEventListener('click', () => {
       if (isHoveringTower) {
-        unitRowVisible = true;
-        document.getElementById('unit-row').classList.add('visible');
-        document.querySelector('.panel-slot[data-slot="360view"]').classList.add('active');
+        const row = document.getElementById('unit-row');
+        const slot360 = document.querySelector('.panel-slot[data-slot="360view"]');
 
+        // If 360 is already active and open, do nothing
+        if (slot360 && slot360.classList.contains('active')) return;
+
+        unitRowVisible = true;
+        if (row) row.classList.add('visible');
+        if (slot360) slot360.classList.add('active');
+
+        // Only set Unit 1 if no unit has been selected yet
         const activeUnit = document.querySelector('.unit-btn.active');
         if (!activeUnit) {
           const firstBtn = document.querySelector('.unit-btn[data-unit="1"]');
           if (firstBtn) firstBtn.classList.add('active');
           openUnitViewer(1);
+        } else {
+          openUnitViewer(parseInt(activeUnit.dataset.unit));
         }
       }
     });

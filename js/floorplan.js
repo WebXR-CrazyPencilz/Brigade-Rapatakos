@@ -1296,6 +1296,8 @@ window.FloorplanModule = (function () {
   function open(floorNum) {
     if (overlayOpen) return;
     overlayOpen = true;
+    // Cancel any pending close→reset so it doesn't wipe state after we open.
+    clearTimeout(_closeResetTimer);
     level = 0; activeTower = null; activeUnit = null; viewMode = 'top';
     floorParity = (floorNum !== undefined) ? (isOdd(floorNum) ? 'odd' : 'even') : 'odd';
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
@@ -1308,13 +1310,22 @@ window.FloorplanModule = (function () {
     document.getElementById('fp-overlay').classList.add('open');
   }
 
+  let _closeResetTimer = null;
+
   function close() {
     if (!overlayOpen) return;
     overlayOpen = false;
+    // Cancel any previously queued reset so a rapid open→close→open
+    // sequence never fires a stale resetToSitemap() mid-session.
+    clearTimeout(_closeResetTimer);
     const overlay = document.getElementById('fp-overlay');
     overlay.classList.remove('open');
-    overlay.style.pointerEvents = 'none'; // ← ADD THIS immediately
-    setTimeout(() => { resetToSitemap(); }, 420);
+    overlay.style.pointerEvents = 'none';
+    _closeResetTimer = setTimeout(() => {
+      // Only reset if still closed — guards against open() being called
+      // before the animation finishes.
+      if (!overlayOpen) resetToSitemap();
+    }, 420);
   }
 
   // ─── BIND EVENTS ─────────────────────────────────────────────
