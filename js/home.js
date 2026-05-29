@@ -430,7 +430,12 @@ window.HomeModule = (function () {
           document.getElementById('unit-row').classList.add('visible');
           const activeUnit = document.querySelector('.unit-btn.active');
           if (activeUnit) {
-            openUnitViewer(parseInt(activeUnit.dataset.unit));
+          openUnitViewer(parseInt(activeUnit.dataset.unit));
+          } else {
+    // No unit was previously selected — auto-select Unit 1
+          const firstBtn = document.querySelector('.unit-btn[data-unit="1"]');
+          if (firstBtn) firstBtn.classList.add('active');
+          openUnitViewer(1);
           }
           return;
         }
