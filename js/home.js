@@ -17,7 +17,7 @@ window.HomeModule = (function () {
     2: 'unit2/index.html',
     3: 'unit3/index.html',
     4: 'unit4/index.html',
-  }
+  };
 
   // ─── INJECT HTML & STYLES ────────────────────────────────────────
   function injectHTML() {
@@ -27,19 +27,51 @@ window.HomeModule = (function () {
     style.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Cormorant+Garamond:wght@300;400;500&display=swap');
 
+      /* ── Rotate Prompt ── */
+      #rotate-prompt {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: #0a0805;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        pointer-events: all;
+      }
+      #rotate-prompt.show { display: flex; }
+      #rotate-prompt svg {
+        width: 52px; height: 52px;
+        stroke: rgba(200,190,154,.80); fill: none;
+        stroke-width: 1.5;
+        animation: rotateHint 1.8s ease-in-out infinite;
+      }
+      @keyframes rotateHint {
+        0%,100% { transform: rotate(0deg); }
+        50%      { transform: rotate(90deg); }
+      }
+      #rotate-prompt p {
+        font-family: 'Syne', sans-serif;
+        font-size: 11px; font-weight: 600;
+        letter-spacing: .16em; text-transform: uppercase;
+        color: rgba(200,190,154,.55);
+        margin: 0;
+      }
+      @media (orientation: landscape) {
+        #rotate-prompt { display: none !important; }
+      }
+
       /* ── Unit Row ── */
       #unit-row {
         position: fixed;
         bottom: 62px;
-        left: 0;
-        right: 0;
-        width: 100%;
+        left: 0; right: 0; width: 100%;
         z-index: 101;
         display: flex;
         flex-direction: row;
         align-items: stretch;
-        gap: 0;
-        padding: 0;
+        gap: 0; padding: 0;
         background: rgba(245, 242, 235, 0.97);
         border-top: 1px solid rgba(200, 190, 154, 0.50);
         border-bottom: 1px solid rgba(200, 190, 154, 0.50);
@@ -52,7 +84,6 @@ window.HomeModule = (function () {
         transition: opacity 0.28s ease, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
         box-sizing: border-box;
       }
-
       #unit-row.visible {
         opacity: 1;
         pointer-events: all;
@@ -69,16 +100,11 @@ window.HomeModule = (function () {
         cursor: pointer;
         border-right: 1px solid rgba(200, 190, 154, 0.25);
         background: transparent;
-        flex: 1;
-        min-width: 0;
+        flex: 1; min-width: 0;
         transition: background 0.22s ease;
         position: relative;
       }
-
-      .unit-btn:last-child {
-        border-right: none;
-      }
-
+      .unit-btn:last-child { border-right: none; }
       .unit-btn::after {
         content: '';
         position: absolute;
@@ -87,29 +113,23 @@ window.HomeModule = (function () {
         background: transparent;
         transition: background 0.25s ease;
       }
-
       .unit-btn:hover { background: rgba(200, 190, 154, 0.10); }
       .unit-btn:hover::after { background: linear-gradient(to right, #e8dfc0, #c8be9a, #e8dfc0); }
       .unit-btn.active { background: rgba(200, 190, 154, 0.18); }
       .unit-btn.active::after { background: linear-gradient(to right, #e8dfc0, #c8be9a, #e8dfc0); }
 
       .unit-btn-icon {
-        width: 26px;
-        height: 26px;
+        width: 26px; height: 26px;
         border-radius: 5px;
         background: rgba(200, 190, 154, 0.15);
         border: 1px solid rgba(200, 190, 154, 0.45);
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        display: flex; align-items: center; justify-content: center;
         font-family: 'Syne', sans-serif;
-        font-size: 9px;
-        font-weight: 700;
+        font-size: 9px; font-weight: 700;
         color: rgba(100, 88, 60, 0.85);
         flex-shrink: 0;
         transition: background 0.22s ease, border-color 0.22s ease;
       }
-
       .unit-btn:hover .unit-btn-icon,
       .unit-btn.active .unit-btn-icon {
         background: rgba(200, 190, 154, 0.28);
@@ -118,26 +138,19 @@ window.HomeModule = (function () {
 
       .unit-btn-label {
         font-family: 'Syne', sans-serif;
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
+        font-size: 10px; font-weight: 600;
+        letter-spacing: 0.12em; text-transform: uppercase;
         color: rgba(100, 88, 60, 0.75);
-        line-height: 1;
-        white-space: nowrap;
+        line-height: 1; white-space: nowrap;
         transition: color 0.22s ease;
       }
-
       .unit-btn:hover .unit-btn-label,
       .unit-btn.active .unit-btn-label { color: #5a4e2e; }
 
       /* ── Bottom Panel ── */
       #bottom-panel {
         position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        width: 100%;
+        bottom: 0; left: 0; right: 0; width: 100%;
         height: 62px;
         z-index: 100;
         display: flex;
@@ -152,7 +165,6 @@ window.HomeModule = (function () {
         transform: translateY(100%);
         animation: panelRiseIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
       }
-
       @keyframes panelRiseIn {
         from { transform: translateY(100%); }
         to   { transform: translateY(0); }
@@ -171,9 +183,7 @@ window.HomeModule = (function () {
         transition: background 0.25s ease;
         overflow: hidden;
       }
-
       .panel-slot:last-child { border-right: none; }
-
       .panel-slot::after {
         content: '';
         position: absolute;
@@ -182,120 +192,84 @@ window.HomeModule = (function () {
         background: transparent;
         transition: background 0.25s ease;
       }
-
       .panel-slot:hover { background: rgba(200, 190, 154, 0.12); }
       .panel-slot:hover::after { background: linear-gradient(to right, #e8dfc0, #c8be9a, #e8dfc0); }
       .panel-slot.active { background: rgba(200, 190, 154, 0.16); }
       .panel-slot.active::after { background: linear-gradient(to right, #e8dfc0, #c8be9a, #e8dfc0); }
 
       .panel-slot-icon {
-        width: 30px;
-        height: 30px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        width: 30px; height: 30px;
+        display: flex; align-items: center; justify-content: center;
         flex-shrink: 0;
         border-radius: 7px;
         background: rgba(200, 190, 154, 0.15);
         border: 1px solid rgba(200, 190, 154, 0.45);
         transition: background 0.25s ease, border-color 0.25s ease;
       }
-
       .panel-slot:hover .panel-slot-icon,
       .panel-slot.active .panel-slot-icon {
         background: rgba(200, 190, 154, 0.28);
         border-color: rgba(200, 190, 154, 0.80);
       }
-
       .panel-slot-icon svg {
-        width: 15px;
-        height: 15px;
+        width: 15px; height: 15px;
         stroke: rgba(160, 148, 110, 0.80);
-        fill: none;
-        stroke-width: 1.5;
-        stroke-linecap: round;
-        stroke-linejoin: round;
+        fill: none; stroke-width: 1.5;
+        stroke-linecap: round; stroke-linejoin: round;
         transition: stroke 0.25s ease;
       }
-
       .panel-slot:hover .panel-slot-icon svg,
       .panel-slot.active .panel-slot-icon svg { stroke: #8a7a50; }
 
       .panel-slot-label {
         font-family: 'Syne', sans-serif;
-        font-size: 11px;
-        font-weight: 600;
-        letter-spacing: 0.12em;
-        text-transform: uppercase;
+        font-size: 11px; font-weight: 600;
+        letter-spacing: 0.12em; text-transform: uppercase;
         color: rgba(100, 88, 60, 0.75);
-        line-height: 1;
-        white-space: nowrap;
+        line-height: 1; white-space: nowrap;
         transition: color 0.25s ease;
       }
-
       .panel-slot:hover .panel-slot-label,
       .panel-slot.active .panel-slot-label { color: #5a4e2e; }
 
       /* ── Unit Viewer Overlay ── */
       #unit-viewer-overlay {
         position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
+        top: 0; left: 0; right: 0;
         bottom: 62px;
         z-index: 99;
         transform: translateY(100%);
         transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
       }
+      #unit-viewer-overlay.open { transform: translateY(0); }
 
-      #unit-viewer-overlay.open {
-        transform: translateY(0);
-      }
-
-      /* ── iframe fade transition ── */
+      /* ── iframe ── */
       #unit-iframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-        display: block;
+        width: 100%; height: 100%;
+        border: none; display: block;
         opacity: 1;
         transition: opacity 0.35s ease;
       }
+      #unit-iframe.fading { opacity: 0; }
 
-      #unit-iframe.fading {
-        opacity: 0;
-      }
-
-      /* ── Unit switch loader ── */
+      /* ── Unit loader ── */
       #unit-loader {
-        position: absolute;
-        inset: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
         background: rgba(10, 8, 5, 0.55);
-        opacity: 0;
-        pointer-events: none;
+        opacity: 0; pointer-events: none;
         transition: opacity 0.25s ease;
         z-index: 2;
       }
-
-      #unit-loader.visible {
-        opacity: 1;
-      }
-
+      #unit-loader.visible { opacity: 1; }
       #unit-loader-ring {
-        width: 36px;
-        height: 36px;
+        width: 36px; height: 36px;
         border: 2.5px solid rgba(200, 190, 154, 0.25);
         border-top-color: rgba(200, 190, 154, 0.9);
         border-radius: 50%;
         animation: spinRing 0.75s linear infinite;
       }
-
-      @keyframes spinRing {
-        to { transform: rotate(360deg); }
-      }
+      @keyframes spinRing { to { transform: rotate(360deg); } }
     `;
     document.head.appendChild(style);
 
@@ -305,6 +279,17 @@ window.HomeModule = (function () {
       gallery:   `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="5" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="3" y="11" width="18" height="10" rx="1"/></svg>`,
       map:       `<svg viewBox="0 0 24 24"><path d="M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>`,
     };
+
+    // Rotate prompt
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="rotate-prompt">
+        <svg viewBox="0 0 24 24">
+          <rect x="5" y="2" width="14" height="20" rx="2"/>
+          <path d="M9 21h6"/>
+        </svg>
+        <p>Please rotate your device</p>
+      </div>
+    `);
 
     // Unit row
     document.body.insertAdjacentHTML('beforeend', `
@@ -350,7 +335,7 @@ window.HomeModule = (function () {
       </div>
     `);
 
-    // Unit viewer overlay — with loader spinner inside
+    // Unit viewer overlay
     document.body.insertAdjacentHTML('beforeend', `
       <div id="unit-viewer-overlay">
         <div id="unit-loader"><div id="unit-loader-ring"></div></div>
@@ -370,24 +355,19 @@ window.HomeModule = (function () {
     if (!url) return;
 
     const isSameUnit = iframe.src.endsWith(url);
-
-    // Already open on same unit — nothing to do
     if (overlay.classList.contains('open') && isSameUnit) return;
 
     if (!isSameUnit) {
-      // Fade out iframe → swap src → fade back in
       iframe.classList.add('fading');
       if (loader) loader.classList.add('visible');
-
       setTimeout(() => {
         iframe.src = url;
-
         iframe.onload = () => {
           iframe.classList.remove('fading');
           if (loader) loader.classList.remove('visible');
           iframe.onload = null;
         };
-      }, 350); // matches fade-out transition
+      }, 350);
     }
 
     overlay.classList.add('open');
@@ -399,7 +379,6 @@ window.HomeModule = (function () {
   }
 
   // ─── CLOSE ALL MODULES ───────────────────────────────────────────
-  // *** FIX: closes every open module before opening a new one ***
   function closeAllModules() {
     // Close 360 viewer
     closeUnitViewer();
@@ -408,28 +387,20 @@ window.HomeModule = (function () {
     if (row) row.classList.remove('visible');
     document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
 
-    // Close FloorplanModule if open
+    // ── FIX: immediately kill pointer-events on fp-overlay before close animation ──
     if (window.FloorplanModule && typeof FloorplanModule.close === 'function') {
+      const fpOverlay = document.getElementById('fp-overlay');
+      if (fpOverlay) fpOverlay.style.pointerEvents = 'none';
       FloorplanModule.close();
     }
 
-    // Close GalleryModule if open
     if (window.GalleryModule && typeof GalleryModule.close === 'function') {
       GalleryModule.close();
     }
 
-    // Close MapModule if open
     if (window.MapModule && typeof MapModule.close === 'function') {
       MapModule.close();
     }
-  }
-
-  // ─── COLLAPSE UNIT ROW ───────────────────────────────────────────
-  function collapseUnitRow() {
-    unitRowVisible = false;
-    document.getElementById('unit-row').classList.remove('visible');
-    document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
-    closeUnitViewer();
   }
 
   // ─── PANEL EVENTS ────────────────────────────────────────────────
@@ -443,23 +414,20 @@ window.HomeModule = (function () {
         // Deactivate all slots
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
 
-        // *** FIX: close ALL modules before doing anything else ***
+        // Close everything first
         closeAllModules();
 
         if (isActive) {
-          // Clicking the already-active slot → just close, we're done
+          // Already active — just toggle off
           return;
         }
 
-        // Activate the clicked slot
+        // Activate clicked slot
         el.classList.add('active');
 
-        // ── Only 360view opens the unit sub-row ──────────────────
         if (slot === '360view') {
           unitRowVisible = true;
           document.getElementById('unit-row').classList.add('visible');
-
-          // Reopen viewer if a unit was already selected
           const activeUnit = document.querySelector('.unit-btn.active');
           if (activeUnit) {
             openUnitViewer(parseInt(activeUnit.dataset.unit));
@@ -467,19 +435,16 @@ window.HomeModule = (function () {
           return;
         }
 
-        // ── Floor Plan — delegate to FloorplanModule ─────────────
         if (slot === 'floorplan') {
           if (window.FloorplanModule) FloorplanModule.open();
           return;
         }
 
-        // ── Gallery — delegate to GalleryModule ──────────────────
         if (slot === 'gallery') {
           if (window.GalleryModule) GalleryModule.open();
           return;
         }
 
-        // ── Location Map — delegate to MapModule ─────────────────
         if (slot === 'map') {
           if (window.MapModule) MapModule.open();
           return;
@@ -487,7 +452,7 @@ window.HomeModule = (function () {
       });
     });
 
-    // Unit buttons — animated switch (only relevant for 360view)
+    // Unit buttons
     document.querySelectorAll('.unit-btn').forEach(el => {
       el.addEventListener('click', () => {
         const unit = parseInt(el.dataset.unit);
@@ -497,23 +462,42 @@ window.HomeModule = (function () {
       });
     });
 
-    // Click outside → collapse everything
+    // ── FIX: click outside also closes all modules ────────────────
     document.addEventListener('click', (e) => {
       const bar     = document.getElementById('bottom-panel');
       const row     = document.getElementById('unit-row');
       const overlay = document.getElementById('unit-viewer-overlay');
+      const fpOvl   = document.getElementById('fp-overlay');
 
-      if (
+      const clickedOutside =
         bar && row &&
         !bar.contains(e.target) &&
         !row.contains(e.target) &&
-        !(overlay && overlay.contains(e.target))
-      ) {
+        !(overlay && overlay.contains(e.target)) &&
+        !(fpOvl  && fpOvl.contains(e.target));
+
+      if (clickedOutside) {
         unitRowVisible = false;
         row.classList.remove('visible');
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+        // Also close all open modules
+        closeAllModules();
       }
     });
+  }
+
+  // ─── ORIENTATION / MOBILE CHECK ──────────────────────────────────
+  function bindOrientationCheck() {
+    function check() {
+      const prompt   = document.getElementById('rotate-prompt');
+      if (!prompt) return;
+      const isMobile  = window.innerWidth <= 900 || 'ontouchstart' in window;
+      const isPortrait = window.innerHeight > window.innerWidth;
+      prompt.classList.toggle('show', isMobile && isPortrait);
+    }
+    window.addEventListener('resize', check);
+    window.addEventListener('orientationchange', check);
+    check();
   }
 
   // ─── SPLINE ──────────────────────────────────────────────────────
@@ -694,6 +678,7 @@ window.HomeModule = (function () {
       splineCurve = buildOvalSpline(20, 14, 8, 80);
       bindEvents();
       bindPanelEvents();
+      bindOrientationCheck();
       animate();
       setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
     }

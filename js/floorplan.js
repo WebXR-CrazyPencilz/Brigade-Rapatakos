@@ -1311,7 +1311,9 @@ window.FloorplanModule = (function () {
   function close() {
     if (!overlayOpen) return;
     overlayOpen = false;
-    document.getElementById('fp-overlay').classList.remove('open');
+    const overlay = document.getElementById('fp-overlay');
+    overlay.classList.remove('open');
+    overlay.style.pointerEvents = 'none'; // ← ADD THIS immediately
     setTimeout(() => { resetToSitemap(); }, 420);
   }
 
