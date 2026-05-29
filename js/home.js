@@ -379,18 +379,24 @@ window.HomeModule = (function () {
   }
 
   // ─── CLOSE ALL MODULES ───────────────────────────────────────────
+  // Returns true if the floorplan was open (so callers can defer follow-up actions)
   function closeAllModules() {
-    // Close 360 viewer
     closeUnitViewer();
+
     unitRowVisible = false;
     const row = document.getElementById('unit-row');
     if (row) row.classList.remove('visible');
     document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
 
-    // ── FIX: immediately kill pointer-events on fp-overlay before close animation ──
+    let floorplanWasOpen = false;
     if (window.FloorplanModule && typeof FloorplanModule.close === 'function') {
       const fpOverlay = document.getElementById('fp-overlay');
-      if (fpOverlay) fpOverlay.style.pointerEvents = 'none';
+      if (fpOverlay) {
+        // Kill pointer-events immediately so fp-overlay can't intercept the next click
+        fpOverlay.style.pointerEvents = 'none';
+        floorplanWasOpen = fpOverlay.classList.contains('open') ||
+                           fpOverlay.style.display !== 'none';
+      }
       FloorplanModule.close();
     }
 
@@ -401,93 +407,70 @@ window.HomeModule = (function () {
     if (window.MapModule && typeof MapModule.close === 'function') {
       MapModule.close();
     }
+
+    return floorplanWasOpen;
   }
 
   // ─── PANEL EVENTS ────────────────────────────────────────────────
-function bindPanelEvents() {
+  function bindPanelEvents() {
 
-  document.querySelectorAll('.panel-slot').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.stopPropagation(); // ← CRITICAL: stops this click reaching the document listener
+    // Panel slot buttons
+    document.querySelectorAll('.panel-slot').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
 
-      const slot     = el.dataset.slot;
-      const isActive = el.classList.contains('active');
+        const slot     = el.dataset.slot;
+        const isActive = el.classList.contains('active');
 
-      document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
-      closeAllModules();
+        document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+        const fpWasOpen = closeAllModules();
 
-      if (isActive) return;
+        if (isActive) return;
 
-      el.classList.add('active');
+        el.classList.add('active');
 
-      if (slot === '360view') {
-        unitRowVisible = true;
-        document.getElementById('unit-row').classList.add('visible');
-        const activeUnit = document.querySelector('.unit-btn.active');
-        if (activeUnit) {
-          openUnitViewer(parseInt(activeUnit.dataset.unit));
-        } else {
-          const firstBtn = document.querySelector('.unit-btn[data-unit="1"]');
-          if (firstBtn) firstBtn.classList.add('active');
-          openUnitViewer(1);
+        if (slot === '360view') {
+          // If floorplan was open, defer opening the viewer until after its
+          // close animation completes (typically ~300–400 ms) so fp-overlay
+          // doesn't sit on top and block the iframe interaction.
+          const open360 = () => {
+            unitRowVisible = true;
+            const unitRow = document.getElementById('unit-row');
+            if (unitRow) unitRow.classList.add('visible');
+            const activeUnit = document.querySelector('.unit-btn.active');
+            if (activeUnit) {
+              openUnitViewer(parseInt(activeUnit.dataset.unit));
+            } else {
+              const firstBtn = document.querySelector('.unit-btn[data-unit="1"]');
+              if (firstBtn) firstBtn.classList.add('active');
+              openUnitViewer(1);
+            }
+          };
+          fpWasOpen ? setTimeout(open360, 350) : open360();
+          return;
         }
-        return;
-      }
 
-      if (slot === 'floorplan') {
-        if (window.FloorplanModule) FloorplanModule.open();
-        return;
-      }
+        if (slot === 'floorplan') {
+          if (window.FloorplanModule) FloorplanModule.open();
+          return;
+        }
 
-      if (slot === 'gallery') {
-        if (window.GalleryModule) GalleryModule.open();
-        return;
-      }
+        if (slot === 'gallery') {
+          if (window.GalleryModule) GalleryModule.open();
+          return;
+        }
 
-      if (slot === 'map') {
-        if (window.MapModule) MapModule.open();
-        return;
-      }
+        if (slot === 'map') {
+          if (window.MapModule) MapModule.open();
+          return;
+        }
+      });
     });
-  });
-
-  // Unit buttons — also stop propagation so click-outside doesn't fire
-  document.querySelectorAll('.unit-btn').forEach(el => {
-    el.addEventListener('click', (e) => {
-      e.stopPropagation(); // ← same fix
-      const unit = parseInt(el.dataset.unit);
-      document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
-      el.classList.add('active');
-      openUnitViewer(unit);
-    });
-  });
-
-  // Click outside → collapse everything
-  document.addEventListener('click', (e) => {
-    const bar     = document.getElementById('bottom-panel');
-    const row     = document.getElementById('unit-row');
-    const overlay = document.getElementById('unit-viewer-overlay');
-    const fpOvl   = document.getElementById('fp-overlay');
-
-    const clickedOutside =
-      bar && row &&
-      !bar.contains(e.target) &&
-      !row.contains(e.target) &&
-      !(overlay && overlay.contains(e.target)) &&
-      !(fpOvl  && fpOvl.contains(e.target));
-
-    if (clickedOutside) {
-      unitRowVisible = false;
-      row.classList.remove('visible');
-      document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
-      closeAllModules();
-    }
-  });
-}
 
     // Unit buttons
     document.querySelectorAll('.unit-btn').forEach(el => {
-      el.addEventListener('click', () => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
         const unit = parseInt(el.dataset.unit);
         document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
@@ -495,25 +478,24 @@ function bindPanelEvents() {
       });
     });
 
-    // ── FIX: click outside also closes all modules ────────────────
+    // Click outside → collapse everything
+    // NOTE: fp-overlay is intentionally excluded from this guard — panel-slot
+    // clicks already call e.stopPropagation(), so the document listener never
+    // fires for them. Including fp-overlay here previously caused it to swallow
+    // legitimate outside-clicks during its close animation.
     document.addEventListener('click', (e) => {
       const bar     = document.getElementById('bottom-panel');
       const row     = document.getElementById('unit-row');
       const overlay = document.getElementById('unit-viewer-overlay');
-      const fpOvl   = document.getElementById('fp-overlay');
 
       const clickedOutside =
         bar && row &&
         !bar.contains(e.target) &&
         !row.contains(e.target) &&
-        !(overlay && overlay.contains(e.target)) &&
-        !(fpOvl  && fpOvl.contains(e.target));
+        !(overlay && overlay.contains(e.target));
 
       if (clickedOutside) {
-        unitRowVisible = false;
-        row.classList.remove('visible');
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
-        // Also close all open modules
         closeAllModules();
       }
     });
@@ -522,7 +504,7 @@ function bindPanelEvents() {
   // ─── ORIENTATION / MOBILE CHECK ──────────────────────────────────
   function bindOrientationCheck() {
     function check() {
-      const prompt   = document.getElementById('rotate-prompt');
+      const prompt = document.getElementById('rotate-prompt');
       if (!prompt) return;
       const isMobile  = window.innerWidth <= 900 || 'ontouchstart' in window;
       const isPortrait = window.innerHeight > window.innerWidth;
