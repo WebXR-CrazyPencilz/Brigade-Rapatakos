@@ -749,7 +749,7 @@ window.FloorplanModule = (function () {
           <div id="fp-panel-cluster" class="fp-panel">
             <div id="fp-cluster-wrap">
               <img id="fp-cluster-img" src="" alt="Cluster Plan" />
-              <svg id="fp-zone-svg" viewBox="0 0 100 100" preserveAspectRatio="none"></svg>
+              <svg id="fp-zone-svg" viewBox="0 0 100 100"></svg>
               <div id="fp-zone-tip">
                 <span id="fp-zone-tip-name"></span>
                 <span id="fp-zone-tip-type"></span>
@@ -813,9 +813,14 @@ window.FloorplanModule = (function () {
 
   // ─── RESET TO SITEMAP ────────────────────────────────────────
   function resetToSitemap() {
+    // Disconnect any live ResizeObserver before state/DOM reset to prevent
+    // duplicate tile appends if the overlay is rapidly reopened. (Fix A)
+    if (_sitemapRO) { _sitemapRO.disconnect(); _sitemapRO = null; }
+
     level       = 0;
     activeTower = null;
     activeUnit  = null;
+    viewMode    = 'top';
 
     const svg = document.getElementById('fp-zone-svg');
     if (svg) svg.innerHTML = '';
@@ -935,7 +940,8 @@ window.FloorplanModule = (function () {
 
   // ─── DRILL TO CLUSTER ────────────────────────────────────────
   function drillToCluster(towerId) {
-    activeUnit = null;
+    activeUnit  = null;
+    floorParity = 'odd'; // Reset parity per-tower so Tower A's even/odd state doesn't carry into Tower C etc.
     const unitInfo = document.getElementById('fp-unit-info');
     if (unitInfo) unitInfo.classList.remove('visible');
     const planImg = document.getElementById('fp-plan-img');
@@ -974,7 +980,15 @@ window.FloorplanModule = (function () {
   // ─── BUILD ZONES ─────────────────────────────────────────────
   function buildZones(towerId, parity) {
     const svg = document.getElementById('fp-zone-svg');
+    const img = document.getElementById('fp-cluster-img');
     svg.innerHTML = '';
+
+    // Set viewBox to the image's natural dimensions so percentage-based polygon
+    // coordinates map correctly regardless of the image's aspect ratio.
+    // Falls back to the 100×100 convention if image hasn't loaded yet.
+    const vw = (img && img.naturalWidth)  ? img.naturalWidth  : 100;
+    const vh = (img && img.naturalHeight) ? img.naturalHeight : 100;
+    svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
 
     getUnits(towerId, parity).forEach(u => {
       const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
@@ -1296,9 +1310,15 @@ window.FloorplanModule = (function () {
   function open(floorNum) {
     if (overlayOpen) return;
     overlayOpen = true;
+    // Restore pointer-events that close() disabled, so the overlay is interactive.
+    const fpOverlay = document.getElementById('fp-overlay');
+    if (fpOverlay) fpOverlay.style.pointerEvents = '';
     // Cancel any pending close→reset so it doesn't wipe state after we open.
     clearTimeout(_closeResetTimer);
-    level = 0; activeTower = null; activeUnit = null; viewMode = 'top';
+    // NOTE: level/activeTower/activeUnit are NOT reset here.
+    // resetToSitemap() (called from the close timer) handles that after the
+    // close animation completes. Resetting unconditionally here would discard
+    // mid-session state on a quick close→reopen.
     floorParity = (floorNum !== undefined) ? (isOdd(floorNum) ? 'odd' : 'even') : 'odd';
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
@@ -1380,7 +1400,7 @@ window.FloorplanModule = (function () {
     },
     TOWERS,
     SITEMAP,
-    IK,
+    // IK is intentionally not exported — internal utility only.
   };
 
 })();

@@ -422,31 +422,34 @@ window.HomeModule = (function () {
         const slot     = el.dataset.slot;
         const isActive = el.classList.contains('active');
 
-        const previouslyActiveUnit = document.querySelector('.unit-btn.active');
-        const targetUnit = previouslyActiveUnit ? parseInt(previouslyActiveUnit.dataset.unit) : 1;
+        // Capture the currently active unit BEFORE closeAllModules() clears it.
+        // closeAllModules() strips all .unit-btn.active classes, so we must
+        // read the selection first.
+        const previouslyActiveUnitEl = document.querySelector('.unit-btn.active');
+        const targetUnit = previouslyActiveUnitEl ? parseInt(previouslyActiveUnitEl.dataset.unit) : 1;
+
+        // Check toggle-off BEFORE modifying DOM state.
+        if (isActive) {
+          document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+          closeAllModules();
+          return;
+        }
 
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
         const fpWasOpen = closeAllModules();
 
-        if (isActive) return;
-
         el.classList.add('active');
 
         if (slot === '360view') {
-          // Capture the currently active unit BEFORE closeAllModules() clears it.
-          // closeAllModules() strips all .unit-btn.active classes, so we must
-          // read the selection first and re-apply it inside open360().
-          const previouslyActiveUnit = document.querySelector('.unit-btn.active');
-          const targetUnit = previouslyActiveUnit
-            ? parseInt(previouslyActiveUnit.dataset.unit)
-            : 1;
-
           const open360 = () => {
-  unitRowVisible = true;
-  const unitRow = document.getElementById('unit-row');
-  if (unitRow) unitRow.classList.add('visible');
-  const targetBtn = document.querySelector(`.unit-btn[data-unit="${targetUnit}"]`);
-
+            unitRowVisible = true;
+            const unitRow = document.getElementById('unit-row');
+            if (unitRow) unitRow.classList.add('visible');
+            const targetBtn = document.querySelector(`.unit-btn[data-unit="${targetUnit}"]`);
+            if (targetBtn) {
+              targetBtn.classList.add('active');
+              openUnitViewer(targetUnit);
+            }
           };
           // If floorplan was open, defer until its close animation finishes
           // so fp-overlay (z-index 200) doesn't sit above the iframe.
@@ -646,7 +649,6 @@ window.HomeModule = (function () {
         // If 360 is already active and open, do nothing
         if (slot360 && slot360.classList.contains('active')) return;
 
-        unitRowVisible = true;
         if (row) row.classList.add('visible');
         if (slot360) slot360.classList.add('active');
 
@@ -681,7 +683,9 @@ window.HomeModule = (function () {
       const tz = Math.cos(manualYaw) * Math.cos(manualPitch) * r;
       camera.position.lerp(new THREE.Vector3(tx, ty, tz), 0.08);
       camera.lookAt(new THREE.Vector3(0, 4, 0));
-      if (!isDragging) autoRotate = true;
+      // NOTE: autoRotate is intentionally NOT reset here.
+      // The mouseup handler is the sole controller of when auto-rotate resumes,
+      // preventing an immediate snap back to the spline path after drag ends.
     }
 
     if (towerMesh) {
