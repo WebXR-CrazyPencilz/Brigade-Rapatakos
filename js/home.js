@@ -404,57 +404,86 @@ window.HomeModule = (function () {
   }
 
   // ─── PANEL EVENTS ────────────────────────────────────────────────
-  function bindPanelEvents() {
+function bindPanelEvents() {
 
-    document.querySelectorAll('.panel-slot').forEach(el => {
-      el.addEventListener('click', () => {
-        const slot     = el.dataset.slot;
-        const isActive = el.classList.contains('active');
+  document.querySelectorAll('.panel-slot').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation(); // ← CRITICAL: stops this click reaching the document listener
 
-        // Deactivate all slots
-        document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+      const slot     = el.dataset.slot;
+      const isActive = el.classList.contains('active');
 
-        // Close everything first
-        closeAllModules();
+      document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+      closeAllModules();
 
-        if (isActive) {
-          // Already active — just toggle off
-          return;
+      if (isActive) return;
+
+      el.classList.add('active');
+
+      if (slot === '360view') {
+        unitRowVisible = true;
+        document.getElementById('unit-row').classList.add('visible');
+        const activeUnit = document.querySelector('.unit-btn.active');
+        if (activeUnit) {
+          openUnitViewer(parseInt(activeUnit.dataset.unit));
+        } else {
+          const firstBtn = document.querySelector('.unit-btn[data-unit="1"]');
+          if (firstBtn) firstBtn.classList.add('active');
+          openUnitViewer(1);
         }
+        return;
+      }
 
-        // Activate clicked slot
-        el.classList.add('active');
+      if (slot === 'floorplan') {
+        if (window.FloorplanModule) FloorplanModule.open();
+        return;
+      }
 
-        if (slot === '360view') {
-           unitRowVisible = true;
-          document.getElementById('unit-row').classList.add('visible');
-          const activeUnit = document.querySelector('.unit-btn.active');
-          if (activeUnit) {
-            openUnitViewer(parseInt(activeUnit.dataset.unit));
-          } else {
-            const firstBtn = document.querySelector('.unit-btn[data-unit="1"]');
-            if (firstBtn) firstBtn.classList.add('active');
-            openUnitViewer(1);
-          }
-          return;
-        }
+      if (slot === 'gallery') {
+        if (window.GalleryModule) GalleryModule.open();
+        return;
+      }
 
-        if (slot === 'floorplan') {
-          if (window.FloorplanModule) FloorplanModule.open();
-          return;
-        }
-
-        if (slot === 'gallery') {
-          if (window.GalleryModule) GalleryModule.open();
-          return;
-        }
-
-        if (slot === 'map') {
-          if (window.MapModule) MapModule.open();
-          return;
-        }
-      });
+      if (slot === 'map') {
+        if (window.MapModule) MapModule.open();
+        return;
+      }
     });
+  });
+
+  // Unit buttons — also stop propagation so click-outside doesn't fire
+  document.querySelectorAll('.unit-btn').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation(); // ← same fix
+      const unit = parseInt(el.dataset.unit);
+      document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      openUnitViewer(unit);
+    });
+  });
+
+  // Click outside → collapse everything
+  document.addEventListener('click', (e) => {
+    const bar     = document.getElementById('bottom-panel');
+    const row     = document.getElementById('unit-row');
+    const overlay = document.getElementById('unit-viewer-overlay');
+    const fpOvl   = document.getElementById('fp-overlay');
+
+    const clickedOutside =
+      bar && row &&
+      !bar.contains(e.target) &&
+      !row.contains(e.target) &&
+      !(overlay && overlay.contains(e.target)) &&
+      !(fpOvl  && fpOvl.contains(e.target));
+
+    if (clickedOutside) {
+      unitRowVisible = false;
+      row.classList.remove('visible');
+      document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+      closeAllModules();
+    }
+  });
+}
 
     // Unit buttons
     document.querySelectorAll('.unit-btn').forEach(el => {
