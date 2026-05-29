@@ -446,8 +446,7 @@ window.HomeModule = (function () {
   const unitRow = document.getElementById('unit-row');
   if (unitRow) unitRow.classList.add('visible');
   const targetBtn = document.querySelector(`.unit-btn[data-unit="${targetUnit}"]`);
-            if (targetBtn) targetBtn.classList.add('active');
-            openUnitViewer(targetUnit);
+
           };
           // If floorplan was open, defer until its close animation finishes
           // so fp-overlay (z-index 200) doesn't sit above the iframe.
