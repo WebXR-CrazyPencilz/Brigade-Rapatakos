@@ -506,48 +506,50 @@ window.FloorplanModule = (function () {
       }
 
       /* ── TOGGLES ── */
-      #fp-toggles-row { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+      #fp-toggles-row { display: flex; align-items: center; gap: 8px; flex: 1; justify-content: center; flex-shrink: 0; }
 
-      #fp-parity-toggle {
-        display: flex;
-        border: 1px solid rgba(200,190,154,.30); border-radius: 7px; overflow: hidden;
-        opacity: 0; pointer-events: none; transition: opacity 0.28s;
-      }
-      #fp-parity-toggle.visible { opacity: 1; pointer-events: all; }
-      .fp-parity-btn {
-        padding: 6px 12px; font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
-        letter-spacing: .11em; text-transform: uppercase; color: rgba(200,190,154,.55);
-        cursor: pointer; background: transparent; border: none; outline: none;
-        border-right: 1px solid rgba(200,190,154,.20);
-        transition: background 0.2s, color 0.2s; white-space: nowrap;
-        -webkit-tap-highlight-color: transparent;
-        /* minimum tap target */
-        min-height: 36px; display: flex; align-items: center;
-      }
-      .fp-parity-btn:last-child { border-right: none; }
-      .fp-parity-btn.active  { background: rgba(200,190,154,.14); color: rgba(245,242,235,.90); }
-      .fp-parity-btn:not(.active):active,
-      .fp-parity-btn:not(.active):hover { background: rgba(200,190,154,.07); color: rgba(200,190,154,.80); }
-
+      /* ── TOGGLES — pill style ── */
+      #fp-parity-toggle,
       #fp-view-toggle {
         display: flex;
-        border: 1px solid rgba(200,190,154,.30); border-radius: 7px; overflow: hidden;
+        background: rgba(30,28,24,0.92);
+        border: 1px solid rgba(200,190,154,.22);
+        border-radius: 999px;
+        padding: 3px;
+        gap: 2px;
         opacity: 0; pointer-events: none; transition: opacity 0.28s;
       }
+      #fp-parity-toggle.visible,
       #fp-view-toggle.visible { opacity: 1; pointer-events: all; }
+
+      .fp-parity-btn,
       .fp-toggle-btn {
-        padding: 6px 12px; font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
-        letter-spacing: .11em; text-transform: uppercase; color: rgba(200,190,154,.55);
-        cursor: pointer; background: transparent; border: none; outline: none;
-        border-right: 1px solid rgba(200,190,154,.20);
-        transition: background 0.2s, color 0.2s; white-space: nowrap;
+        padding: 6px 16px;
+        font-family: 'Syne', sans-serif;
+        font-size: 9px; font-weight: 700;
+        letter-spacing: .13em; text-transform: uppercase;
+        color: rgba(200,190,154,.50);
+        cursor: pointer; background: transparent;
+        border: none; outline: none;
+        border-radius: 999px;
+        transition: background 0.22s, color 0.22s;
+        white-space: nowrap; min-height: 32px;
+        display: flex; align-items: center;
         -webkit-tap-highlight-color: transparent;
-        min-height: 36px; display: flex; align-items: center;
       }
-      .fp-toggle-btn:last-child { border-right: none; }
-      .fp-toggle-btn.active { background: rgba(200,190,154,.14); color: rgba(245,242,235,.90); }
+      .fp-parity-btn.active,
+      .fp-toggle-btn.active {
+        background: linear-gradient(135deg, #c8b96a 0%, #a8943a 100%);
+        color: #1a1608;
+        box-shadow: 0 2px 8px rgba(180,160,60,.35);
+      }
+      .fp-parity-btn:not(.active):active,
+      .fp-parity-btn:not(.active):hover,
       .fp-toggle-btn:not(.active):active,
-      .fp-toggle-btn:not(.active):hover { background: rgba(200,190,154,.07); color: rgba(200,190,154,.80); }
+      .fp-toggle-btn:not(.active):hover {
+        color: rgba(200,190,154,.80);
+        background: rgba(200,190,154,.08);
+      }
 
       /* ── CLOSE ── */
       #fp-close {
