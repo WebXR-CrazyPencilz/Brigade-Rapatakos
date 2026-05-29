@@ -7,23 +7,13 @@
 // BLUE  = unit appears in BOTH odd and even columns → listed in oddUnits AND evenUnits
 // GREEN = unit appears in only ONE column (odd or even) → listed in that side only
 // WHITE = removed (not applicable for that parity)
+// ─────────────────────────────────────────────────────────────────────────────
 //
-// Tower A
-//   ODD  (3 units — blue only): 4BHK-C, 3BHK(L)-D, 3BHK(S)-A
-//   EVEN (5 units — blue only): 3BHK(L)-C(Podium), 3BHK(L)-B, 3BHK(L)-D, 3BHK(S)-A, 4BHK-E
-//
-// Tower B
-//   ODD  (3 units — blue only): 4BHK-C, 3BHK(L)-D, 3BHK(S)-A
-//   EVEN (5 units — blue only): 3BHK(L)-C(Podium), 3BHK(L)-B, 3BHK(L)-D, 3BHK(S)-A, 4BHK-D
-//
-// Tower C
-//   ODD  (2 units): 3BHK(L)-G (blue), 3BHK(L)-G Podium (green=odd-only)
-//   EVEN (6 units): 3BHK-G (green=even-only), 3BHK(S)-B (blue), 3BHK(S)-B Podium (blue),
-//                   4BHK-F (blue), 3BHK(L)-G (blue), 3BHK(L)-E (blue)
-//
-// Tower D
-//   ODD  (2 units — blue): 3BHK(L)-A, 3BHK(S)-A
-//   EVEN (6 units — blue): 4BHK-A, 3BHK(L)-B, 3BHK(L)-A, 4BHK-B, 3BHK(S)-A, 4BHK-E
+// ─── IMAGE URL HELPER ────────────────────────────────────────────────────────
+// IK(path) builds a full ImageKit URL from a relative path.
+// Usage:  IK('isometric/unit06_3bhk_l(g)_podium_tower_03.jpg')
+//         IK('topview/unit05_3bhk_s(a)_tower_02.jpg')
+// To fill an empty slot replace '' with IK('folder/filename.jpg')
 // ─────────────────────────────────────────────────────────────────────────────
 
 window.FloorplanModule = (function () {
@@ -238,7 +228,6 @@ window.FloorplanModule = (function () {
       even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_03.jpg') },
 
       oddUnits: [
-        // BLUE — appears in both odd and even
         {
           unitId: 'C-odd-01',
           label:  '3BHK (L) Type G',
@@ -248,7 +237,6 @@ window.FloorplanModule = (function () {
           iso:    IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'),
           points: '10,15 55,15 55,52 10,52',
         },
-        // GREEN — odd only
         {
           unitId: 'C-odd-02',
           label:  '3BHK (L) Type G — Podium',
@@ -261,7 +249,6 @@ window.FloorplanModule = (function () {
       ],
 
       evenUnits: [
-        // GREEN — even only
         {
           unitId: 'C-even-01',
           label:  '4BHK Type G',
@@ -271,7 +258,6 @@ window.FloorplanModule = (function () {
           iso:    IK('isometric/unit01_4bhk_(g)_tower_03.jpg'),
           points: '5,8 30,8 30,35 5,35',
         },
-        // BLUE — appears in both odd and even
         {
           unitId: 'C-even-02',
           label:  '3BHK (S) Type B',
@@ -418,11 +404,13 @@ window.FloorplanModule = (function () {
   // ─── STATE ───────────────────────────────────────────────────
   let level        = 0;
   let activeTower  = null;
-  let activeFloor  = null;
   let activeUnit   = null;
   let floorParity  = 'odd';
   let viewMode     = 'top';
   let overlayOpen  = false;
+
+  // ─── TRANSITION FLAG — prevents ResizeObserver firing mid-animation ──
+  let _transitioning = false;
 
   // ─── HELPERS ─────────────────────────────────────────────────
   function isOdd(n) { return n % 2 !== 0; }
@@ -458,7 +446,6 @@ window.FloorplanModule = (function () {
       }
       #fp-overlay.open { opacity: 1; pointer-events: all; transform: translateY(0); }
 
-      /* ── TOPBAR ── */
       #fp-topbar {
         flex-shrink: 0;
         display: flex; align-items: center;
@@ -496,7 +483,6 @@ window.FloorplanModule = (function () {
       #fp-back-label {
         font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
         color:rgba(200,190,154,.65); transition:color 0.2s;
-        /* hide text on very small screens, keep icon */
         display: none;
       }
       @media (min-width: 400px) { #fp-back-label { display: block; } }
@@ -505,9 +491,7 @@ window.FloorplanModule = (function () {
       .fp-pipe { width:1px; height:18px; background:rgba(200,190,154,.20); flex-shrink:0; opacity:0; transition:opacity 0.22s; }
       .fp-pipe.visible { opacity:1; }
 
-      #fp-breadcrumb {
-        flex:1; display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden;
-      }
+      #fp-breadcrumb { flex:1; display:flex; align-items:center; gap:6px; min-width:0; overflow:hidden; }
       .fp-crumb {
         font-family:'Cormorant Garamond',serif; font-size:15px; font-weight:400;
         color:rgba(200,190,154,.55); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -518,10 +502,7 @@ window.FloorplanModule = (function () {
       .fp-crumb-sep { font-family:'Cormorant Garamond',serif; font-size:14px; color:rgba(200,190,154,.28); flex-shrink:0; opacity:0; transition:opacity 0.22s; }
       .fp-crumb-sep.visible { opacity:1; }
 
-      /* toggles row — on mobile they move below the main bar row */
-      #fp-toggles-row {
-        display: flex; align-items: center; gap: 8px; flex-shrink: 0;
-      }
+      #fp-toggles-row { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 
       #fp-parity-toggle {
         display:flex;
@@ -571,7 +552,6 @@ window.FloorplanModule = (function () {
       .fp-panel.exit-l { opacity:0; transform:translateX(-32px); }
       .fp-panel.exit-r { opacity:0; transform:translateX( 32px); }
 
-      /* ── SITEMAP ── */
       #fp-panel-sitemap { display:flex; align-items:center; justify-content:center; background:#0a0805; transform:translateX(0); }
       #fp-sitemap-wrap { position:relative; display:inline-block; max-width:100%; max-height:100%; }
       #fp-sitemap-img {
@@ -587,7 +567,6 @@ window.FloorplanModule = (function () {
         gap:3px; padding:6px; box-sizing:border-box;
       }
       .fp-tower-tile:hover { background:rgba(200,190,154,.18); border-color:rgba(200,190,154,.75); transform:scale(1.04); }
-      /* larger tap target on touch */
       @media (hover: none) { .fp-tower-tile { padding: 8px; } }
       .fp-tower-tile-label { font-family:'Cormorant Garamond',serif; font-size:12px; font-weight:500; color:rgba(245,242,235,.85); white-space:nowrap; text-align:center; }
       .fp-tower-tile-sub { font-family:'Syne',sans-serif; font-size:7px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:rgba(200,190,154,.55); white-space:nowrap; }
@@ -597,13 +576,11 @@ window.FloorplanModule = (function () {
         color:rgba(200,190,154,.38); pointer-events:none; white-space:nowrap;
       }
 
-      /* ── CLUSTER ── */
       #fp-panel-cluster { display:flex; align-items:center; justify-content:center; background:#0a0805; transform:translateX(32px); }
       #fp-cluster-wrap { position:relative; display:inline-block; max-width:100%; max-height:100%; }
       #fp-cluster-img {
         display:block; max-width:100%; max-height:calc(100dvh - 56px - 62px);
         object-fit:contain; border:1px solid rgba(200,190,154,.12); transition:opacity 0.28s;
-        /* ensure touch events pass through to SVG zones */
         pointer-events: none;
       }
       #fp-cluster-img.fading { opacity:0; }
@@ -613,12 +590,10 @@ window.FloorplanModule = (function () {
         fill:rgba(200,190,154,.12); stroke:rgba(200,190,154,.55); stroke-width:1.5;
         cursor:pointer; pointer-events:all;
         transition:fill 0.20s, stroke 0.20s;
-        /* larger touch area via stroke trick on mobile */
         stroke-linejoin: round;
       }
       .fp-zone:hover { fill:rgba(200,190,154,.30); stroke:rgba(200,190,154,.95); }
       .fp-zone.selected { fill:rgba(200,190,154,.22); stroke:#e8dfc0; stroke-width:2; }
-      /* touch-specific highlight */
       .fp-zone:active { fill:rgba(200,190,154,.40); }
 
       #fp-zone-tip {
@@ -626,14 +601,12 @@ window.FloorplanModule = (function () {
         background:rgba(10,8,5,.88); border:1px solid rgba(200,190,154,.40);
         border-radius:4px; backdrop-filter:blur(8px);
         pointer-events:none; opacity:0; transition:opacity 0.18s; z-index:10; white-space:nowrap;
-        /* keep tip on screen */
         max-width: calc(100vw - 24px);
       }
       #fp-zone-tip.visible { opacity:1; }
       #fp-zone-tip-name { font-family:'Cormorant Garamond',serif; font-size:14px; font-weight:500; color:rgba(245,242,235,.90); display:block; }
       #fp-zone-tip-type { font-family:'Syne',sans-serif; font-size:8.5px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:rgba(200,190,154,.60); display:block; margin-top:2px; }
 
-      /* ── UNIT PANEL ── */
       #fp-panel-unit { display:flex; flex-direction:column; transform:translateX(32px); }
       #fp-plan-area {
         flex:1; display:flex; align-items:center; justify-content:center;
@@ -653,7 +626,6 @@ window.FloorplanModule = (function () {
         opacity:0; transform:translateY(6px);
         transition:opacity 0.30s ease 0.12s, transform 0.30s ease 0.12s;
         pointer-events:none;
-        /* don't overflow on very small screens */
         max-width: calc(100vw - 40px);
       }
       #fp-unit-info.visible { opacity:1; transform:translateY(0); }
@@ -661,7 +633,6 @@ window.FloorplanModule = (function () {
       #fp-unit-info-type { font-family:'Syne',sans-serif; font-size:9px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:rgba(200,190,154,.55); }
       #fp-unit-info-area { font-family:'Syne',sans-serif; font-size:9px; font-weight:400; letter-spacing:.10em; color:rgba(200,190,154,.38); }
 
-      /* ── SPINNER ── */
       #fp-spinner {
         position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
         background:rgba(10,8,5,.50); opacity:0; pointer-events:none;
@@ -703,7 +674,6 @@ window.FloorplanModule = (function () {
               <button class="fp-parity-btn active" data-parity="odd">Odd</button>
               <button class="fp-parity-btn"        data-parity="even">Even</button>
             </div>
-
             <div id="fp-view-toggle">
               <button class="fp-toggle-btn active" data-view="top">Plan</button>
               <button class="fp-toggle-btn"        data-view="iso">Iso</button>
@@ -754,7 +724,13 @@ window.FloorplanModule = (function () {
   }
 
   // ─── PANEL TRANSITIONS ───────────────────────────────────────
+  // Sets _transitioning=true for 350ms so the ResizeObserver
+  // doesn't rebuild sitemap tiles during animation reflows.
   function showPanel(id, direction) {
+    _transitioning = true;
+    clearTimeout(showPanel._timer);
+    showPanel._timer = setTimeout(() => { _transitioning = false; }, 350);
+
     ['fp-panel-sitemap','fp-panel-cluster','fp-panel-unit'].forEach(pid => {
       const el = document.getElementById(pid);
       if (!el) return;
@@ -763,22 +739,67 @@ window.FloorplanModule = (function () {
     });
   }
 
+  // ─── RESET TO SITEMAP ────────────────────────────────────────
+  // Single shared function used by goBack(), crumb-0, and close().
+  // Fully wipes all cluster + unit panel state before showing sitemap.
+  function resetToSitemap() {
+    level       = 0;
+    activeTower = null;
+    activeUnit  = null;
+
+    // wipe cluster panel
+    const svg = document.getElementById('fp-zone-svg');
+    if (svg) svg.innerHTML = '';
+    const clusterImg = document.getElementById('fp-cluster-img');
+    if (clusterImg) { clusterImg.classList.remove('fading'); clusterImg.removeAttribute('src'); }
+
+    // wipe unit panel
+    const planImg = document.getElementById('fp-plan-img');
+    if (planImg) { planImg.classList.remove('fading'); planImg.removeAttribute('src'); }
+    const unitInfo = document.getElementById('fp-unit-info');
+    if (unitInfo) unitInfo.classList.remove('visible');
+    const spinner = document.getElementById('fp-spinner');
+    if (spinner) spinner.classList.remove('visible');
+
+    // clear any selected zone highlight
+    document.querySelectorAll('.fp-zone.selected')
+      .forEach(z => z.classList.remove('selected'));
+
+    // hide zone tooltip
+    hideZoneTip();
+
+    showPanel('fp-panel-sitemap', 'back');
+    updateTopbar();
+  }
+
   // ─── SITEMAP TILES ───────────────────────────────────────────
-  // Keep a single ResizeObserver so we never stack duplicates across open() calls.
+  // ResizeObserver only rebuilds tiles when the image size actually
+  // changes AND no panel transition is in progress.
   let _sitemapRO = null;
 
   function buildSitemapTiles() {
     const wrap = document.getElementById('fp-sitemap-wrap');
     const img  = document.getElementById('fp-sitemap-img');
+    let lastW  = 0;
+    let lastH  = 0;
 
-    // Disconnect any previous observer before creating a new one.
     if (_sitemapRO) { _sitemapRO.disconnect(); _sitemapRO = null; }
 
     function placeTiles() {
-      // Remove and re-draw tiles so we never accumulate duplicates.
+      // Hard stop — never touch tiles during a panel transition animation.
+      if (_transitioning) return;
+
+      const iw = img.offsetWidth;
+      const ih = img.offsetHeight;
+      if (!iw || !ih) return;
+
+      // Only rebuild if the image dimensions actually changed.
+      if (iw === lastW && ih === lastH) return;
+      lastW = iw;
+      lastH = ih;
+
       wrap.querySelectorAll('.fp-tower-tile').forEach(t => t.remove());
-      const iw = img.offsetWidth, ih = img.offsetHeight;
-      if (!iw || !ih) return; // image not yet laid out — observer will retry
+
       SITEMAP.towerTiles.forEach(tile => {
         const el = document.createElement('div');
         el.className = 'fp-tower-tile';
@@ -787,7 +808,6 @@ window.FloorplanModule = (function () {
         el.style.width  = (tile.w / 100 * iw) + 'px';
         el.style.height = (tile.h / 100 * ih) + 'px';
         el.innerHTML = `<span class="fp-tower-tile-label">${tile.label}</span><span class="fp-tower-tile-sub">Explore</span>`;
-        // Capture tile.id in a const so the closure is stable.
         const tileId = tile.id;
         el.addEventListener('click', () => drillToCluster(tileId));
         wrap.appendChild(el);
@@ -797,7 +817,6 @@ window.FloorplanModule = (function () {
     if (img.complete && img.naturalWidth > 0) placeTiles();
     else img.addEventListener('load', placeTiles, { once: true });
 
-    // Single observer — disconnect stored above on next call.
     _sitemapRO = new ResizeObserver(placeTiles);
     _sitemapRO.observe(img);
   }
@@ -809,35 +828,34 @@ window.FloorplanModule = (function () {
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
     });
+
     const img    = document.getElementById('fp-cluster-img');
     const newSrc = getClusterImage(activeTower, floorParity);
 
-    // Clear zones immediately so old ones can't be tapped during the fade.
     document.getElementById('fp-zone-svg').innerHTML = '';
     img.classList.add('fading');
 
     setTimeout(() => {
-      let zonesBuilt = false;
-      function finishLoad() {
-        if (zonesBuilt) return;
-        zonesBuilt = true;
+      let done = false;
+      function finish() {
+        if (done) return; done = true;
         img.classList.remove('fading');
         buildZones(activeTower, floorParity);
       }
-      img.onload  = finishLoad;
+      img.onload  = finish;
       img.onerror = () => { img.classList.remove('fading'); };
       img.src = newSrc;
-      if (img.complete && img.naturalWidth > 0) finishLoad();
+      if (img.complete && img.naturalWidth > 0) finish();
     }, 220);
   }
 
   // ─── DRILL TO CLUSTER ────────────────────────────────────────
   function drillToCluster(towerId) {
-    // Always reset unit state whenever we enter the cluster level.
     activeUnit = null;
-    document.getElementById('fp-unit-info').classList.remove('visible');
+    const unitInfo = document.getElementById('fp-unit-info');
+    if (unitInfo) unitInfo.classList.remove('visible');
     const planImg = document.getElementById('fp-plan-img');
-    planImg.removeAttribute('src');
+    if (planImg) { planImg.removeAttribute('src'); }
     document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
 
     activeTower = towerId;
@@ -848,28 +866,21 @@ window.FloorplanModule = (function () {
     const img    = document.getElementById('fp-cluster-img');
     const newSrc = getClusterImage(towerId, floorParity);
 
+    // Clear old zones immediately — no stale polygons while loading.
+    document.getElementById('fp-zone-svg').innerHTML = '';
     img.classList.add('fading');
 
-    // Always clear old zones immediately so stale polygons can't be tapped.
-    document.getElementById('fp-zone-svg').innerHTML = '';
-
     setTimeout(() => {
-      // Guard: only run buildZones once even if both onload and the
-      // already-cached branch fire (some browsers fire onload for cached imgs).
-      let zonesBuilt = false;
-      function finishLoad() {
-        if (zonesBuilt) return;
-        zonesBuilt = true;
+      let done = false;
+      function finish() {
+        if (done) return; done = true;
         img.classList.remove('fading');
         buildZones(towerId, floorParity);
       }
-
-      img.onload  = finishLoad;
+      img.onload  = finish;
       img.onerror = () => { img.classList.remove('fading'); };
       img.src = newSrc;
-
-      // If image was already cached the browser won't fire onload — handle it.
-      if (img.complete && img.naturalWidth > 0) finishLoad();
+      if (img.complete && img.naturalWidth > 0) finish();
     }, 220);
 
     level = 1;
@@ -888,13 +899,11 @@ window.FloorplanModule = (function () {
       poly.setAttribute('points', u.points);
       poly.dataset.unitId = u.unitId;
 
-      // mouse events (desktop)
       poly.addEventListener('mouseenter', (e) => showZoneTip(u, e));
       poly.addEventListener('mousemove',  (e) => moveZoneTip(e));
       poly.addEventListener('mouseleave', hideZoneTip);
       poly.addEventListener('click', () => drillToUnit(u));
 
-      // touch events (mobile) — show tip briefly then navigate on tap
       let touchMoved = false;
       poly.addEventListener('touchstart', (e) => {
         touchMoved = false;
@@ -926,16 +935,14 @@ window.FloorplanModule = (function () {
     document.getElementById('fp-zone-tip-type').textContent = `${u.type}${u.area ? '  ·  ' + u.area : ''}`;
     const tip  = document.getElementById('fp-zone-tip');
     tip.classList.add('visible');
-    // position near touch point
     const rect = document.getElementById('fp-cluster-wrap').getBoundingClientRect();
     const t = e.touches[0];
     let left = t.clientX - rect.left + 14;
     let top  = t.clientY - rect.top  - 40;
-    // clamp so tip stays inside wrap
     const tw = tip.offsetWidth || 120;
     if (left + tw > rect.width - 8) left = rect.width - tw - 8;
     if (left < 4) left = 4;
-    if (top < 4) top = 4;
+    if (top  < 4) top  = 4;
     tip.style.left = left + 'px';
     tip.style.top  = top  + 'px';
   }
@@ -952,32 +959,28 @@ window.FloorplanModule = (function () {
   }
 
   function hideZoneTip() {
-    document.getElementById('fp-zone-tip').classList.remove('visible');
+    const tip = document.getElementById('fp-zone-tip');
+    if (tip) tip.classList.remove('visible');
   }
 
   // ─── DRILL TO UNIT ───────────────────────────────────────────
   function drillToUnit(unitData) {
     activeUnit = unitData;
     viewMode   = 'top';
+
     document.querySelectorAll('.fp-toggle-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.view === 'top');
     });
+
     document.getElementById('fp-unit-info-name').textContent = unitData.label;
     document.getElementById('fp-unit-info-type').textContent = unitData.type;
     document.getElementById('fp-unit-info-area').textContent = unitData.area || '';
     document.getElementById('fp-unit-info').classList.add('visible');
-    // clear previous selected zone
-    document.querySelectorAll('.fp-zone')
-    .forEach(z => z.classList.remove('selected'));
 
-    // highlight current selected zone
-    const activeZone = document.querySelector(
-    `.fp-zone[data-unit-id="${unitData.unitId}"]`
-    );
-
-    if (activeZone) {
-    activeZone.classList.add('selected');
-    }
+    // Highlight selected zone BEFORE panel transition starts so it's visible.
+    document.querySelectorAll('.fp-zone').forEach(z => z.classList.remove('selected'));
+    const activeZone = document.querySelector(`.fp-zone[data-unit-id="${unitData.unitId}"]`);
+    if (activeZone) activeZone.classList.add('selected');
 
     level = 2;
     showPanel('fp-panel-unit', 'forward');
@@ -992,7 +995,8 @@ window.FloorplanModule = (function () {
     const spinner = document.getElementById('fp-spinner');
     const src     = unitImagePath(activeUnit, viewMode);
 
-    if (!src) {
+    // Treat a URL that ends with just a folder slash as "not set".
+    if (!src || src.endsWith('/')) {
       img.removeAttribute('src');
       spinner.classList.remove('visible');
       return;
@@ -1010,29 +1014,16 @@ window.FloorplanModule = (function () {
   // ─── BACK NAV ────────────────────────────────────────────────
   function goBack() {
     if (level === 2) {
-      level = 1;
-      // ── BUG FIX: clear activeUnit when leaving unit panel ──
+      // Level 2 → Level 1: just go back to cluster, keep tower state.
       activeUnit = null;
       document.getElementById('fp-unit-info').classList.remove('visible');
+      document.getElementById('fp-spinner').classList.remove('visible');
       showPanel('fp-panel-cluster', 'back');
+      level = 1;
       updateTopbar();
     } else if (level === 1) {
-      level = 0;
-      // ── BUG FIX: clear both tower and unit when going to sitemap ──
-      activeTower = null;
-      activeUnit  = null;
-      document.getElementById('fp-unit-info').classList.remove('visible');
-
-      const planImg = document.getElementById('fp-plan-img');
-      planImg.removeAttribute('src');
-
-      document.querySelectorAll('.fp-zone.selected')
-      .forEach(z => z.classList.remove('selected'));
-
-      document.getElementById('fp-zone-svg').innerHTML = '';
-      
-      showPanel('fp-panel-sitemap', 'back');
-      updateTopbar();
+      // Level 1 → Level 0: full reset via shared function.
+      resetToSitemap();
     }
   }
 
@@ -1104,24 +1095,8 @@ window.FloorplanModule = (function () {
     if (!overlayOpen) return;
     overlayOpen = false;
     document.getElementById('fp-overlay').classList.remove('open');
-    setTimeout(() => {
-
-  level = 0;
-
-  activeTower = null;
-  activeUnit  = null;
-
-  viewMode = 'top';
-
-  document.getElementById('fp-zone-svg').innerHTML = '';
-
-  document.getElementById('fp-unit-info')
-    .classList.remove('visible');
-
-  document.getElementById('fp-plan-img')
-    .removeAttribute('src');
-
-}, 420);
+    // Full reset after the overlay fade-out completes.
+    setTimeout(() => { resetToSitemap(); }, 420);
   }
 
   // ─── BIND EVENTS ─────────────────────────────────────────────
@@ -1129,13 +1104,12 @@ window.FloorplanModule = (function () {
     document.getElementById('fp-close').addEventListener('click', close);
     document.getElementById('fp-back').addEventListener('click', goBack);
 
+    // crumb-0: jump to sitemap from ANY level — always use resetToSitemap().
     document.getElementById('fp-crumb-0').addEventListener('click', () => {
-      if (level > 0) {
-        // ── BUG FIX: clear tower + unit when jumping directly to sitemap via breadcrumb ──
-        level = 0; activeTower = null; activeUnit = null;
-        showPanel('fp-panel-sitemap','back'); updateTopbar();
-      }
+      if (level > 0) resetToSitemap();
     });
+
+    // crumb-1: go back one step from level 2 only.
     document.getElementById('fp-crumb-1').addEventListener('click', () => {
       if (level === 2) goBack();
     });
