@@ -447,7 +447,9 @@ window.FloorplanModule = (function () {
   transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.22,1,0.36,1);
   font-family: 'Syne', sans-serif; overflow: hidden;
       }
+      /* TO: */
       #fp-overlay.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+      #fp-overlay.hidden { display: none; }
 
       /* ── TOPBAR ──
          Uses a CSS custom property --fp-topbar-h that JS updates whenever
