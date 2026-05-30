@@ -1333,7 +1333,10 @@ window.FloorplanModule = (function () {
     overlayOpen = true;
     // Restore pointer-events that close() disabled, so the overlay is interactive.
     const fpOverlay = document.getElementById('fp-overlay');
-    if (fpOverlay) fpOverlay.style.pointerEvents = '';
+if (fpOverlay) {
+  fpOverlay.classList.remove('hidden');  // ← ADD THIS
+  fpOverlay.style.pointerEvents = '';
+}
     // Cancel any pending close→reset so it doesn't wipe state after we open.
     clearTimeout(_closeResetTimer);
     // NOTE: level/activeTower/activeUnit are NOT reset here.
@@ -1364,10 +1367,11 @@ window.FloorplanModule = (function () {
     overlay.classList.remove('open');
     overlay.style.pointerEvents = 'none';
     _closeResetTimer = setTimeout(() => {
-      // Only reset if still closed — guards against open() being called
-      // before the animation finishes.
-      if (!overlayOpen) resetToSitemap();
-    }, 420);
+  if (!overlayOpen) {
+    resetToSitemap();
+    overlay.classList.add('hidden');  // ← ADD THIS
+  }
+}, 420);
   }
 
   // ─── BIND EVENTS ─────────────────────────────────────────────

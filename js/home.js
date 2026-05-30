@@ -398,8 +398,6 @@ if (fpOverlay) {
 if (window.FloorplanModule && typeof FloorplanModule.close === 'function') {
   FloorplanModule.close();
 }
-// Always restore fp-overlay pointer-events after animation
-// so it never blocks subsequent panel clicks
 setTimeout(() => {
   if (fpOverlay) fpOverlay.style.pointerEvents = '';
 }, 420);
