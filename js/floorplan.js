@@ -986,12 +986,9 @@ window.FloorplanModule = (function () {
     const img = document.getElementById('fp-cluster-img');
     svg.innerHTML = '';
 
-    // Set viewBox to the image's natural dimensions so percentage-based polygon
-    // coordinates map correctly regardless of the image's aspect ratio.
-    // Falls back to the 100×100 convention if image hasn't loaded yet.
-    const vw = (img && img.naturalWidth)  ? img.naturalWidth  : 100;
-    const vh = (img && img.naturalHeight) ? img.naturalHeight : 100;
-    svg.setAttribute('viewBox', `0 0 ${vw} ${vh}`);
+    // FIXED — always use 100×100 to match percentage-based points
+    svg.setAttribute('viewBox', '0 0 100 100');
+    svg.setAttribute('preserveAspectRatio', 'none');
 
     getUnits(towerId, parity).forEach(u => {
       const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
