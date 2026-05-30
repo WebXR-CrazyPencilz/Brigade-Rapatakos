@@ -195,6 +195,7 @@ const textureCache = {}
 const loader = new THREE.TextureLoader()
 
 function loadTexture(key, onDone) {
+  if (!rooms[key]) { console.warn('loadTexture: unknown key', key); onDone && onDone(null); return }  // ← ADD THIS LINE
   if (textureCache[key]) { onDone && onDone(textureCache[key]); return }
   loader.load(
     rooms[key].image,
@@ -212,7 +213,7 @@ function loadTexture(key, onDone) {
 }
 
 function preloadInitial() {
-  const priority = ['living', 'livingtobedroom', 'livingtokitchen', 'foyertoliving2', 'masterbedroomcorridor', 'kidsbedroomcorridor']
+  const priority = ['living', 'livingtobedroom', 'lobbytoliving1', 'foyertoliving2', 'masterbedroomcorridor', 'kidsbedroomcorridor']
   priority.forEach((k, i) => setTimeout(() => loadTexture(k), i * 150))
 }
 
