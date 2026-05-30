@@ -388,17 +388,21 @@ window.HomeModule = (function () {
     if (row) row.classList.remove('visible');
     document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
 
-    let floorplanWasOpen = false;
-    if (window.FloorplanModule && typeof FloorplanModule.close === 'function') {
-      const fpOverlay = document.getElementById('fp-overlay');
-      if (fpOverlay) {
-        // fp-overlay uses opacity/pointer-events, NOT display:none.
-        // The only reliable indicator it is open is the 'open' class.
-        floorplanWasOpen = fpOverlay.classList.contains('open');
-        fpOverlay.style.pointerEvents = 'none';
-      }
-      FloorplanModule.close();
-    }
+    // AFTER:
+let floorplanWasOpen = false;
+const fpOverlay = document.getElementById('fp-overlay');
+if (fpOverlay) {
+  floorplanWasOpen = fpOverlay.classList.contains('open');
+  fpOverlay.style.pointerEvents = 'none';
+}
+if (window.FloorplanModule && typeof FloorplanModule.close === 'function') {
+  FloorplanModule.close();
+}
+// Always restore fp-overlay pointer-events after animation
+// so it never blocks subsequent panel clicks
+setTimeout(() => {
+  if (fpOverlay) fpOverlay.style.pointerEvents = '';
+}, 420);
 
     if (window.GalleryModule && typeof GalleryModule.close === 'function') {
       GalleryModule.close();
