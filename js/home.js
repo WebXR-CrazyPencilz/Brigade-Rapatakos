@@ -488,7 +488,7 @@ window.HomeModule = (function () {
         bar && row &&
         !bar.contains(e.target) &&
         !row.contains(e.target) &&
-        !(overlay && overlay.contains(e.target));
+        !(overlay && overlay.contains(e.target))&&
         !document.getElementById('fp-overlay').contains(e.target);
 
       if (clickedOutside) {
