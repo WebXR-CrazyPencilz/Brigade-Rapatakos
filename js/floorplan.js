@@ -438,14 +438,14 @@ window.FloorplanModule = (function () {
       /* ── OVERLAY ── */
       #fp-overlay {
         position: fixed;
-        top: 0; left: 0; right: 0;
-        bottom: calc(62px + env(safe-area-inset-bottom, 0px));
-        z-index: 200; background: #0a0805;
-        display: flex; flex-direction: column;
-        opacity: 0; pointer-events: none;
-        transform: translateY(6px);
-        transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.22,1,0.36,1);
-        font-family: 'Syne', sans-serif; overflow: hidden;
+  top: 0; left: 0; right: 0;
+  bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+  z-index: 200; background: #0a0805;
+  display: flex; flex-direction: column;
+  opacity: 0; pointer-events: none;
+  transform: translateY(6px);
+  transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.22,1,0.36,1);
+  font-family: 'Syne', sans-serif; overflow: hidden;
       }
       #fp-overlay.open { opacity: 1; pointer-events: all; transform: translateY(0); }
 
@@ -455,21 +455,44 @@ window.FloorplanModule = (function () {
          Images use this variable so they never go behind the topbar.       */
       :root { --fp-topbar-h: 56px; }
 
-      #fp-topbar {
-        flex-shrink: 0;
-        display: flex; align-items: center;
-        padding: 8px 12px;
-        border-bottom: 1px solid rgba(200,190,154,.18);
-        background: rgba(10,8,5,.92);
-        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-        gap: 10px; position: relative; z-index: 2;
+      @media (max-width: 480px) {
+  #fp-toggles-row {
+    position: static;
+    transform: none;
+    flex: 1;
+    justify-content: center;
+  }
+  #fp-topbar {
+    flex-wrap: nowrap;
+    padding: 8px;
+    gap: 6px;
+  }
+  .fp-parity-btn,
+  .fp-toggle-btn {
+    padding: 6px 10px;
+    font-size: 8px;
+  }
+}
+  #fp-content { 
+  flex: 1; 
+  position: relative; 
+  overflow: hidden; 
+}
 
-      }
-      #fp-topbar::after {
-        content: ''; position: absolute; bottom: -1px; left: 50%;
-        transform: translateX(-50%); width: 80px; height: 1px;
-        background: linear-gradient(to right, transparent, rgba(200,190,154,.55), transparent);
-      }
+      #fp-topbar {
+  flex-shrink: 0;
+  display: flex; align-items: center;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(200,190,154,.18);
+  background: rgba(10,8,5,.92);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  gap: 10px; position: relative; z-index: 2;
+}
+#fp-topbar::after {
+  content: ''; position: absolute; bottom: -1px; left: 50%;
+  transform: translateX(-50%); width: 80px; height: 1px;
+  background: linear-gradient(to right, transparent, rgba(200,190,154,.55), transparent);
+}
 
       /* ── BACK BUTTON — icon only, no label, no pipe, no breadcrumb ── */
       #fp-back {
@@ -555,20 +578,18 @@ window.FloorplanModule = (function () {
       }
 
       /* ── CLOSE ── */
-      #fp-close {
-        flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px;
-        border: 1px solid rgba(200,190,154,.25); background: rgba(200,190,154,.06);
-        display: flex; align-items: center; justify-content: center; cursor: pointer;
-        transition: background 0.2s, border-color 0.2s;
-        -webkit-tap-highlight-color: transparent;
-      }
-      #fp-close:active, #fp-close:hover {
-        background: rgba(200,190,154,.16); border-color: rgba(200,190,154,.55);
-      }
-      #fp-close svg { width:12px; height:12px; stroke:rgba(200,190,154,.70); fill:none; stroke-width:2; stroke-linecap:round; }
-
-      /* ── CONTENT + PANELS ── */
-      #fp-content { flex: 1; position: relative; overflow: hidden; }
+#fp-close {
+  flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px;
+  border: 1px solid rgba(200,190,154,.25); background: rgba(200,190,154,.06);
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: background 0.2s, border-color 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  margin-left: auto;  /* ← pushes X to far right */
+}
+#fp-close:active, #fp-close:hover {
+  background: rgba(200,190,154,.16); border-color: rgba(200,190,154,.55);
+}
+#fp-close svg { width:12px; height:12px; stroke:rgba(200,190,154,.70); fill:none; stroke-width:2; stroke-linecap:round; }
 
       .fp-panel {
         position: absolute; inset: 0;
