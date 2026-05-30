@@ -911,6 +911,7 @@ window.FloorplanModule = (function () {
     if (img.offsetWidth > 0) placeTiles();
     });
     _sitemapRO.observe(wrap);
+    _sitemapRO.observe(img);
   }
 
   // ─── SWAP PARITY ─────────────────────────────────────────────
@@ -1330,6 +1331,7 @@ window.FloorplanModule = (function () {
     updateTitle();
     document.getElementById('fp-overlay').classList.add('open');
     buildSitemapTiles();
+    setTimeout(() => buildSitemapTiles(), 420);
   }
 
   let _closeResetTimer = null;
