@@ -442,7 +442,7 @@ window.HomeModule = (function () {
           };
           // If floorplan was open, defer until its close animation finishes
           // so fp-overlay (z-index 200) doesn't sit above the unit row.
-          fpWasOpen ? setTimeout(open360, 420) : open360();
+          setTimeout(open360, 420);
           return;
         }
 
