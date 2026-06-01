@@ -551,25 +551,34 @@ setTimeout(() => {
     scene.add(rim);
 
     const loader = new THREE.GLTFLoader();
-    loader.load(
-      'scene.glb',
-      (gltf) => {
-        towerMesh = gltf.scene;
-        towerMesh.traverse(child => {
-          if (child.isMesh) {
-            child.castShadow    = true;
-            child.receiveShadow = true;
-          }
-        });
-        scene.add(towerMesh);
-        console.log('✅ scene.glb loaded');
-      },
-      (xhr) => {
-        if (xhr.total > 0)
-          console.log('GLB: ' + Math.round(xhr.loaded / xhr.total * 100) + '%');
-      },
-      (err) => { console.error('❌ GLB failed:', err); }
-    );
+
+loader.load(
+  'scene.glb',
+
+  // ✅ Success
+  (gltf) => {
+    scene.add(gltf.scene);
+    window.App.finishLoad(); // now hide the loader
+  },
+
+  // 📊 Progress — wire to the loader bar
+  (xhr) => {
+    if (xhr.lengthComputable) {
+      const pct = Math.round((xhr.loaded / xhr.total) * 100);
+      document.querySelector('.loader-bar').style.width = pct + '%';
+      document.querySelector('.loader-sub').textContent =
+        'Loading Environment — ' + pct + '%';
+    }
+  },
+
+  // ❌ Error — show a message instead of black screen
+  (error) => {
+    console.error('GLB load failed:', error);
+    document.querySelector('.loader-sub').textContent =
+      'Failed to load scene. Please refresh.';
+    document.querySelector('.loader-bar').style.background = '#c0392b';
+  }
+);
   }
 
   // ─── RENDERER ────────────────────────────────────────────────────

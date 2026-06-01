@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BRIGADE-RAPATAKOS — Interactive Experience</title>
   <link rel="icon" href="data:,">
+  <meta name="description" content="Brigade Rapatakos — Explore your future home in an immersive 3D experience." />
+  <meta property="og:title" content="Brigade Rapatakos" />
+  <meta property="og:description" content="Interactive 3D property experience." />
+  <meta property="og:image" content="preview.jpg" />
+  <meta name="theme-color" content="#0d0d0d" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Syne:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
@@ -32,10 +37,10 @@
 <!-- 2. GLTFLoader -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
-<!-- 3. Modules -->
-<script type="module" src="js/firebase-auth.js"></script> 
-<script src="js/home.js"></script>
-<script src="js/floorplan.js"></script>
+<!-- FIX — make all three modules -->
+<script type="module" src="js/firebase-auth.js"></script>
+<script type="module" src="js/home.js"></script>
+<script type="module" src="js/floorplan.js"></script>
 
 <!-- 4. App controller -->
 <script>
@@ -58,14 +63,15 @@ window.App = {
   }, 900);
 },
 
-  navigate(view, opts = {}) {
-    const overlay = document.getElementById('transition-overlay');
-    overlay.classList.add('flash');
-    setTimeout(() => {
-      this._doNavigate(view, opts);
-      overlay.classList.remove('flash');
-    }, 350);
-  },
+  // FIX — wait for the animation to actually finish
+navigate(view, opts = {}) {
+  const overlay = document.getElementById('transition-overlay');
+  overlay.classList.add('flash');
+  overlay.addEventListener('animationend', () => {
+    this._doNavigate(view, opts);
+    overlay.classList.remove('flash');
+  }, { once: true }); // once:true auto-removes the listener
+},
 
   _doNavigate(view, opts) {
     const ur = document.getElementById('unit-row');
