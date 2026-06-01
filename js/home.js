@@ -379,7 +379,6 @@ window.HomeModule = (function () {
   }
 
   // ─── CLOSE ALL MODULES ───────────────────────────────────────────
-  // Returns true if the floorplan was open (so callers can defer follow-up actions)
   function closeAllModules() {
     closeUnitViewer();
 
@@ -388,19 +387,18 @@ window.HomeModule = (function () {
     if (row) row.classList.remove('visible');
     document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
 
-    // AFTER:
-let floorplanWasOpen = false;
-const fpOverlay = document.getElementById('fp-overlay');
-if (fpOverlay) {
-  floorplanWasOpen = fpOverlay.classList.contains('open');
-  fpOverlay.style.pointerEvents = 'none';
-}
-if (window.FloorplanModule && typeof FloorplanModule.close === 'function') {
-  FloorplanModule.close();
-}
-setTimeout(() => {
-  if (fpOverlay) fpOverlay.style.pointerEvents = '';
-}, 420);
+    let floorplanWasOpen = false;
+    const fpOverlay = document.getElementById('fp-overlay');
+    if (fpOverlay) {
+      floorplanWasOpen = fpOverlay.classList.contains('open');
+      fpOverlay.style.pointerEvents = 'none';
+    }
+    if (window.FloorplanModule && typeof FloorplanModule.close === 'function') {
+      FloorplanModule.close();
+    }
+    setTimeout(() => {
+      if (fpOverlay) fpOverlay.style.pointerEvents = '';
+    }, 420);
 
     if (window.GalleryModule && typeof GalleryModule.close === 'function') {
       GalleryModule.close();
@@ -416,7 +414,6 @@ setTimeout(() => {
   // ─── PANEL EVENTS ────────────────────────────────────────────────
   function bindPanelEvents() {
 
-    // Panel slot buttons
     document.querySelectorAll('.panel-slot').forEach(el => {
       el.addEventListener('click', (e) => {
         e.stopPropagation();
@@ -435,15 +432,11 @@ setTimeout(() => {
         el.classList.add('active');
 
         if (slot === '360view') {
-          // Just show the unit sub-panel. No unit auto-loads.
-          // The user picks a unit from the row to open the viewer.
           const open360 = () => {
             unitRowVisible = true;
             const unitRow = document.getElementById('unit-row');
             if (unitRow) unitRow.classList.add('visible');
           };
-          // If floorplan was open, defer until its close animation finishes
-          // so fp-overlay (z-index 200) doesn't sit above the unit row.
           setTimeout(open360, 420);
           return;
         }
@@ -476,22 +469,20 @@ setTimeout(() => {
       });
     });
 
-    // Click outside → collapse everything
-    // NOTE: fp-overlay is intentionally excluded from this guard — panel-slot
-    // clicks already call e.stopPropagation(), so the document listener never
-    // fires for them. Including fp-overlay here previously caused it to swallow
-    // legitimate outside-clicks during its close animation.
+    // FIX 1: Safe null check on fp-overlay — was crashing if fp-overlay
+    // didn't exist yet, breaking ALL click events on the entire page
     document.addEventListener('click', (e) => {
-      const bar     = document.getElementById('bottom-panel');
-      const row     = document.getElementById('unit-row');
-      const overlay = document.getElementById('unit-viewer-overlay');
+      const bar      = document.getElementById('bottom-panel');
+      const row      = document.getElementById('unit-row');
+      const overlay  = document.getElementById('unit-viewer-overlay');
+      const fpOverlay = document.getElementById('fp-overlay'); // safe reference
 
       const clickedOutside =
         bar && row &&
         !bar.contains(e.target) &&
         !row.contains(e.target) &&
-        !(overlay && overlay.contains(e.target)) &&
-        !document.getElementById('fp-overlay').contains(e.target);
+        !(overlay  && overlay.contains(e.target)) &&
+        !(fpOverlay && fpOverlay.contains(e.target)); // FIX: was .contains() with no null check
 
       if (clickedOutside) {
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
@@ -505,7 +496,7 @@ setTimeout(() => {
     function check() {
       const prompt = document.getElementById('rotate-prompt');
       if (!prompt) return;
-      const isMobile  = window.innerWidth <= 900 || 'ontouchstart' in window;
+      const isMobile   = window.innerWidth <= 900 || 'ontouchstart' in window;
       const isPortrait = window.innerHeight > window.innerWidth;
       prompt.classList.toggle('show', isMobile && isPortrait);
     }
@@ -552,33 +543,40 @@ setTimeout(() => {
 
     const loader = new THREE.GLTFLoader();
 
-loader.load(
-  'scene.glb',
+    loader.load(
+      'scene.glb',
 
-  // ✅ Success
-  (gltf) => {
-    scene.add(gltf.scene);
-    window.App.finishLoad(); // now hide the loader
-  },
+      // FIX 2: Assign gltf.scene to towerMesh so hover detection and
+      // emissive glow actually work — was always null before
+      (gltf) => {
+        scene.add(gltf.scene);
+        towerMesh = gltf.scene; // FIX: was missing — raycaster was always checking null
+        if (window.App && typeof window.App.finishLoad === 'function') {
+          window.App.finishLoad(); // FIX 3: guard so it only calls if App exists
+        }
+      },
 
-  // 📊 Progress — wire to the loader bar
-  (xhr) => {
-    if (xhr.lengthComputable) {
-      const pct = Math.round((xhr.loaded / xhr.total) * 100);
-      document.querySelector('.loader-bar').style.width = pct + '%';
-      document.querySelector('.loader-sub').textContent =
-        'Loading Environment — ' + pct + '%';
-    }
-  },
+      // Progress — wired to the loader bar
+      (xhr) => {
+        if (xhr.lengthComputable) {
+          const pct = Math.round((xhr.loaded / xhr.total) * 100);
+          const bar = document.querySelector('.loader-bar');
+          const sub = document.querySelector('.loader-sub');
+          if (bar) bar.style.width = pct + '%';
+          if (sub) sub.textContent = 'Loading Environment — ' + pct + '%';
+        }
+      },
 
-  // ❌ Error — show a message instead of black screen
-  (error) => {
-    console.error('GLB load failed:', error);
-    document.querySelector('.loader-sub').textContent =
-      'Failed to load scene. Please refresh.';
-    document.querySelector('.loader-bar').style.background = '#c0392b';
-  }
-);
+      // FIX 4: Added null checks on .loader-bar and .loader-sub so this
+      // doesn't throw if the loader was already removed from the DOM
+      (error) => {
+        console.error('GLB load failed:', error);
+        const sub = document.querySelector('.loader-sub');
+        const bar = document.querySelector('.loader-bar');
+        if (sub) sub.textContent = 'Failed to load scene. Please refresh.';
+        if (bar) bar.style.background = '#c0392b';
+      }
+    );
   }
 
   // ─── RENDERER ────────────────────────────────────────────────────
@@ -644,17 +642,15 @@ loader.load(
 
     canvas.addEventListener('click', () => {
       if (isHoveringTower) {
-        const row = document.getElementById('unit-row');
+        const row     = document.getElementById('unit-row');
         const slot360 = document.querySelector('.panel-slot[data-slot="360view"]');
 
-        // If 360 is already active and open, do nothing
         if (slot360 && slot360.classList.contains('active')) return;
 
         unitRowVisible = true;
         if (row) row.classList.add('visible');
         if (slot360) slot360.classList.add('active');
 
-        // Only set Unit 1 if no unit has been selected yet
         const activeUnit = document.querySelector('.unit-btn.active');
         if (!activeUnit) {
           const firstBtn = document.querySelector('.unit-btn[data-unit="1"]');
