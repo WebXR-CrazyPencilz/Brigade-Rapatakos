@@ -447,7 +447,6 @@ window.FloorplanModule = (function () {
   transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.22,1,0.36,1);
   font-family: 'Syne', sans-serif; overflow: hidden;
       }
-      /* TO: */
       #fp-overlay.open { opacity: 1; pointer-events: all; transform: translateY(0); }
       #fp-overlay.hidden { display: none; }
 
@@ -946,16 +945,25 @@ window.FloorplanModule = (function () {
     });
 
     const img    = document.getElementById('fp-cluster-img');
+    const svg    = document.getElementById('fp-zone-svg');
+    if (!img || !svg) return; // FIX: null safety
     const newSrc = getClusterImage(activeTower, floorParity);
-    document.getElementById('fp-zone-svg').innerHTML = '';
+    svg.innerHTML = '';
     img.classList.add('fading');
+
+    // FIX: capture current tower+parity to guard against race conditions
+    // (user rapidly swapping parity / switching towers)
+    const reqTower  = activeTower;
+    const reqParity = floorParity;
 
     setTimeout(() => {
       let done = false;
       function finish() {
         if (done) return; done = true;
+        // Discard if state changed while loading
+        if (activeTower !== reqTower || floorParity !== reqParity) return;
         img.classList.remove('fading');
-        buildZones(activeTower, floorParity);
+        buildZones(reqTower, reqParity);
       }
       img.onload  = finish;
       img.onerror = () => { img.classList.remove('fading'); };
@@ -980,16 +988,24 @@ window.FloorplanModule = (function () {
     });
 
     const img    = document.getElementById('fp-cluster-img');
+    const svg    = document.getElementById('fp-zone-svg');
+    if (!img || !svg) return; // FIX: null safety
     const newSrc = getClusterImage(towerId, floorParity);
-    document.getElementById('fp-zone-svg').innerHTML = '';
+    svg.innerHTML = '';
     img.classList.add('fading');
+
+    // FIX: capture current tower+parity to guard against race conditions
+    const reqTower  = towerId;
+    const reqParity = floorParity;
 
     setTimeout(() => {
       let done = false;
       function finish() {
         if (done) return; done = true;
+        // Discard if user already drilled to a different tower
+        if (activeTower !== reqTower || floorParity !== reqParity) return;
         img.classList.remove('fading');
-        buildZones(towerId, floorParity);
+        buildZones(reqTower, reqParity);
       }
       img.onload  = finish;
       img.onerror = () => { img.classList.remove('fading'); };
@@ -1128,6 +1144,7 @@ window.FloorplanModule = (function () {
     if (!activeUnit) return;
     const img     = document.getElementById('fp-plan-img');
     const spinner = document.getElementById('fp-spinner');
+    if (!img || !spinner) return; // FIX: null safety
     const src     = unitImagePath(activeUnit, viewMode);
 
     // IK('folder/') with no filename = not set yet
@@ -1137,11 +1154,25 @@ window.FloorplanModule = (function () {
       return;
     }
 
+    // FIX: capture current unit+view so a slow load doesn't apply to
+    // a different unit the user has since navigated to
+    const reqUnit = activeUnit;
+    const reqView = viewMode;
+
     img.classList.add('fading');
     spinner.classList.add('visible');
     setTimeout(() => {
+      // Bail if user navigated away during the fade-out delay
+      if (activeUnit !== reqUnit || viewMode !== reqView) {
+        spinner.classList.remove('visible');
+        return;
+      }
       img.src = src;
-      img.onload  = () => { img.classList.remove('fading'); spinner.classList.remove('visible'); };
+      img.onload  = () => {
+        if (activeUnit !== reqUnit || viewMode !== reqView) return;
+        img.classList.remove('fading');
+        spinner.classList.remove('visible');
+      };
       img.onerror = () => { img.classList.remove('fading'); spinner.classList.remove('visible'); };
     }, 280);
   }
@@ -1294,8 +1325,10 @@ window.FloorplanModule = (function () {
   function goBack() {
     if (level === 2) {
       activeUnit = null;
-      document.getElementById('fp-unit-info').classList.remove('visible');
-      document.getElementById('fp-spinner').classList.remove('visible');
+      const unitInfo = document.getElementById('fp-unit-info');
+      if (unitInfo) unitInfo.classList.remove('visible');
+      const spinner = document.getElementById('fp-spinner');
+      if (spinner) spinner.classList.remove('visible');
       // Reset pinch-zoom when leaving unit panel
       const planImg = document.getElementById('fp-plan-img');
       if (planImg) planImg.style.transform = '';
@@ -1313,6 +1346,7 @@ window.FloorplanModule = (function () {
     const back         = document.getElementById('fp-back');
     const parityToggle = document.getElementById('fp-parity-toggle');
     const viewToggle   = document.getElementById('fp-view-toggle');
+    if (!back || !parityToggle || !viewToggle) return; // FIX: null safety
 
     if (level === 0) {
       back.classList.remove('visible');
@@ -1333,12 +1367,13 @@ window.FloorplanModule = (function () {
   function open(floorNum) {
     if (overlayOpen) return;
     overlayOpen = true;
+
     // Restore pointer-events that close() disabled, so the overlay is interactive.
     const fpOverlay = document.getElementById('fp-overlay');
-if (fpOverlay) {
-  fpOverlay.classList.remove('hidden');  // ← ADD THIS
-  fpOverlay.style.pointerEvents = '';
-}
+    if (!fpOverlay) return; // FIX: null safety — bail if injectHTML never ran
+    fpOverlay.classList.remove('hidden');
+    fpOverlay.style.pointerEvents = '';
+
     // Cancel any pending close→reset so it doesn't wipe state after we open.
     clearTimeout(_closeResetTimer);
     // NOTE: level/activeTower/activeUnit are NOT reset here.
@@ -1352,7 +1387,7 @@ if (fpOverlay) {
     showPanel('fp-panel-sitemap', 'forward');
     updateTopbar();
     updateTitle();
-    document.getElementById('fp-overlay').classList.add('open');
+    fpOverlay.classList.add('open');
     buildSitemapTiles();
     setTimeout(() => buildSitemapTiles(), 420);
   }
@@ -1366,23 +1401,28 @@ if (fpOverlay) {
     // sequence never fires a stale resetToSitemap() mid-session.
     clearTimeout(_closeResetTimer);
     const overlay = document.getElementById('fp-overlay');
+    if (!overlay) return; // FIX: null safety — was crashing if init() never ran
     overlay.classList.remove('open');
     overlay.style.pointerEvents = 'none';
     _closeResetTimer = setTimeout(() => {
-  if (!overlayOpen) {
-    resetToSitemap();
-    overlay.classList.add('hidden');  // ← ADD THIS
-  }
-}, 420);
+      if (!overlayOpen) {
+        resetToSitemap();
+        if (overlay) overlay.classList.add('hidden');
+      }
+    }, 420);
   }
 
   // ─── BIND EVENTS ─────────────────────────────────────────────
   function bindEvents() {
-    document.getElementById('fp-close').addEventListener('click', close);
-    document.getElementById('fp-back').addEventListener('click', goBack);
+    const closeBtn = document.getElementById('fp-close');
+    const backBtn  = document.getElementById('fp-back');
+    if (!closeBtn || !backBtn) return; // FIX: null safety — bail if HTML wasn't injected
+
+    closeBtn.addEventListener('click', close);
+    backBtn.addEventListener('click', goBack);
 
     // Touch on back button — instant response
-    document.getElementById('fp-back').addEventListener('touchend', (e) => {
+    backBtn.addEventListener('touchend', (e) => {
       e.preventDefault();
       goBack();
     });
