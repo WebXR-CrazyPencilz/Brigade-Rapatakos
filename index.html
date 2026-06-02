@@ -13,6 +13,213 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Syne:wght@400;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
+
+  <style>
+    /* ─── ENQUIRY BUTTON ─── */
+    #enquiry-btn {
+      position: fixed;
+      bottom: 32px;
+      right: 32px;
+      z-index: 8000;
+      background: linear-gradient(135deg, #c9a96e 0%, #a07840 100%);
+      color: #0d0d0d;
+      font-family: 'Syne', sans-serif;
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      border: none;
+      border-radius: 2px;
+      padding: 14px 28px;
+      cursor: pointer;
+      box-shadow: 0 8px 32px rgba(201,169,110,0.35);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    #enquiry-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 40px rgba(201,169,110,0.5);
+    }
+
+    /* ─── MODAL OVERLAY ─── */
+    #zoho-modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(5, 5, 8, 0.85);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      z-index: 9000;
+      justify-content: center;
+      align-items: center;
+      animation: overlayIn 0.3s ease;
+    }
+    #zoho-modal-overlay.open {
+      display: flex;
+    }
+    @keyframes overlayIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    /* ─── MODAL BOX ─── */
+    #zoho-modal-box {
+      background: #111114;
+      border: 1px solid rgba(201,169,110,0.25);
+      border-radius: 4px;
+      width: 100%;
+      max-width: 480px;
+      margin: 20px;
+      padding: 40px 36px 36px;
+      position: relative;
+      animation: modalIn 0.35s cubic-bezier(0.22,1,0.36,1);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+    }
+    @keyframes modalIn {
+      from { opacity: 0; transform: translateY(24px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    /* ─── CLOSE BUTTON ─── */
+    #zoho-modal-close {
+      position: absolute;
+      top: 16px;
+      right: 18px;
+      background: none;
+      border: none;
+      color: rgba(255,255,255,0.4);
+      font-size: 22px;
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.2s;
+      font-family: 'Syne', sans-serif;
+    }
+    #zoho-modal-close:hover { color: #c9a96e; }
+
+    /* ─── MODAL HEADER ─── */
+    .zoho-modal-eyebrow {
+      font-family: 'Syne', sans-serif;
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: #c9a96e;
+      margin-bottom: 8px;
+    }
+    .zoho-modal-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 28px;
+      font-weight: 300;
+      color: #f0ece4;
+      margin-bottom: 6px;
+      line-height: 1.2;
+    }
+    .zoho-modal-subtitle {
+      font-family: 'Syne', sans-serif;
+      font-size: 11px;
+      color: rgba(255,255,255,0.38);
+      letter-spacing: 0.04em;
+      margin-bottom: 28px;
+    }
+
+    /* ─── OVERRIDE ZOHO FORM STYLES ─── */
+    #crmWebToEntityForm {
+      background: transparent !important;
+      color: #f0ece4 !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+    }
+    #crmWebToEntityForm * {
+      box-sizing: border-box;
+    }
+    .zcwf_title {
+      display: none !important; /* we have our own title */
+    }
+    .zcwf_lblLeft .zcwf_row {
+      margin: 0 0 16px 0 !important;
+    }
+    .zcwf_lblLeft .zcwf_col_lab {
+      width: 100% !important;
+      float: none !important;
+      margin: 0 0 5px 0 !important;
+      font-family: 'Syne', sans-serif !important;
+      font-size: 10px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.15em !important;
+      text-transform: uppercase !important;
+      color: rgba(255,255,255,0.45) !important;
+    }
+    .zcwf_lblLeft .zcwf_col_fld {
+      width: 100% !important;
+      float: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .zcwf_lblLeft .zcwf_col_fld input[type=text],
+    .zcwf_lblLeft .zcwf_col_fld textarea {
+      width: 100% !important;
+      background: rgba(255,255,255,0.05) !important;
+      border: 1px solid rgba(255,255,255,0.12) !important;
+      border-radius: 2px !important;
+      color: #f0ece4 !important;
+      font-family: 'Syne', sans-serif !important;
+      font-size: 13px !important;
+      padding: 11px 14px !important;
+      outline: none !important;
+      transition: border-color 0.2s !important;
+      float: none !important;
+    }
+    .zcwf_lblLeft .zcwf_col_fld input[type=text]:focus,
+    .zcwf_lblLeft .zcwf_col_fld textarea:focus {
+      border-color: rgba(201,169,110,0.6) !important;
+      background: rgba(201,169,110,0.05) !important;
+    }
+    .zcwf_lblLeft .zcwf_col_fld input[type=text]::placeholder {
+      color: rgba(255,255,255,0.2) !important;
+    }
+
+    /* Submit & Reset buttons */
+    .formsubmit.zcwf_button {
+      width: 100% !important;
+      padding: 14px !important;
+      background: linear-gradient(135deg, #c9a96e 0%, #a07840 100%) !important;
+      color: #0d0d0d !important;
+      font-family: 'Syne', sans-serif !important;
+      font-size: 11px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.15em !important;
+      text-transform: uppercase !important;
+      border: none !important;
+      border-radius: 2px !important;
+      cursor: pointer !important;
+      margin-top: 4px !important;
+      transition: opacity 0.2s !important;
+      box-shadow: 0 4px 20px rgba(201,169,110,0.3) !important;
+    }
+    .formsubmit.zcwf_button:hover { opacity: 0.88 !important; }
+
+    .zcwf_button[name="reset"] {
+      display: none !important; /* hide reset button for cleaner UI */
+    }
+
+    /* Splash success message */
+    .wf_customMessageBox {
+      font-family: 'Syne', sans-serif !important;
+      font-size: 13px !important;
+    }
+
+    /* ─── MOBILE ─── */
+    @media (max-width: 500px) {
+      #enquiry-btn {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        font-size: 11px;
+      }
+      #zoho-modal-box {
+        padding: 32px 22px 28px;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -31,6 +238,199 @@
   <canvas id="three-canvas"></canvas>
 </div>
 
+<!-- ═══════════════════════════════════════════
+     ENQUIRY BUTTON (fixed bottom-right)
+════════════════════════════════════════════ -->
+<button id="enquiry-btn" onclick="openZohoForm()">Enquire Now</button>
+
+<!-- ═══════════════════════════════════════════
+     ZOHO CRM MODAL
+════════════════════════════════════════════ -->
+<div id="zoho-modal-overlay" onclick="handleOverlayClick(event)">
+  <div id="zoho-modal-box">
+
+    <!-- Close -->
+    <button id="zoho-modal-close" onclick="closeZohoForm()" aria-label="Close">&#x2715;</button>
+
+    <!-- Header -->
+    <div class="zoho-modal-eyebrow">Brigade Rapatakos</div>
+    <div class="zoho-modal-title">Register Your Interest</div>
+    <div class="zoho-modal-subtitle">Our team will reach out to you shortly.</div>
+
+    <!-- ── ZOHO WEBFORM (source code pasted here) ── -->
+    <div id='crmWebToEntityForm' class='zcwf_lblLeft crmWebToEntityForm' style='background-color: transparent; color: #f0ece4; max-width: 100%;'>
+      <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+      <META HTTP-EQUIV='content-type' CONTENT='text/html;charset=UTF-8'>
+
+      <div class='wf_customMessageBox' id='wf_splash' style='display:none'>
+        <div class='wf_customCircle'>
+          <div class='wf_customCheckMark'></div>
+        </div>
+        <span id='wf_splash_info'></span>
+      </div>
+
+      <form id='webform1309230000000456421' name='WebToLeads1309230000000456421' accept-charset='UTF-8'>
+        <input type='text' style='display:none;' name='xnQsjsdp' value='e0c3ec302d9fa6847ce2459c42ea233e58dae8f6233205eb92e7841f52c63f82'/>
+        <input type='hidden' name='zc_gad' id='zc_gad' value=''/>
+        <input type='text' style='display:none;' name='xmIwtLD' value='a84f15d9b9013676ee0ea144590a809f799b588a6fb0215a7a8c5d7791e2ae4d3beba3d2f5d7a5c5a0d76293ec81e400'/>
+        <input type='text' style='display:none;' name='actionType' value='TGVhZHM='/>
+        <input type='text' style='display:none;' name='returnURL' value='null'/>
+
+        <!-- First Name -->
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab' style='font-size:12px; font-family:Arial;'>
+            <label for='First_Name'>First Name</label>
+          </div>
+          <div class='zcwf_col_fld'>
+            <input type='text' id='First_Name' aria-label='First Name' name='First Name' maxlength='40' placeholder='First name'/>
+            <div class='zcwf_col_help'></div>
+          </div>
+        </div>
+
+        <!-- Last Name -->
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab' style='font-size:12px; font-family:Arial;'>
+            <label for='Last_Name'>Last Name <span style='color:#c9a96e;'>*</span></label>
+          </div>
+          <div class='zcwf_col_fld'>
+            <input type='text' id='Last_Name' aria-required='true' aria-label='Last Name' name='Last Name' maxlength='80' placeholder='Last name'/>
+            <div class='zcwf_col_help'></div>
+          </div>
+        </div>
+
+        <!-- Phone -->
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab' style='font-size:12px; font-family:Arial;'>
+            <label for='Phone'>Phone</label>
+          </div>
+          <div class='zcwf_col_fld'>
+            <input type='text' id='Phone' aria-label='Phone' name='Phone' maxlength='30' placeholder='+91 00000 00000'/>
+            <div class='zcwf_col_help'></div>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab' style='font-size:12px; font-family:Arial;'>
+            <label for='Email'>Email</label>
+          </div>
+          <div class='zcwf_col_fld'>
+            <input type='text' ftype='email' autocomplete='false' id='Email' aria-label='Email' name='Email' maxlength='100' placeholder='your@email.com'/>
+            <div class='zcwf_col_help'></div>
+          </div>
+        </div>
+
+        <!-- City -->
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab' style='font-size:12px; font-family:Arial;'>
+            <label for='Address_-_City'>City</label>
+          </div>
+          <div class='zcwf_col_fld'>
+            <input type='text' id='Address_-_City' aria-label='Address - City' name='Address - City' maxlength='255' placeholder='Your city'/>
+            <div class='zcwf_col_help'></div>
+          </div>
+        </div>
+
+        <input type='text' style='display:none;' name='aG9uZXlwb3Q' value=''/>
+
+        <!-- Submit -->
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab'></div>
+          <div class='zcwf_col_fld'>
+            <input type='submit' id='formsubmit' role='button' class='formsubmit zcwf_button' value='Submit Enquiry' aria-label='Submit'/>
+            <input type='reset' class='zcwf_button' name='reset' value='Reset' aria-label='Reset'/>
+          </div>
+        </div>
+
+        <script>
+          function validateEmail1309230000000456421(){
+            var form = document.forms['WebToLeads1309230000000456421'];
+            var emailFld = form.querySelectorAll('[ftype=email]');
+            for(var i=0;i<emailFld.length;i++){
+              var emailVal = emailFld[i].value;
+              if((emailVal.replace(/^\s+|\s+$/g,'')).length!=0){
+                var atpos=emailVal.indexOf('@');
+                var dotpos=emailVal.lastIndexOf('.');
+                if(atpos<1||dotpos<atpos+2||dotpos+2>=emailVal.length){
+                  alert('Please enter a valid email address.');
+                  emailFld[i].focus();
+                  return false;
+                }
+              }
+            }
+            return true;
+          }
+
+          function checkMandatory1309230000000456421(){
+            var mndFileds=['Last Name'];
+            var fldLangVal=['Last Name'];
+            for(var i=0;i<mndFileds.length;i++){
+              var fieldObj=document.forms['WebToLeads1309230000000456421'][mndFileds[i]];
+              if(fieldObj){
+                if(((fieldObj.value).replace(/^\s+|\s+$/g,'')).length==0){
+                  alert(fldLangVal[i]+' cannot be empty.');
+                  fieldObj.focus();
+                  return false;
+                }
+              }
+            }
+            if(!validateEmail1309230000000456421()) return false;
+            document.querySelector('.crmWebToEntityForm .formsubmit').setAttribute('disabled',true);
+          }
+
+          function captchaFailedHandling1309230000000456421(message){
+            var capErr=document.getElementById('captchaErr1309230000000456421');
+            if(capErr){ capErr.innerHTML=message; capErr.style.visibility='visible'; setTimeout(function(){capErr.style.visibility='hidden';},5000); }
+          }
+
+          document.getElementById('webform1309230000000456421').addEventListener('submit',function(e){
+            var ismandatory=checkMandatory1309230000000456421();
+            e.preventDefault();
+            if(ismandatory===undefined||ismandatory){
+              var formData=new FormData(this);
+              fetch('https://crm.zoho.in/crm/WebToLeadForm',{
+                method:'POST',body:formData,cache:'no-cache'
+              }).then(function(response){
+                var ct=response.headers.get('Content-Type');
+                return ct&&ct.includes('application/json')?response.json():response.text();
+              }).then(function(data){
+                if(typeof data==='object'){
+                  if(data.actionsubmit==='Splash Message'){
+                    if(data.invalidCaptcha&&data.invalidCaptcha==='true'){
+                      captchaFailedHandling1309230000000456421(data.actionvalue);
+                    } else {
+                      var splashinfodom=document.getElementById('wf_splash_info');
+                      splashinfodom.innerText=data.actionvalue||'Thank you! We will be in touch shortly.';
+                      var splashdom=document.getElementById('wf_splash');
+                      document.getElementById('webform1309230000000456421').reset.click();
+                      splashdom.style.display='';
+                      setTimeout(function(){ splashdom.style.display='none'; closeZohoForm(); },4000);
+                    }
+                  } else if(data.actionsubmit==='redirect_url'){
+                    window.location.assign(data.redirectUrl);
+                  } else if(data.actionsubmit==='error_msg'){
+                    alert(data.message);
+                  }
+                } else {
+                  document.write(data);
+                }
+                var formDom=document.querySelector('.crmWebToEntityForm .formsubmit');
+                if(formDom) formDom.removeAttribute('disabled');
+              }).catch(function(){
+                alert('An error occurred. Please try again.');
+                var formDom=document.querySelector('.crmWebToEntityForm .formsubmit');
+                if(formDom) formDom.removeAttribute('disabled');
+              });
+            }
+          });
+        </script>
+      </form>
+    </div>
+    <!-- ── END ZOHO WEBFORM ── -->
+
+  </div>
+</div>
+
 <!-- 1. Three.js core -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
@@ -45,6 +445,31 @@
 <!-- 4. App controller -->
 <script>
 
+/* ─── ZOHO MODAL CONTROLS ─── */
+function openZohoForm() {
+  var overlay = document.getElementById('zoho-modal-overlay');
+  overlay.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeZohoForm() {
+  var overlay = document.getElementById('zoho-modal-overlay');
+  overlay.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function handleOverlayClick(e) {
+  if (e.target === document.getElementById('zoho-modal-overlay')) {
+    closeZohoForm();
+  }
+}
+
+/* ─── ESC key closes modal ─── */
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') closeZohoForm();
+});
+
+/* ─── APP CONTROLLER ─── */
 window.App = {
   currentView: 'home',
   previousView: null,
@@ -53,25 +478,23 @@ window.App = {
     setTimeout(() => this.finishLoad(), 2400);
   },
 
- finishLoad() {
-  const loader = document.getElementById('loader');
-  loader.classList.add('fade-out');
-  setTimeout(() => {
-    loader.style.display = 'none';
-    document.getElementById('home-view').classList.add('active');
-    // HomeModule.init() removed — firebase-auth.js handles this after login
-  }, 900);
-},
+  finishLoad() {
+    const loader = document.getElementById('loader');
+    loader.classList.add('fade-out');
+    setTimeout(() => {
+      loader.style.display = 'none';
+      document.getElementById('home-view').classList.add('active');
+    }, 900);
+  },
 
-  // FIX — wait for the animation to actually finish
-navigate(view, opts = {}) {
-  const overlay = document.getElementById('transition-overlay');
-  overlay.classList.add('flash');
-  overlay.addEventListener('animationend', () => {
-    this._doNavigate(view, opts);
-    overlay.classList.remove('flash');
-  }, { once: true }); // once:true auto-removes the listener
-},
+  navigate(view, opts = {}) {
+    const overlay = document.getElementById('transition-overlay');
+    overlay.classList.add('flash');
+    overlay.addEventListener('animationend', () => {
+      this._doNavigate(view, opts);
+      overlay.classList.remove('flash');
+    }, { once: true });
+  },
 
   _doNavigate(view, opts) {
     const ur = document.getElementById('unit-row');
@@ -97,7 +520,6 @@ navigate(view, opts = {}) {
   goBack() {
     this.navigate(this.previousView || 'home');
   }
-
 };
 
 App.init();
