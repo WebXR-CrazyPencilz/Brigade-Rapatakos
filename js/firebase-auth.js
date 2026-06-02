@@ -75,13 +75,29 @@ const SHEETS_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyZimItfRFOe
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-const firebaseApp = initializeApp(firebaseConfig);
-const auth        = getAuth(firebaseApp);
-const db          = getFirestore(firebaseApp);
-const provider    = new GoogleAuthProvider();
+let firebaseApp, auth, db, provider;
 
-// Always prompt account chooser even if only one account is signed in
-provider.setCustomParameters({ prompt: 'select_account' });
+try {
+  firebaseApp = initializeApp(firebaseConfig);
+  auth        = getAuth(firebaseApp);
+  db          = getFirestore(firebaseApp);
+  provider    = new GoogleAuthProvider();
+
+  // Always prompt account chooser even if only one account is signed in
+  provider.setCustomParameters({ prompt: 'select_account' });
+} catch (err) {
+  // If Firebase fails to initialize, show a useful error instead of a black page
+  console.error('❌ Firebase initialization failed:', err);
+  document.addEventListener('DOMContentLoaded', () => {
+    document.body.innerHTML =
+      '<div style="position:fixed;inset:0;display:flex;align-items:center;justify-content:center;' +
+      'background:#0a0805;color:rgba(200,190,154,.65);font-family:sans-serif;font-size:14px;' +
+      'text-align:center;padding:24px;">' +
+      'Unable to load. Please refresh or try again later.' +
+      '</div>';
+  });
+  throw err; // halt the rest of the module
+}
 
 
 // ─── HELPERS — DETECT DEVICE & BROWSER ───────────────────────────────────────
@@ -166,9 +182,14 @@ async function sendToSheets(payload) {
 
 // ─── START APP ────────────────────────────────────────────────────────────────
 // Called after successful login OR if user is already signed in on page load.
+// Guarded so that if onAuthStateChanged fires more than once in a session
+// (e.g. token refresh, sign-out then sign-in), the app doesn't re-init twice.
+let _appStarted = false;
 function startApp() {
-  if (window.HomeModule)      HomeModule.init();
-  if (window.FloorplanModule) FloorplanModule.init();
+  if (_appStarted) return;
+  _appStarted = true;
+  if (window.HomeModule      && typeof HomeModule.init === 'function')      HomeModule.init();
+  if (window.FloorplanModule && typeof FloorplanModule.init === 'function') FloorplanModule.init();
 }
 
 
@@ -394,7 +415,8 @@ function injectLoginUI() {
     </div>
   `);
 
-  document.getElementById('auth-google-btn').addEventListener('click', triggerLogin);
+  const googleBtn = document.getElementById('auth-google-btn');
+  if (googleBtn) googleBtn.addEventListener('click', triggerLogin);
 }
 
 
@@ -413,6 +435,7 @@ async function triggerLogin() {
   const status  = document.getElementById('auth-status');
   const spinner = document.getElementById('auth-spinner');
   const btnText = document.getElementById('auth-btn-text');
+  if (!btn || !status || !spinner || !btnText) return; // safety: UI was removed
 
   // Loading state
   btn.disabled = true;
@@ -446,12 +469,17 @@ async function triggerLogin() {
     // popup_closed_by_user is not really an error — user just closed the popup
     if (err.code === 'auth/popup-closed-by-user') {
       status.textContent = 'Sign-in cancelled — try again';
+    } else if (err.code === 'auth/popup-blocked') {
+      status.textContent = 'Pop-up blocked — please allow pop-ups and retry';
+    } else if (err.code === 'auth/network-request-failed') {
+      status.textContent = 'Network error — check your connection';
     } else {
       status.textContent = 'Something went wrong — please try again';
       console.error('❌ Login error:', err.code, err.message);
     }
 
     // Reset button
+    status.classList.remove('success');
     btn.disabled         = false;
     spinner.classList.remove('on');
     btnText.textContent  = 'Continue with Google';
