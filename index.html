@@ -33,7 +33,14 @@
       padding: 14px 28px;
       cursor: pointer;
       box-shadow: 0 8px 32px rgba(201,169,110,0.35);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.5s ease;
+      /* Hidden until 3D scene is ready */
+      opacity: 0;
+      pointer-events: none;
+    }
+    #enquiry-btn.visible {
+      opacity: 1;
+      pointer-events: auto;
     }
     #enquiry-btn:hover {
       transform: translateY(-2px);
@@ -437,8 +444,7 @@
 <!-- 2. GLTFLoader -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
-<!-- FIX — make all three modules -->
-<script type="module" src="js/firebase-auth.js"></script>
+<!-- App modules -->
 <script type="module" src="js/home.js"></script>
 <script type="module" src="js/floorplan.js"></script>
 
@@ -484,6 +490,10 @@ window.App = {
     setTimeout(() => {
       loader.style.display = 'none';
       document.getElementById('home-view').classList.add('active');
+      // Show Enquire Now button after 3D scene is visible
+      setTimeout(() => {
+        document.getElementById('enquiry-btn').classList.add('visible');
+      }, 800);
     }, 900);
   },
 
