@@ -11,149 +11,110 @@
   <meta property="og:image" content="preview.jpg" />
   <meta name="theme-color" content="#0d0d0d" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500&family=Syne:wght@400;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Syne:wght@400;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 
   <style>
-    /* ─── ENQUIRY BUTTON ─── */
-    #enquiry-btn {
+    /* ═══════════════════════════════════════
+       ZOHO GATE SCREEN  (fullscreen, z:9999)
+       Shows BEFORE the 3D scene loads
+    ═══════════════════════════════════════ */
+    #zoho-gate {
       position: fixed;
-      bottom: 32px;
-      right: 32px;
-      z-index: 8000;
-      background: linear-gradient(135deg, #c9a96e 0%, #a07840 100%);
-      color: #0d0d0d;
-      font-family: 'Syne', sans-serif;
-      font-size: 13px;
-      font-weight: 700;
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      border: none;
-      border-radius: 2px;
-      padding: 14px 28px;
-      cursor: pointer;
-      box-shadow: 0 8px 32px rgba(201,169,110,0.35);
-      transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.5s ease;
-      /* Hidden until 3D scene is ready */
+      inset: 0;
+      z-index: 9999;
+      background: #0a0805;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+      transition: opacity 0.65s ease;
+    }
+    #zoho-gate.fade-out {
       opacity: 0;
       pointer-events: none;
     }
-    #enquiry-btn.visible {
-      opacity: 1;
-      pointer-events: auto;
-    }
-    #enquiry-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 40px rgba(201,169,110,0.5);
-    }
 
-    /* ─── MODAL OVERLAY ─── */
-    #zoho-modal-overlay {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(5, 5, 8, 0.85);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-      z-index: 9000;
-      justify-content: center;
-      align-items: center;
-      animation: overlayIn 0.3s ease;
-    }
-    #zoho-modal-overlay.open {
-      display: flex;
-    }
-    @keyframes overlayIn {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-    }
-
-    /* ─── MODAL BOX ─── */
-    #zoho-modal-box {
-      background: #111114;
-      border: 1px solid rgba(201,169,110,0.25);
-      border-radius: 4px;
-      width: 100%;
-      max-width: 480px;
-      margin: 20px;
-      padding: 40px 36px 36px;
-      position: relative;
-      animation: modalIn 0.35s cubic-bezier(0.22,1,0.36,1);
-      box-shadow: 0 32px 80px rgba(0,0,0,0.7);
-    }
-    @keyframes modalIn {
-      from { opacity: 0; transform: translateY(24px) scale(0.97); }
-      to   { opacity: 1; transform: translateY(0) scale(1); }
-    }
-
-    /* ─── CLOSE BUTTON ─── */
-    #zoho-modal-close {
+    /* Grain overlay */
+    #zoho-gate::before {
+      content: '';
       position: absolute;
-      top: 16px;
-      right: 18px;
-      background: none;
-      border: none;
-      color: rgba(255,255,255,0.4);
-      font-size: 22px;
-      cursor: pointer;
-      line-height: 1;
-      transition: color 0.2s;
-      font-family: 'Syne', sans-serif;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-size: 200px;
+      pointer-events: none;
+      opacity: 0.4;
     }
-    #zoho-modal-close:hover { color: #c9a96e; }
 
-    /* ─── MODAL HEADER ─── */
-    .zoho-modal-eyebrow {
+    /* Card */
+    #zoho-gate-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 440px;
+      margin: 40px 20px;
+      padding: 44px 40px 40px;
+      background: rgba(255,255,255,0.025);
+      border: 1px solid rgba(200,190,154,0.18);
+      border-radius: 4px;
+      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+      box-sizing: border-box;
+    }
+
+    /* Logo / Header */
+    .gate-logo {
+      font-family: 'Syne', sans-serif;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: 0.32em;
+      text-transform: uppercase;
+      color: rgba(200,190,154,0.5);
+      margin-bottom: 10px;
+    }
+    .gate-title {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 30px;
+      font-weight: 300;
+      color: rgba(240,236,228,0.95);
+      line-height: 1.2;
+      margin-bottom: 6px;
+    }
+    .gate-subtitle {
       font-family: 'Syne', sans-serif;
       font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: #c9a96e;
-      margin-bottom: 8px;
+      color: rgba(200,190,154,0.4);
+      letter-spacing: 0.08em;
+      margin-bottom: 32px;
     }
-    .zoho-modal-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 28px;
-      font-weight: 300;
-      color: #f0ece4;
-      margin-bottom: 6px;
-      line-height: 1.2;
-    }
-    .zoho-modal-subtitle {
-      font-family: 'Syne', sans-serif;
-      font-size: 11px;
-      color: rgba(255,255,255,0.38);
-      letter-spacing: 0.04em;
+    .gate-rule {
+      width: 40px;
+      height: 1px;
+      background: linear-gradient(to right, transparent, rgba(200,190,154,0.45), transparent);
       margin-bottom: 28px;
     }
 
-    /* ─── OVERRIDE ZOHO FORM STYLES ─── */
+    /* ── Zoho form field overrides ── */
     #crmWebToEntityForm {
       background: transparent !important;
-      color: #f0ece4 !important;
+      color: rgba(240,236,228,0.9) !important;
       max-width: 100% !important;
       padding: 0 !important;
     }
-    #crmWebToEntityForm * {
-      box-sizing: border-box;
-    }
-    .zcwf_title {
-      display: none !important; /* we have our own title */
-    }
-    .zcwf_lblLeft .zcwf_row {
-      margin: 0 0 16px 0 !important;
-    }
+    .zcwf_title { display: none !important; }
+
+    .zcwf_lblLeft .zcwf_row { margin: 0 0 18px 0 !important; }
+
     .zcwf_lblLeft .zcwf_col_lab {
       width: 100% !important;
       float: none !important;
-      margin: 0 0 5px 0 !important;
+      margin: 0 0 6px 0 !important;
       font-family: 'Syne', sans-serif !important;
-      font-size: 10px !important;
+      font-size: 9.5px !important;
       font-weight: 700 !important;
-      letter-spacing: 0.15em !important;
+      letter-spacing: 0.18em !important;
       text-transform: uppercase !important;
-      color: rgba(255,255,255,0.45) !important;
+      color: rgba(200,190,154,0.45) !important;
     }
     .zcwf_lblLeft .zcwf_col_fld {
       width: 100% !important;
@@ -164,67 +125,76 @@
     .zcwf_lblLeft .zcwf_col_fld input[type=text],
     .zcwf_lblLeft .zcwf_col_fld textarea {
       width: 100% !important;
-      background: rgba(255,255,255,0.05) !important;
-      border: 1px solid rgba(255,255,255,0.12) !important;
-      border-radius: 2px !important;
-      color: #f0ece4 !important;
+      background: rgba(200,190,154,0.05) !important;
+      border: 1px solid rgba(200,190,154,0.18) !important;
+      border-radius: 3px !important;
+      color: rgba(240,236,228,0.9) !important;
       font-family: 'Syne', sans-serif !important;
       font-size: 13px !important;
-      padding: 11px 14px !important;
+      padding: 12px 14px !important;
       outline: none !important;
-      transition: border-color 0.2s !important;
+      transition: border-color 0.2s, background 0.2s !important;
       float: none !important;
+      box-sizing: border-box !important;
     }
     .zcwf_lblLeft .zcwf_col_fld input[type=text]:focus,
     .zcwf_lblLeft .zcwf_col_fld textarea:focus {
-      border-color: rgba(201,169,110,0.6) !important;
-      background: rgba(201,169,110,0.05) !important;
+      border-color: rgba(200,190,154,0.55) !important;
+      background: rgba(200,190,154,0.08) !important;
     }
     .zcwf_lblLeft .zcwf_col_fld input[type=text]::placeholder {
-      color: rgba(255,255,255,0.2) !important;
+      color: rgba(200,190,154,0.22) !important;
     }
 
-    /* Submit & Reset buttons */
+    /* Submit button */
     .formsubmit.zcwf_button {
       width: 100% !important;
       padding: 14px !important;
       background: linear-gradient(135deg, #c9a96e 0%, #a07840 100%) !important;
-      color: #0d0d0d !important;
+      color: #0a0805 !important;
       font-family: 'Syne', sans-serif !important;
-      font-size: 11px !important;
+      font-size: 10.5px !important;
       font-weight: 700 !important;
-      letter-spacing: 0.15em !important;
+      letter-spacing: 0.18em !important;
       text-transform: uppercase !important;
       border: none !important;
-      border-radius: 2px !important;
+      border-radius: 3px !important;
       cursor: pointer !important;
-      margin-top: 4px !important;
-      transition: opacity 0.2s !important;
-      box-shadow: 0 4px 20px rgba(201,169,110,0.3) !important;
+      margin-top: 6px !important;
+      transition: opacity 0.2s, transform 0.2s !important;
+      box-shadow: 0 4px 20px rgba(201,169,110,0.25) !important;
     }
-    .formsubmit.zcwf_button:hover { opacity: 0.88 !important; }
-
-    .zcwf_button[name="reset"] {
-      display: none !important; /* hide reset button for cleaner UI */
+    .formsubmit.zcwf_button:hover {
+      opacity: 0.88 !important;
+      transform: translateY(-1px) !important;
     }
+    .zcwf_button[name="reset"] { display: none !important; }
 
-    /* Splash success message */
+    /* Skip link */
+    #gate-skip {
+      margin-top: 22px;
+      font-family: 'Syne', sans-serif;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      color: rgba(200,190,154,0.25);
+      text-align: center;
+      cursor: pointer;
+      transition: color 0.2s;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    #gate-skip:hover { color: rgba(200,190,154,0.5); }
+
+    /* Success message */
     .wf_customMessageBox {
       font-family: 'Syne', sans-serif !important;
-      font-size: 13px !important;
+      font-size: 12px !important;
     }
 
-    /* ─── MOBILE ─── */
-    @media (max-width: 500px) {
-      #enquiry-btn {
-        bottom: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        font-size: 11px;
-      }
-      #zoho-modal-box {
-        padding: 32px 22px 28px;
-      }
+    /* Mobile */
+    @media (max-width: 480px) {
+      #zoho-gate-card { padding: 36px 24px 32px; margin: 24px 16px; }
+      .gate-title { font-size: 26px; }
     }
   </style>
 </head>
@@ -245,34 +215,23 @@
   <canvas id="three-canvas"></canvas>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     ENQUIRY BUTTON (fixed bottom-right)
-════════════════════════════════════════════ -->
-<button id="enquiry-btn" onclick="openZohoForm()">Enquire Now</button>
+<!-- ═══════════════════════════════════════════════════════
+     ZOHO GATE — Fullscreen form shown BEFORE 3D loads
+     Same pattern as the old Firebase login screen.
+     After submit (or skip) → startApp() fires.
+════════════════════════════════════════════════════════ -->
+<div id="zoho-gate">
+  <div id="zoho-gate-card">
 
-<!-- ═══════════════════════════════════════════
-     ZOHO CRM MODAL
-════════════════════════════════════════════ -->
-<div id="zoho-modal-overlay" onclick="handleOverlayClick(event)">
-  <div id="zoho-modal-box">
+    <div class="gate-logo">Brigade Rapatakos</div>
+    <div class="gate-title">Register Your Interest</div>
+    <div class="gate-subtitle">Enter your details to begin the experience</div>
+    <div class="gate-rule"></div>
 
-    <!-- Close -->
-    <button id="zoho-modal-close" onclick="closeZohoForm()" aria-label="Close">&#x2715;</button>
-
-    <!-- Header -->
-    <div class="zoho-modal-eyebrow">Brigade Rapatakos</div>
-    <div class="zoho-modal-title">Register Your Interest</div>
-    <div class="zoho-modal-subtitle">Our team will reach out to you shortly.</div>
-
-    <!-- ── ZOHO WEBFORM (source code pasted here) ── -->
-    <div id='crmWebToEntityForm' class='zcwf_lblLeft crmWebToEntityForm' style='background-color: transparent; color: #f0ece4; max-width: 100%;'>
-      <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-      <META HTTP-EQUIV='content-type' CONTENT='text/html;charset=UTF-8'>
-
+    <!-- ZOHO WEBFORM -->
+    <div id='crmWebToEntityForm' class='zcwf_lblLeft crmWebToEntityForm' style='background:transparent;'>
       <div class='wf_customMessageBox' id='wf_splash' style='display:none'>
-        <div class='wf_customCircle'>
-          <div class='wf_customCheckMark'></div>
-        </div>
+        <div class='wf_customCircle'><div class='wf_customCheckMark'></div></div>
         <span id='wf_splash_info'></span>
       </div>
 
@@ -285,56 +244,41 @@
 
         <!-- First Name -->
         <div class='zcwf_row'>
-          <div class='zcwf_col_lab' style='font-size:12px; font-family:Arial;'>
-            <label for='First_Name'>First Name</label>
-          </div>
+          <div class='zcwf_col_lab'><label for='First_Name'>First Name</label></div>
           <div class='zcwf_col_fld'>
-            <input type='text' id='First_Name' aria-label='First Name' name='First Name' maxlength='40' placeholder='First name'/>
-            <div class='zcwf_col_help'></div>
+            <input type='text' id='First_Name' name='First Name' maxlength='40' placeholder='First name'/>
           </div>
         </div>
 
         <!-- Last Name -->
         <div class='zcwf_row'>
-          <div class='zcwf_col_lab' style='font-size:12px; font-family:Arial;'>
-            <label for='Last_Name'>Last Name <span style='color:#c9a96e;'>*</span></label>
-          </div>
+          <div class='zcwf_col_lab'><label for='Last_Name'>Last Name <span style='color:#c9a96e;'>*</span></label></div>
           <div class='zcwf_col_fld'>
-            <input type='text' id='Last_Name' aria-required='true' aria-label='Last Name' name='Last Name' maxlength='80' placeholder='Last name'/>
-            <div class='zcwf_col_help'></div>
+            <input type='text' id='Last_Name' aria-required='true' name='Last Name' maxlength='80' placeholder='Last name'/>
           </div>
         </div>
 
         <!-- Phone -->
         <div class='zcwf_row'>
-          <div class='zcwf_col_lab' style='font-size:12px; font-family:Arial;'>
-            <label for='Phone'>Phone</label>
-          </div>
+          <div class='zcwf_col_lab'><label for='Phone'>Phone</label></div>
           <div class='zcwf_col_fld'>
-            <input type='text' id='Phone' aria-label='Phone' name='Phone' maxlength='30' placeholder='+91 00000 00000'/>
-            <div class='zcwf_col_help'></div>
+            <input type='text' id='Phone' name='Phone' maxlength='30' placeholder='+91 00000 00000'/>
           </div>
         </div>
 
         <!-- Email -->
         <div class='zcwf_row'>
-          <div class='zcwf_col_lab' style='font-size:12px; font-family:Arial;'>
-            <label for='Email'>Email</label>
-          </div>
+          <div class='zcwf_col_lab'><label for='Email'>Email</label></div>
           <div class='zcwf_col_fld'>
-            <input type='text' ftype='email' autocomplete='false' id='Email' aria-label='Email' name='Email' maxlength='100' placeholder='your@email.com'/>
-            <div class='zcwf_col_help'></div>
+            <input type='text' ftype='email' autocomplete='false' id='Email' name='Email' maxlength='100' placeholder='your@email.com'/>
           </div>
         </div>
 
         <!-- City -->
         <div class='zcwf_row'>
-          <div class='zcwf_col_lab' style='font-size:12px; font-family:Arial;'>
-            <label for='Address_-_City'>City</label>
-          </div>
+          <div class='zcwf_col_lab'><label for='Address_-_City'>City</label></div>
           <div class='zcwf_col_fld'>
-            <input type='text' id='Address_-_City' aria-label='Address - City' name='Address - City' maxlength='255' placeholder='Your city'/>
-            <div class='zcwf_col_help'></div>
+            <input type='text' id='Address_-_City' name='Address - City' maxlength='255' placeholder='Your city'/>
           </div>
         </div>
 
@@ -344,24 +288,22 @@
         <div class='zcwf_row'>
           <div class='zcwf_col_lab'></div>
           <div class='zcwf_col_fld'>
-            <input type='submit' id='formsubmit' role='button' class='formsubmit zcwf_button' value='Submit Enquiry' aria-label='Submit'/>
-            <input type='reset' class='zcwf_button' name='reset' value='Reset' aria-label='Reset'/>
+            <input type='submit' id='formsubmit' role='button' class='formsubmit zcwf_button' value='Begin Experience' aria-label='Submit'/>
+            <input type='reset' class='zcwf_button' name='reset' value='Reset'/>
           </div>
         </div>
 
         <script>
           function validateEmail1309230000000456421(){
-            var form = document.forms['WebToLeads1309230000000456421'];
-            var emailFld = form.querySelectorAll('[ftype=email]');
+            var form=document.forms['WebToLeads1309230000000456421'];
+            var emailFld=form.querySelectorAll('[ftype=email]');
             for(var i=0;i<emailFld.length;i++){
-              var emailVal = emailFld[i].value;
-              if((emailVal.replace(/^\s+|\s+$/g,'')).length!=0){
-                var atpos=emailVal.indexOf('@');
-                var dotpos=emailVal.lastIndexOf('.');
-                if(atpos<1||dotpos<atpos+2||dotpos+2>=emailVal.length){
+              var v=emailFld[i].value;
+              if((v.replace(/^\s+|\s+$/g,'')).length!=0){
+                var a=v.indexOf('@'),d=v.lastIndexOf('.');
+                if(a<1||d<a+2||d+2>=v.length){
                   alert('Please enter a valid email address.');
-                  emailFld[i].focus();
-                  return false;
+                  emailFld[i].focus(); return false;
                 }
               }
             }
@@ -369,111 +311,87 @@
           }
 
           function checkMandatory1309230000000456421(){
-            var mndFileds=['Last Name'];
-            var fldLangVal=['Last Name'];
-            for(var i=0;i<mndFileds.length;i++){
-              var fieldObj=document.forms['WebToLeads1309230000000456421'][mndFileds[i]];
-              if(fieldObj){
-                if(((fieldObj.value).replace(/^\s+|\s+$/g,'')).length==0){
-                  alert(fldLangVal[i]+' cannot be empty.');
-                  fieldObj.focus();
-                  return false;
-                }
-              }
+            var f=document.forms['WebToLeads1309230000000456421']['Last Name'];
+            if(f && ((f.value).replace(/^\s+|\s+$/g,'')).length==0){
+              alert('Last Name cannot be empty.'); f.focus(); return false;
             }
             if(!validateEmail1309230000000456421()) return false;
-            document.querySelector('.crmWebToEntityForm .formsubmit').setAttribute('disabled',true);
-          }
-
-          function captchaFailedHandling1309230000000456421(message){
-            var capErr=document.getElementById('captchaErr1309230000000456421');
-            if(capErr){ capErr.innerHTML=message; capErr.style.visibility='visible'; setTimeout(function(){capErr.style.visibility='hidden';},5000); }
+            var btn=document.querySelector('.crmWebToEntityForm .formsubmit');
+            if(btn) btn.setAttribute('disabled',true);
           }
 
           document.getElementById('webform1309230000000456421').addEventListener('submit',function(e){
-            var ismandatory=checkMandatory1309230000000456421();
+            var ok=checkMandatory1309230000000456421();
             e.preventDefault();
-            if(ismandatory===undefined||ismandatory){
+            if(ok===undefined||ok){
               var formData=new FormData(this);
               fetch('https://crm.zoho.in/crm/WebToLeadForm',{
-                method:'POST',body:formData,cache:'no-cache'
-              }).then(function(response){
-                var ct=response.headers.get('Content-Type');
-                return ct&&ct.includes('application/json')?response.json():response.text();
+                method:'POST', body:formData, cache:'no-cache'
+              }).then(function(r){
+                var ct=r.headers.get('Content-Type');
+                return ct&&ct.includes('application/json')?r.json():r.text();
               }).then(function(data){
                 if(typeof data==='object'){
                   if(data.actionsubmit==='Splash Message'){
-                    if(data.invalidCaptcha&&data.invalidCaptcha==='true'){
-                      captchaFailedHandling1309230000000456421(data.actionvalue);
-                    } else {
-                      var splashinfodom=document.getElementById('wf_splash_info');
-                      splashinfodom.innerText=data.actionvalue||'Thank you! We will be in touch shortly.';
-                      var splashdom=document.getElementById('wf_splash');
-                      document.getElementById('webform1309230000000456421').reset.click();
-                      splashdom.style.display='';
-                      setTimeout(function(){ splashdom.style.display='none'; closeZohoForm(); },4000);
-                    }
+                    var info=document.getElementById('wf_splash_info');
+                    info.innerText=data.actionvalue||'Thank you! Launching experience…';
+                    document.getElementById('wf_splash').style.display='';
+                    document.getElementById('webform1309230000000456421').reset.click();
+                    // After 2s — dismiss gate and start 3D
+                    setTimeout(function(){ dismissGateAndStart(); }, 2000);
                   } else if(data.actionsubmit==='redirect_url'){
-                    window.location.assign(data.redirectUrl);
-                  } else if(data.actionsubmit==='error_msg'){
-                    alert(data.message);
+                    dismissGateAndStart();
+                  } else {
+                    dismissGateAndStart();
                   }
                 } else {
-                  document.write(data);
+                  dismissGateAndStart();
                 }
-                var formDom=document.querySelector('.crmWebToEntityForm .formsubmit');
-                if(formDom) formDom.removeAttribute('disabled');
+                var btn=document.querySelector('.crmWebToEntityForm .formsubmit');
+                if(btn) btn.removeAttribute('disabled');
               }).catch(function(){
-                alert('An error occurred. Please try again.');
-                var formDom=document.querySelector('.crmWebToEntityForm .formsubmit');
-                if(formDom) formDom.removeAttribute('disabled');
+                // Even on error — let them through
+                dismissGateAndStart();
               });
             }
           });
         </script>
       </form>
     </div>
-    <!-- ── END ZOHO WEBFORM ── -->
+    <!-- END ZOHO FORM -->
+
+    <!-- Skip link for internal team testing -->
+    <div id="gate-skip" onclick="dismissGateAndStart()">Skip — Enter Experience</div>
 
   </div>
 </div>
 
-<!-- 1. Three.js core -->
+<!-- Three.js core -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-<!-- 2. GLTFLoader -->
+<!-- GLTFLoader -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-
 <!-- App modules -->
 <script type="module" src="js/home.js"></script>
 <script type="module" src="js/floorplan.js"></script>
 
-<!-- 4. App controller -->
 <script>
+/* ─── GATE DISMISS → START 3D APP ─── */
+let _appStarted = false;
 
-/* ─── ZOHO MODAL CONTROLS ─── */
-function openZohoForm() {
-  var overlay = document.getElementById('zoho-modal-overlay');
-  overlay.classList.add('open');
-  document.body.style.overflow = 'hidden';
-}
+function dismissGateAndStart() {
+  if (_appStarted) return;
+  _appStarted = true;
 
-function closeZohoForm() {
-  var overlay = document.getElementById('zoho-modal-overlay');
-  overlay.classList.remove('open');
-  document.body.style.overflow = '';
-}
-
-function handleOverlayClick(e) {
-  if (e.target === document.getElementById('zoho-modal-overlay')) {
-    closeZohoForm();
+  var gate = document.getElementById('zoho-gate');
+  if (gate) {
+    gate.classList.add('fade-out');
+    setTimeout(function() { gate.remove(); }, 700);
   }
-}
 
-/* ─── ESC key closes modal ─── */
-document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') closeZohoForm();
-});
+  // Start the 3D modules — same as firebase-auth.js did
+  if (window.HomeModule      && typeof HomeModule.init      === 'function') HomeModule.init();
+  if (window.FloorplanModule && typeof FloorplanModule.init === 'function') FloorplanModule.init();
+}
 
 /* ─── APP CONTROLLER ─── */
 window.App = {
@@ -481,19 +399,18 @@ window.App = {
   previousView: null,
 
   init() {
-    setTimeout(() => this.finishLoad(), 2400);
+    // Do NOT auto-start — gate controls when 3D begins
+    // (HomeModule.init is called by dismissGateAndStart)
   },
 
   finishLoad() {
     const loader = document.getElementById('loader');
+    if (!loader) return;
     loader.classList.add('fade-out');
     setTimeout(() => {
       loader.style.display = 'none';
-      document.getElementById('home-view').classList.add('active');
-      // Show Enquire Now button after 3D scene is visible
-      setTimeout(() => {
-        document.getElementById('enquiry-btn').classList.add('visible');
-      }, 800);
+      const hv = document.getElementById('home-view');
+      if (hv) hv.classList.add('active');
     }, 900);
   },
 
