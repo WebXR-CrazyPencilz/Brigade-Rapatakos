@@ -1,15 +1,11 @@
-// home.js — GLB scene loader with bottom panel navigation
+// home.js — Horizontal image carousel with bottom panel navigation
 window.HomeModule = (function () {
 
-  let scene, camera, renderer, clock;
-  let splineT = 0, splineCurve;
-  let raycaster, mouse;
-  let towerMesh = null;
-  let isHoveringTower = false;
-  let autoRotate = true;
-  let isDragging = false, prevMouse = { x: 0, y: 0 };
-  let manualYaw = 0, manualPitch = 0;
   let unitRowVisible = false;
+  let current = 0;
+  let autoTimer = null;
+  let startX = 0;
+  let dragged = false;
 
   // ─── UNIT URL MAP ────────────────────────────────────────────────
   const unitURLs = {
@@ -18,6 +14,16 @@ window.HomeModule = (function () {
     3: 'unit3/index.html',
     4: 'unit4/index.html',
   };
+
+  // ─── CAROUSEL IMAGES ─────────────────────────────────────────────
+  // Replace src with your ImageKit URLs when ready
+  const IMAGES = [
+    { src: '', label: 'View 1' },
+    { src: '', label: 'View 2' },
+    { src: '', label: 'View 3' },
+    { src: '', label: 'View 4' },
+    { src: '', label: 'View 5' },
+  ];
 
   // ─── INJECT HTML & STYLES ────────────────────────────────────────
   function injectHTML() {
@@ -60,6 +66,90 @@ window.HomeModule = (function () {
       }
       @media (orientation: landscape) {
         #rotate-prompt { display: none !important; }
+      }
+
+      /* ── Carousel ── */
+      #carousel {
+        position: fixed;
+        inset: 0;
+        bottom: 62px;
+        background: #0a0805;
+        overflow: hidden;
+      }
+      #carousel-track {
+        display: flex;
+        height: 100%;
+        transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+        cursor: grab;
+        user-select: none;
+      }
+      #carousel-track.grabbing { cursor: grabbing; }
+      .c-slide {
+        flex-shrink: 0;
+        width: 100vw;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .c-slide img {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+        pointer-events: none;
+      }
+      .c-placeholder {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 100px; font-weight: 300;
+        color: rgba(200,190,154,.06);
+      }
+      #c-dots {
+        position: absolute;
+        bottom: 16px; left: 50%;
+        transform: translateX(-50%);
+        display: flex; gap: 8px;
+        pointer-events: none;
+      }
+      .c-dot {
+        width: 5px; height: 5px;
+        border-radius: 50%;
+        background: rgba(200,190,154,.25);
+        transition: background .3s, transform .3s;
+      }
+      .c-dot.active {
+        background: rgba(200,190,154,.85);
+        transform: scale(1.4);
+      }
+
+      /* ── Lightbox ── */
+      #lightbox {
+        position: fixed; inset: 0; z-index: 500;
+        background: rgba(5,4,2,.95);
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none;
+        transition: opacity .3s;
+      }
+      #lightbox.open { opacity: 1; pointer-events: all; }
+      #lb-img {
+        max-width: calc(100vw - 40px);
+        max-height: calc(100dvh - 80px);
+        object-fit: contain;
+      }
+      #lb-empty {
+        display: none;
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic;
+        color: rgba(200,190,154,.35);
+        font-size: 16px;
+      }
+      #lb-close {
+        position: absolute; top: 16px; right: 16px;
+        width: 36px; height: 36px; border-radius: 8px;
+        border: 1px solid rgba(200,190,154,.25);
+        background: rgba(200,190,154,.06);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; color: rgba(200,190,154,.7); font-size: 18px;
+        -webkit-tap-highlight-color: transparent;
       }
 
       /* ── Unit Row ── */
@@ -280,6 +370,14 @@ window.HomeModule = (function () {
       map:       `<svg viewBox="0 0 24 24"><path d="M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>`,
     };
 
+    const slidesHTML = IMAGES.map((img, i) => `
+      <div class="c-slide" data-index="${i}">
+        ${img.src ? `<img src="${img.src}" alt="${img.label}"/>` : `<div class="c-placeholder">0${i + 1}</div>`}
+      </div>`).join('');
+
+    const dotsHTML = IMAGES.map((_, i) =>
+      `<div class="c-dot${i === 0 ? ' active' : ''}"></div>`).join('');
+
     // Rotate prompt
     document.body.insertAdjacentHTML('beforeend', `
       <div id="rotate-prompt">
@@ -288,6 +386,23 @@ window.HomeModule = (function () {
           <path d="M9 21h6"/>
         </svg>
         <p>Please rotate your device</p>
+      </div>
+    `);
+
+    // Carousel
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="carousel">
+        <div id="carousel-track">${slidesHTML}</div>
+        <div id="c-dots">${dotsHTML}</div>
+      </div>
+    `);
+
+    // Lightbox
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="lightbox">
+        <img id="lb-img" src="" alt=""/>
+        <div id="lb-empty">Image coming soon</div>
+        <div id="lb-close">✕</div>
       </div>
     `);
 
@@ -342,6 +457,63 @@ window.HomeModule = (function () {
         <iframe id="unit-iframe" src="" allow="fullscreen"></iframe>
       </div>
     `);
+  }
+
+  // ─── CAROUSEL ────────────────────────────────────────────────────
+  function goTo(index) {
+    current = ((index % IMAGES.length) + IMAGES.length) % IMAGES.length;
+    document.getElementById('carousel-track').style.transform = `translateX(-${current * 100}vw)`;
+    document.querySelectorAll('.c-dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  }
+
+  function startAuto() {
+    clearInterval(autoTimer);
+    autoTimer = setInterval(() => goTo(current + 1), 3500);
+  }
+
+  function initCarousel() {
+    const track    = document.getElementById('carousel-track');
+    const carousel = document.getElementById('carousel');
+
+    // Tap → lightbox (only if not a drag)
+    track.addEventListener('click', () => { if (!dragged) openLightbox(current); });
+
+    // Touch swipe
+    track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; dragged = false; }, { passive: true });
+    track.addEventListener('touchmove',  e => { if (Math.abs(e.touches[0].clientX - startX) > 8) dragged = true; }, { passive: true });
+    track.addEventListener('touchend',   e => {
+      const dx = e.changedTouches[0].clientX - startX;
+      if (Math.abs(dx) > 50) { goTo(current + (dx < 0 ? 1 : -1)); startAuto(); }
+    });
+
+    // Mouse drag
+    track.addEventListener('mousedown', e => { startX = e.clientX; dragged = false; track.classList.add('grabbing'); });
+    window.addEventListener('mousemove', e => { if (e.buttons && Math.abs(e.clientX - startX) > 8) dragged = true; });
+    window.addEventListener('mouseup', e => {
+      if (!track.classList.contains('grabbing')) return;
+      track.classList.remove('grabbing');
+      const dx = e.clientX - startX;
+      if (Math.abs(dx) > 50) { goTo(current + (dx < 0 ? 1 : -1)); startAuto(); }
+    });
+
+    // Pause auto on hover
+    carousel.addEventListener('mouseenter', () => clearInterval(autoTimer));
+    carousel.addEventListener('mouseleave', startAuto);
+
+    startAuto();
+  }
+
+  // ─── LIGHTBOX ────────────────────────────────────────────────────
+  function openLightbox(index) {
+    const src = IMAGES[index].src;
+    document.getElementById('lb-img').src             = src || '';
+    document.getElementById('lb-img').style.display   = src ? '' : 'none';
+    document.getElementById('lb-empty').style.display = src ? 'none' : 'block';
+    document.getElementById('lightbox').classList.add('open');
+  }
+
+  function closeLightbox() {
+    document.getElementById('lightbox').classList.remove('open');
   }
 
   // ─── UNIT VIEWER ─────────────────────────────────────────────────
@@ -469,26 +641,32 @@ window.HomeModule = (function () {
       });
     });
 
-    // FIX 1: Safe null check on fp-overlay — was crashing if fp-overlay
-    // didn't exist yet, breaking ALL click events on the entire page
     document.addEventListener('click', (e) => {
-      const bar      = document.getElementById('bottom-panel');
-      const row      = document.getElementById('unit-row');
-      const overlay  = document.getElementById('unit-viewer-overlay');
-      const fpOverlay = document.getElementById('fp-overlay'); // safe reference
+      const bar       = document.getElementById('bottom-panel');
+      const row       = document.getElementById('unit-row');
+      const overlay   = document.getElementById('unit-viewer-overlay');
+      const fpOverlay = document.getElementById('fp-overlay');
+      const lb        = document.getElementById('lightbox');
+
+      if (lb && lb.classList.contains('open')) {
+        if (!lb.contains(e.target) || e.target === lb) { closeLightbox(); return; }
+      }
 
       const clickedOutside =
         bar && row &&
         !bar.contains(e.target) &&
         !row.contains(e.target) &&
         !(overlay  && overlay.contains(e.target)) &&
-        !(fpOverlay && fpOverlay.contains(e.target)); // FIX: was .contains() with no null check
+        !(fpOverlay && fpOverlay.contains(e.target));
 
       if (clickedOutside) {
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
         closeAllModules();
       }
     });
+
+    document.getElementById('lb-close').addEventListener('click', closeLightbox);
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
   }
 
   // ─── ORIENTATION / MOBILE CHECK ──────────────────────────────────
@@ -505,210 +683,16 @@ window.HomeModule = (function () {
     check();
   }
 
-  // ─── SPLINE ──────────────────────────────────────────────────────
-  function buildOvalSpline(rx, rz, y, segments) {
-    const pts = [];
-    for (let i = 0; i <= segments; i++) {
-      const t = (i / segments) * Math.PI * 2;
-      pts.push(new THREE.Vector3(
-        Math.cos(t) * rx,
-        y + Math.sin(t * 0.5) * 1.2,
-        Math.sin(t) * rz
-      ));
-    }
-    return new THREE.CatmullRomCurve3(pts, true, 'catmullrom', 0.5);
-  }
-
-  // ─── SCENE ───────────────────────────────────────────────────────
-  function buildScene() {
-    scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x0a0a08);
-    scene.fog = new THREE.FogExp2(0x0a0a08, 0.012);
-    clock = new THREE.Clock();
-
-    scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-
-    const sun = new THREE.DirectionalLight(0xffe8b0, 1.4);
-    sun.position.set(20, 30, 15);
-    sun.castShadow = true;
-    scene.add(sun);
-
-    const fill = new THREE.PointLight(0x8fa68a, 0.5, 60);
-    fill.position.set(-15, 8, -10);
-    scene.add(fill);
-
-    const rim = new THREE.PointLight(0xc8be9a, 0.4, 40);
-    rim.position.set(10, 12, -20);
-    scene.add(rim);
-
-    const loader = new THREE.GLTFLoader();
-
-    loader.load(
-      'scene.glb',
-
-      // FIX 2: Assign gltf.scene to towerMesh so hover detection and
-      // emissive glow actually work — was always null before
-      (gltf) => {
-        scene.add(gltf.scene);
-        towerMesh = gltf.scene; // FIX: was missing — raycaster was always checking null
-        if (window.App && typeof window.App.finishLoad === 'function') {
-          window.App.finishLoad(); // FIX 3: guard so it only calls if App exists
-        }
-      },
-
-      // Progress — wired to the loader bar
-      (xhr) => {
-        if (xhr.lengthComputable) {
-          const pct = Math.round((xhr.loaded / xhr.total) * 100);
-          const bar = document.querySelector('.loader-bar');
-          const sub = document.querySelector('.loader-sub');
-          if (bar) bar.style.width = pct + '%';
-          if (sub) sub.textContent = 'Loading Environment — ' + pct + '%';
-        }
-      },
-
-      // FIX 4: Added null checks on .loader-bar and .loader-sub so this
-      // doesn't throw if the loader was already removed from the DOM
-      (error) => {
-        console.error('GLB load failed:', error);
-        const sub = document.querySelector('.loader-sub');
-        const bar = document.querySelector('.loader-bar');
-        if (sub) sub.textContent = 'Failed to load scene. Please refresh.';
-        if (bar) bar.style.background = '#c0392b';
-      }
-    );
-  }
-
-  // ─── RENDERER ────────────────────────────────────────────────────
-  function initRenderer() {
-    const canvas = document.getElementById('three-canvas');
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    renderer.shadowMap.enabled   = true;
-    renderer.shadowMap.type      = THREE.PCFSoftShadowMap;
-    renderer.toneMapping         = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 0.9;
-
-    camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
-    camera.position.set(0, 8, 22);
-
-    raycaster = new THREE.Raycaster();
-    mouse     = new THREE.Vector2();
-  }
-
-  // ─── CANVAS EVENTS ───────────────────────────────────────────────
-  function bindEvents() {
-    const canvas = document.getElementById('three-canvas');
-
-    window.addEventListener('resize', () => {
-      camera.aspect = window.innerWidth / window.innerHeight;
-      camera.updateProjectionMatrix();
-      renderer.setSize(window.innerWidth, window.innerHeight);
-    });
-
-    canvas.addEventListener('mousemove', (e) => {
-      mouse.x =  (e.clientX / window.innerWidth)  * 2 - 1;
-      mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-
-      if (towerMesh) {
-        raycaster.setFromCamera(mouse, camera);
-        const meshes = [];
-        towerMesh.traverse(c => { if (c.isMesh) meshes.push(c); });
-        const hits = raycaster.intersectObjects(meshes, false);
-        isHoveringTower = hits.length > 0;
-        canvas.style.cursor = isHoveringTower ? 'pointer' : 'default';
-      }
-
-      if (isDragging) {
-        const dx = e.clientX - prevMouse.x;
-        const dy = e.clientY - prevMouse.y;
-        manualYaw   += dx * 0.004;
-        manualPitch  = Math.max(-0.4, Math.min(0.4, manualPitch - dy * 0.003));
-        prevMouse    = { x: e.clientX, y: e.clientY };
-        autoRotate   = false;
-      }
-    });
-
-    canvas.addEventListener('mousedown', (e) => {
-      isDragging = true;
-      prevMouse  = { x: e.clientX, y: e.clientY };
-    });
-
-    canvas.addEventListener('mouseup', () => {
-      isDragging = false;
-      autoRotate = !isHoveringTower;
-    });
-
-    canvas.addEventListener('click', () => {
-      if (isHoveringTower) {
-        const row     = document.getElementById('unit-row');
-        const slot360 = document.querySelector('.panel-slot[data-slot="360view"]');
-
-        if (slot360 && slot360.classList.contains('active')) return;
-
-        unitRowVisible = true;
-        if (row) row.classList.add('visible');
-        if (slot360) slot360.classList.add('active');
-
-        const activeUnit = document.querySelector('.unit-btn.active');
-        if (!activeUnit) {
-          const firstBtn = document.querySelector('.unit-btn[data-unit="1"]');
-          if (firstBtn) firstBtn.classList.add('active');
-          openUnitViewer(1);
-        } else {
-          openUnitViewer(parseInt(activeUnit.dataset.unit));
-        }
-      }
-    });
-  }
-
-  // ─── ANIMATE ─────────────────────────────────────────────────────
-  function animate() {
-    requestAnimationFrame(animate);
-    const delta   = clock.getDelta();
-    const elapsed = clock.getElapsedTime();
-
-    if (autoRotate && splineCurve) {
-      splineT = (splineT + delta * 0.012) % 1;
-      const pt = splineCurve.getPoint(splineT);
-      camera.position.lerp(pt, 0.04);
-      camera.lookAt(new THREE.Vector3(0, 4, 0));
-    } else {
-      const r  = 22;
-      const tx = Math.sin(manualYaw) * Math.cos(manualPitch) * r;
-      const ty = Math.sin(manualPitch) * r + 6;
-      const tz = Math.cos(manualYaw) * Math.cos(manualPitch) * r;
-      camera.position.lerp(new THREE.Vector3(tx, ty, tz), 0.08);
-      camera.lookAt(new THREE.Vector3(0, 4, 0));
-      if (!isDragging) autoRotate = true;
-    }
-
-    if (towerMesh) {
-      towerMesh.traverse(child => {
-        if (child.isMesh && child.material && child.material.emissive) {
-          child.material.emissiveIntensity = isHoveringTower
-            ? 0.15 + Math.sin(elapsed * 4) * 0.08
-            : 0;
-        }
-      });
-    }
-
-    renderer.render(scene, camera);
-  }
-
   // ─── PUBLIC API ──────────────────────────────────────────────────
   return {
     init() {
       injectHTML();
-      initRenderer();
-      buildScene();
-      splineCurve = buildOvalSpline(20, 14, 8, 80);
-      bindEvents();
+      initCarousel();
       bindPanelEvents();
       bindOrientationCheck();
-      animate();
-      setTimeout(() => window.dispatchEvent(new Event('resize')), 100);
+      if (window.App && typeof window.App.finishLoad === 'function') {
+        window.App.finishLoad();
+      }
     }
   };
 
