@@ -60,8 +60,10 @@ window.HomeModule = (function () {
         display: flex; align-items: center; justify-content: center;
       }
       .c-slide img {
-        width: 100%; height: 100%;
-        object-fit: cover; display: block; pointer-events: none;
+        max-width: 90%;
+        max-height: 90%;
+        width: auto; height: auto;
+        object-fit: contain; display: block; pointer-events: none;
       }
       .c-placeholder {
         font-family: 'Cormorant Garamond', serif;
