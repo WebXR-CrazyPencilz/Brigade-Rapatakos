@@ -270,7 +270,7 @@ window.HomeModule = (function () {
     const track    = document.getElementById('carousel-track');
     const carousel = document.getElementById('carousel');
 
-    // Arrows
+    // Arrows — bind FIRST so stopPropagation fires before track listener
     document.getElementById('c-prev').addEventListener('click', (e) => {
       e.stopPropagation();
       goTo(current - 1);
@@ -282,8 +282,10 @@ window.HomeModule = (function () {
       startAuto();
     });
 
-    // Tap on slide → open lightbox (only if not a drag)
-    track.addEventListener('click', () => { if (!dragged) openLightbox(current); });
+    // Tap on slide → open lightbox (only if not a drag and not an arrow)
+    track.addEventListener('click', (e) => {
+      if (!dragged && !e.target.closest('.c-arrow')) openLightbox(current);
+    });
 
     // Touch swipe
     track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; dragged = false; }, { passive: true });
