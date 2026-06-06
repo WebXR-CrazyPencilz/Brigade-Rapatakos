@@ -68,23 +68,7 @@ window.HomeModule = (function () {
         font-size: 100px; font-weight: 300; color: rgba(200,190,154,.06);
       }
 
-      /* Prev / Next arrows */
-      .c-arrow {
-        position: absolute; top: 50%; transform: translateY(-50%);
-        width: 40px; height: 40px; z-index: 10;
-        border-radius: 50%;
-        border: 1px solid rgba(200,190,154,.35);
-        background: rgba(10,8,5,.50);
-        backdrop-filter: blur(6px);
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer;
-        transition: background .2s, border-color .2s;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .c-arrow:hover { background: rgba(200,190,154,.20); border-color: rgba(200,190,154,.70); }
-      .c-arrow svg { width:14px; height:14px; stroke:rgba(200,190,154,.85); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }
-      #c-prev { left: 14px; }
-      #c-next { right: 14px; }
+
 
       /* Dots */
       #c-dots {
@@ -216,12 +200,6 @@ window.HomeModule = (function () {
 
       <div id="carousel">
         <div id="carousel-track">${slidesHTML}</div>
-        <button class="c-arrow" id="c-prev">
-          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-        </button>
-        <button class="c-arrow" id="c-next">
-          <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
-        </button>
         <div id="c-dots">${dotsHTML}</div>
       </div>
 
@@ -229,7 +207,6 @@ window.HomeModule = (function () {
         <img id="lb-img" src="" alt=""/>
         <div id="lb-empty">Image coming soon</div>
         <div id="lb-close">✕</div>
-        <div id="lb-hint">Pinch or scroll to zoom · Double-tap to reset</div>
       </div>
 
       <div id="unit-row">
@@ -270,22 +247,8 @@ window.HomeModule = (function () {
     const track    = document.getElementById('carousel-track');
     const carousel = document.getElementById('carousel');
 
-    // Arrows — bind FIRST so stopPropagation fires before track listener
-    document.getElementById('c-prev').addEventListener('click', (e) => {
-      e.stopPropagation();
-      goTo(current - 1);
-      startAuto();
-    });
-    document.getElementById('c-next').addEventListener('click', (e) => {
-      e.stopPropagation();
-      goTo(current + 1);
-      startAuto();
-    });
-
-    // Tap on slide → open lightbox (only if not a drag and not an arrow)
-    track.addEventListener('click', (e) => {
-      if (!dragged && !e.target.closest('.c-arrow')) openLightbox(current);
-    });
+    // Tap on slide → open lightbox (only if not a drag)
+    track.addEventListener('click', () => { if (!dragged) openLightbox(current); });
 
     // Touch swipe
     track.addEventListener('touchstart', e => { startX = e.touches[0].clientX; dragged = false; }, { passive: true });
@@ -348,14 +311,6 @@ window.HomeModule = (function () {
 
   function bindLightboxZoom() {
     const lb = document.getElementById('lightbox');
-
-    // ── Scroll to zoom (desktop) ──
-    lb.addEventListener('wheel', (e) => {
-      e.preventDefault();
-      lbScale = Math.min(LB_MAX, Math.max(1, lbScale + (e.deltaY < 0 ? 0.15 : -0.15)));
-      if (lbScale === 1) { lbPanX = 0; lbPanY = 0; }
-      lbSetTransform(false);
-    }, { passive: false });
 
     // ── Touch: pinch zoom + pan ──
     let touches = [];
