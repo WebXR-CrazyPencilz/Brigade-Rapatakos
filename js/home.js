@@ -18,11 +18,11 @@ window.HomeModule = (function () {
   // ─── CAROUSEL IMAGES ─────────────────────────────────────────────
   // Replace src with your ImageKit URLs when ready
   const IMAGES = [
-    { src: '', label: 'View 1' },
-    { src: '', label: 'View 2' },
-    { src: '', label: 'View 3' },
-    { src: '', label: 'View 4' },
-    { src: '', label: 'View 5' },
+    { src: 'https://ik.imagekit.io/pwzaetheh/Home/a.png', label: 'View 1' },
+    { src: 'https://ik.imagekit.io/pwzaetheh/Home/b.png', label: 'View 2' },
+    { src: 'https://ik.imagekit.io/pwzaetheh/Home/c.png', label: 'View 3' },
+    { src: 'https://ik.imagekit.io/pwzaetheh/Home/d.png', label: 'View 4' },
+    { src: 'https://ik.imagekit.io/pwzaetheh/Home/e.png', label: 'View 5' },
   ];
 
   // ─── INJECT HTML & STYLES ────────────────────────────────────────
