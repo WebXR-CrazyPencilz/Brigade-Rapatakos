@@ -3,18 +3,16 @@ window.GalleryModule = (function () {
 
   // ─── ALL IMAGES (pulled from home.js IMAGES array + extras) ──────
   const IMAGES = [
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780926126/a_ah6xbh.jpg',  caption: 'Exterior View',        label: '01' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780926127/b_nkoj38.jpg',  caption: 'Grand Entrance',       label: '02' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/c.jpg',                                 caption: 'Living Spaces',        label: '03' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/d.jpg',                                 caption: 'Master Suite',         label: '04' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/e.jpg',                                 caption: 'Kitchen & Dining',     label: '05' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/g.jpg',                                 caption: 'Balcony & Views',      label: '06' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/h.jpg',                                 caption: 'Clubhouse',            label: '07' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780926131/i_toh5q7.jpg',  caption: 'Amenities',            label: '08' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/j.jpg',                                 caption: 'Swimming Pool',        label: '09' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/l.jpg',                                 caption: 'Landscape & Gardens',  label: '10' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/m.jpg',                                 caption: 'Night Elevation',      label: '11' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/n.jpg',                                 caption: 'Aerial Perspective',   label: '12' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928756/patch-through-agreen-forest_mpveu7.jpg',  caption: 'Exterior View',        label: '01' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928747/freepik__edit-img1-to-change-the-sunglasses-on-the-orange-t__10223_copy2_hunmds.jpg',  caption: 'Grand Entrance',       label: '02' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780926778/Brigade_High_35122-_%C2%AA_qvaqsy.jpg',                                 caption: 'Living Spaces',        label: '03' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928748/freepik__a-modern-luxury-indooroutdoor-lounge-with-a-serene__3441_bjy7ga.jpg',                                 caption: 'Master Suite',         label: '04' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928750/freepik__design-a-luxurious-rooftop-outdoor-kitchen-with-a-__33482_qqyhyf.jpg',                                 caption: 'Kitchen & Dining',     label: '05' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928754/freepik__design-a-highend-luxury-lobby-with-marble-floors-a__33481_ryap0w.jpg',                                 caption: 'Balcony & Views',      label: '06' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928756/close-up-woman-relaxing-spa_ryzwuw.jpg',                                 caption: 'Clubhouse',            label: '07' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928748/freepik__a-modern-luxury-indooroutdoor-lounge-with-a-serene__3441_bjy7ga.jpg',  caption: 'Amenities',            label: '08' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928747/freepik__edit-img1-to-change-the-sunglasses-on-the-orange-t__10223_copy2_hunmds.jpg',                                 caption: 'Swimming Pool',        label: '09' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928829/beautiful-green-trees-bright-sunlight_h19cfq.jpg',                                 caption: 'Landscape & Gardens',  label: '10' },
   ];
 
   let current    = 0;
