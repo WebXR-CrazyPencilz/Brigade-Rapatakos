@@ -24,6 +24,7 @@ window.HomeModule = (function () {
     { src: 'https://ik.imagekit.io/pwzaetheh/Home/e.jpg', label: 'View 5' },
     { src: 'https://ik.imagekit.io/pwzaetheh/Home/g.jpg', label: 'View 6' },
     { src: 'https://ik.imagekit.io/pwzaetheh/Home/h.jpg', label: 'View 7' },
+    { src: 'https://ik.imagekit.io/pwzaetheh/Home/i.jpg', label: 'View 7' },
     { src: 'https://ik.imagekit.io/pwzaetheh/Home/j.jpg', label: 'View 8' },
     { src: 'https://ik.imagekit.io/pwzaetheh/Home/l.jpg', label: 'View 9' },
     { src: 'https://ik.imagekit.io/pwzaetheh/Home/m.jpg', label: 'View 10' },
