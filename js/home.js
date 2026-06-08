@@ -17,8 +17,8 @@ window.HomeModule = (function () {
 
   // ─── CAROUSEL IMAGES ─────────────────────────────────────────────
   const IMAGES = [
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/a.jpg', label: 'View 1' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/b.jpg', label: 'View 2' },
+    { src: 'https://ik.imagekit.io/pwzaetheh/Home/m.jpg', label: 'View 1' },
+    { src: 'https://ik.imagekit.io/pwzaetheh/Home/n.jpg', label: 'View 2' },
     { src: 'https://ik.imagekit.io/pwzaetheh/Home/c.jpg', label: 'View 3' },
     { src: 'https://ik.imagekit.io/pwzaetheh/Home/d.jpg', label: 'View 4' },
     { src: 'https://ik.imagekit.io/pwzaetheh/Home/e.jpg', label: 'View 5' },
@@ -27,8 +27,8 @@ window.HomeModule = (function () {
     { src: 'https://ik.imagekit.io/pwzaetheh/Home/i.jpg', label: 'View 7' },
     { src: 'https://ik.imagekit.io/pwzaetheh/Home/j.jpg', label: 'View 8' },
     { src: 'https://ik.imagekit.io/pwzaetheh/Home/l.jpg', label: 'View 9' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/m.jpg', label: 'View 10' },
-    {src: 'https://ik.imagekit.io/pwzaetheh/Home/n.jpg', label: 'View 11' }
+    { src: 'https://ik.imagekit.io/pwzaetheh/Home/b.jpg', label: 'View 10' },
+    {src: 'https://ik.imagekit.io/pwzaetheh/Home/a.jpg', label: 'View 11' }
   ];
 
   // ─── INJECT HTML & STYLES ────────────────────────────────────────
