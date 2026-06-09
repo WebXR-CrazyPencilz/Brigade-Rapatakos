@@ -26,11 +26,11 @@ window.FloorplanModule = (function () {
         points: '58,22 68,22 68,50 52,50 52,40 57,40 57,33 52,33 52,26 57,26 57,22',
       },
 
-      {
-        id: 'tower-B', label: 'Tower B',
+      //{
+        //id: 'tower-B', label: 'Tower B',
         // Right-center building block
-        points: '60,36 68,33 74,38 73,48 64,50 59,45',
-      },
+        //points: '60,36 68,33 74,38 73,48 64,50 59,45',
+      //},
       {
         id: 'tower-C', label: 'Tower C',
         // Bottom-center building block
