@@ -22,7 +22,7 @@ window.FloorplanModule = (function () {
     towerTiles: [
       { id: 'tower-A', label: 'Tower A', points: '55,18 65,18 65,28 55,28' },
       { id: 'tower-B', label: 'Tower B', points: '45,42 72,42 72,42 45,42' },
-      { id: 'tower-C', label: 'Tower C', points: '22,48 52,48 52,72 22,72' },
+      { id: 'tower-C', label: 'Tower C', points: '20,48 52,48 52,73 20,73' },
       { id: 'tower-D', label: 'Tower D', points: '28,30 38,30 38,40 28,40' },
     ],
   };
