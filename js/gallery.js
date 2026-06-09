@@ -9,9 +9,8 @@ window.GalleryModule = (function () {
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928748/freepik__a-modern-luxury-indooroutdoor-lounge-with-a-serene__3441_bjy7ga.jpg', caption: 'Master Suite',        label: '04' },
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928750/freepik__design-a-luxurious-rooftop-outdoor-kitchen-with-a-__33482_qqyhyf.jpg', caption: 'Kitchen & Dining',    label: '05' },
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928754/freepik__design-a-highend-luxury-lobby-with-marble-floors-a__33481_ryap0w.jpg', caption: 'Balcony & Views',     label: '06' },
-   
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928829/beautiful-green-trees-bright-sunlight_h19cfq.jpg', caption: 'Landscape & Gardens', label: '08' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928756/patch-through-agreen-forest_mpveu7.jpg',  caption: 'Exterior View',       label: '09' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928829/beautiful-green-trees-bright-sunlight_h19cfq.jpg', caption: 'Landscape & Gardens', label: '07' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928756/patch-through-agreen-forest_mpveu7.jpg',  caption: 'Exterior View',       label: '08' },
   ];
 
   let current     = 0;
