@@ -1,37 +1,45 @@
 // floorplan.js — 3-Level Floor Plan Viewer
-// Level 0 → Sitemap (default) — 4 tower tiles overlaid
+// Level 0 → Sitemap (default) — 4 tower SVG polygon tiles overlaid
 // Level 1 → Tower Cluster image — ODD/EVEN toggle + polygon unit zones
 // Level 2 → Unit plan — Top View / Isometric toggle
-//
-// ─── SPREADSHEET COLOR KEY ────────────────────────────────────────────────────
-// BLUE  = unit appears in BOTH odd and even columns → listed in oddUnits AND evenUnits
-// GREEN = unit appears in only ONE column (odd or even) → listed in that side only
-// WHITE = removed (not applicable for that parity)
-// ─────────────────────────────────────────────────────────────────────────────
-//
-// ─── IMAGE URL HELPER ────────────────────────────────────────────────────────
-// IK(path) builds a full ImageKit URL from a relative path.
-// Usage:  IK('isometric/unit06_3bhk_l(g)_podium_tower_03.jpg')
-//         IK('topview/unit05_3bhk_s(a)_tower_02.jpg')
-// To fill an empty slot replace '' with IK('folder/filename.jpg')
-// ─────────────────────────────────────────────────────────────────────────────
 
 window.FloorplanModule = (function () {
 
   const IK_BASE = 'https://ik.imagekit.io/pwzaetheh';
-
-  function IK(path) {
-    return `${IK_BASE}/${path}`;
-  }
+  function IK(path) { return `${IK_BASE}/${path}`; }
 
   // ─── LEVEL 0 — SITEMAP ────────────────────────────────────────
+  // Points are in 0-100 coordinate space mapped to the sitemap image.
+  // Sitemap image is 1810×1301px.
+  // Tower positions derived from the actual building footprints on the map.
+  //
+  // T1 (Tower A) — top-right cluster block (~label "1" near top center-right)
+  // T2 (Tower B) — right-center cluster block
+  // T3 (Tower C) — bottom-center cluster block
+  // T4 (Tower D) — left cluster block
   const SITEMAP = {
     image: IK('Cluster/site_cluster.jpg'),
     towerTiles: [
-      { id: 'tower-A', label: 'Tower A', x: 18, y: 30, w: 14, h: 22 },
-      { id: 'tower-B', label: 'Tower B', x: 38, y: 28, w: 14, h: 22 },
-      { id: 'tower-C', label: 'Tower C', x: 58, y: 30, w: 14, h: 22 },
-      { id: 'tower-D', label: 'Tower D', x: 74, y: 32, w: 14, h: 22 },
+      {
+        id: 'tower-A', label: 'Tower A',
+        // Top-right building block on the sitemap
+        points: '53,22 62,19 68,24 67,33 57,35 52,30',
+      },
+      {
+        id: 'tower-B', label: 'Tower B',
+        // Right-center building block
+        points: '60,36 68,33 74,38 73,48 64,50 59,45',
+      },
+      {
+        id: 'tower-C', label: 'Tower C',
+        // Bottom-center building block
+        points: '40,54 55,50 60,56 57,66 44,68 37,62',
+      },
+      {
+        id: 'tower-D', label: 'Tower D',
+        // Left building block
+        points: '27,32 40,27 46,34 43,46 30,48 24,41',
+      },
     ],
   };
 
@@ -46,83 +54,17 @@ window.FloorplanModule = (function () {
       label: 'Tower A',
       odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_01.jpg')  },
       even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_01.jpg') },
-
       oddUnits: [
-        {
-          unitId: 'A-odd-01',
-          label:  '4BHK Type C',
-          type:   '4 BHK',
-          area:   '',
-          top:    IK('topview/unit03_4bhk_(c)_tower_01.jpg'),
-          iso:    IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),
-          points: '10,15 45,15 45,48 10,48',
-        },
-        {
-          unitId: 'A-odd-02',
-          label:  '3BHK (L) Type D',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),
-          iso:    IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),
-          points: '50,15 85,15 85,48 50,48',
-        },
-        {
-          unitId: 'A-odd-03',
-          label:  '3BHK (S) Type A',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),
-          iso:    IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),
-          points: '10,52 85,52 85,85 10,85',
-        },
+        { unitId:'A-odd-01', label:'4BHK Type C',        type:'4 BHK', area:'', top:IK('topview/unit03_4bhk_(c)_tower_01.jpg'),       iso:IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),       points:'10,15 45,15 45,48 10,48' },
+        { unitId:'A-odd-02', label:'3BHK (L) Type D',    type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),      iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),      points:'50,15 85,15 85,48 50,48' },
+        { unitId:'A-odd-03', label:'3BHK (S) Type A',    type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),      iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),      points:'10,52 85,52 85,85 10,85' },
       ],
-
       evenUnits: [
-        {
-          unitId: 'A-even-01',
-          label:  '3BHK (L) Type C — Podium',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'),
-          iso:    IK('isometric/unit01_3bhk_l(C)_podium_tower_02.jpg'),
-          points: '10,10 35,10 35,38 10,38',
-        },
-        {
-          unitId: 'A-even-02',
-          label:  '3BHK (L) Type B',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),
-          iso:    IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),
-          points: '40,10 65,10 65,38 40,38',
-        },
-        {
-          unitId: 'A-even-03',
-          label:  '3BHK (L) Type D',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),
-          iso:    IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),
-          points: '70,10 90,10 90,38 70,38',
-        },
-        {
-          unitId: 'A-even-04',
-          label:  '3BHK (S) Type A',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),
-          iso:    IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),
-          points: '10,43 45,43 45,75 10,75',
-        },
-        {
-          unitId: 'A-even-05',
-          label:  '4BHK Type E',
-          type:   '4 BHK',
-          area:   '',
-          top:    IK('topview/unit04_4bhk_(e)_tower_04.jpg'),
-          iso:    IK('isometric/unit04_4bhk_(e)_tower_04.jpg'),
-          points: '50,43 90,43 90,75 50,75',
-        },
+        { unitId:'A-even-01', label:'3BHK (L) Type C — Podium', type:'3 BHK', area:'', top:IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'),  iso:IK('isometric/unit01_3bhk_l(C)_podium_tower_02.jpg'),  points:'10,10 35,10 35,38 10,38' },
+        { unitId:'A-even-02', label:'3BHK (L) Type B',          type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),          iso:IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),          points:'40,10 65,10 65,38 40,38' },
+        { unitId:'A-even-03', label:'3BHK (L) Type D',          type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),          iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),          points:'70,10 90,10 90,38 70,38' },
+        { unitId:'A-even-04', label:'3BHK (S) Type A',          type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),          iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),          points:'10,43 45,43 45,75 10,75' },
+        { unitId:'A-even-05', label:'4BHK Type E',               type:'4 BHK', area:'', top:IK('topview/unit04_4bhk_(e)_tower_04.jpg'),           iso:IK('isometric/unit04_4bhk_(e)_tower_04.jpg'),           points:'50,43 90,43 90,75 50,75' },
       ],
     },
 
@@ -135,268 +77,64 @@ window.FloorplanModule = (function () {
       label: 'Tower B',
       odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_02.jpg')  },
       even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_02.jpg') },
-
       oddUnits: [
-        {
-          unitId: 'B-odd-01',
-          label:  '4BHK Type C',
-          type:   '4 BHK',
-          area:   '',
-          top:    IK('topview/unit03_4bhk_(c)_tower_01.jpg'),
-          iso:    IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),
-          points: '10,15 45,15 45,48 10,48',
-        },
-        {
-          unitId: 'B-odd-02',
-          label:  '3BHK (L) Type D',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),
-          iso:    IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),
-          points: '50,15 85,15 85,48 50,48',
-        },
-        {
-          unitId: 'B-odd-03',
-          label:  '3BHK (S) Type A',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),
-          iso:    IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),
-          points: '10,52 85,52 85,85 10,85',
-        },
+        { unitId:'B-odd-01', label:'4BHK Type C',     type:'4 BHK', area:'', top:IK('topview/unit03_4bhk_(c)_tower_01.jpg'),  iso:IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),  points:'10,15 45,15 45,48 10,48' },
+        { unitId:'B-odd-02', label:'3BHK (L) Type D', type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'), iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'), points:'50,15 85,15 85,48 50,48' },
+        { unitId:'B-odd-03', label:'3BHK (S) Type A', type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'), iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'), points:'10,52 85,52 85,85 10,85' },
       ],
-
       evenUnits: [
-        {
-          unitId: 'B-even-01',
-          label:  '3BHK (L) Type C — Podium',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'),
-          iso:    IK('isometric/unit01_3bhk_l(C)_podium_tower_02.jpg'),
-          points: '10,10 35,10 35,38 10,38',
-        },
-        {
-          unitId: 'B-even-02',
-          label:  '3BHK (L) Type B',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),
-          iso:    IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),
-          points: '40,10 65,10 65,38 40,38',
-        },
-        {
-          unitId: 'B-even-03',
-          label:  '3BHK (L) Type D',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),
-          iso:    IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),
-          points: '70,10 90,10 90,38 70,38',
-        },
-        {
-          unitId: 'B-even-04',
-          label:  '3BHK (S) Type A',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),
-          iso:    IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),
-          points: '10,43 45,43 45,75 10,75',
-        },
-        {
-          unitId: 'B-even-05',
-          label:  '4BHK Type D',
-          type:   '4 BHK',
-          area:   '',
-          top:    IK('topview/unit04_4bhk_(d)_tower_02.jpg'),
-          iso:    IK('isometric/unit04_4bhk_(d)_tower_02.jpg'),
-          points: '50,43 90,43 90,75 50,75',
-        },
+        { unitId:'B-even-01', label:'3BHK (L) Type C — Podium', type:'3 BHK', area:'', top:IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'), iso:IK('isometric/unit01_3bhk_l(C)_podium_tower_02.jpg'), points:'10,10 35,10 35,38 10,38' },
+        { unitId:'B-even-02', label:'3BHK (L) Type B',          type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),         iso:IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),         points:'40,10 65,10 65,38 40,38' },
+        { unitId:'B-even-03', label:'3BHK (L) Type D',          type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),         iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),         points:'70,10 90,10 90,38 70,38' },
+        { unitId:'B-even-04', label:'3BHK (S) Type A',          type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),         iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),         points:'10,43 45,43 45,75 10,75' },
+        { unitId:'B-even-05', label:'4BHK Type D',               type:'4 BHK', area:'', top:IK('topview/unit04_4bhk_(d)_tower_02.jpg'),          iso:IK('isometric/unit04_4bhk_(d)_tower_02.jpg'),          points:'50,43 90,43 90,75 50,75' },
       ],
     },
 
     // ══════════════════════════════════════════════════════════
     // TOWER C
-    // ODD  (2 units): 3BHK(L)-G [blue], 3BHK(L)-G Podium [green=odd-only]
-    // EVEN (6 units): 4BHK-G [green=even-only], 3BHK(S)-B [blue],
-    //                 3BHK(S)-B Podium [blue], 4BHK-F [blue],
-    //                 3BHK(L)-G [blue], 3BHK(L)-E [blue]
     // ══════════════════════════════════════════════════════════
     'tower-C': {
       label: 'Tower C',
       odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_03.jpg')  },
       even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_03.jpg') },
-
       oddUnits: [
-        {
-          unitId: 'C-odd-01',
-          label:  '3BHK (L) Type G',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),
-          iso:    IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'),
-          points: '10,15 55,15 55,52 10,52',
-        },
-        {
-          unitId: 'C-odd-02',
-          label:  '3BHK (L) Type G — Podium',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit06_3bhk_l(g)_podium_tower_03.jpg'),
-          iso:    IK('isometric/unit06_3bhk_l(g)_podium_tower_03.jpg'),
-          points: '60,15 90,15 90,52 60,52',
-        },
+        { unitId:'C-odd-01', label:'3BHK (L) Type G',          type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),        iso:IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'),        points:'10,15 55,15 55,52 10,52' },
+        { unitId:'C-odd-02', label:'3BHK (L) Type G — Podium', type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(g)_podium_tower_03.jpg'), iso:IK('isometric/unit06_3bhk_l(g)_podium_tower_03.jpg'), points:'60,15 90,15 90,52 60,52' },
       ],
-
       evenUnits: [
-        {
-          unitId: 'C-even-01',
-          label:  '4BHK Type G',
-          type:   '4 BHK',
-          area:   '',
-          top:    IK('topview/unit01_4bhk_(g)_tower_03.jpg'),
-          iso:    IK('isometric/unit01_4bhk_(g)_tower_03.jpg'),
-          points: '5,8 30,8 30,35 5,35',
-        },
-        {
-          unitId: 'C-even-02',
-          label:  '3BHK (S) Type B',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit02_3bhk_s(b)_tower_03.jpg'),
-          iso:    IK('isometric/unit02_3bhk_s(b)_tower_03.jpg'),
-          points: '35,8 60,8 60,35 35,35',
-        },
-        {
-          unitId: 'C-even-03',
-          label:  '3BHK (S) Type B — Podium',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit02_3bhk_s(b)_podium_tower_03.jpg'),
-          iso:    IK('isometric/unit02_3bhk_s(b)_podium_tower_03.jpg'),
-          points: '65,8 90,8 90,35 65,35',
-        },
-        {
-          unitId: 'C-even-04',
-          label:  '4BHK Type F',
-          type:   '4 BHK',
-          area:   '',
-          top:    IK('topview/unit07_4bhk_(f)_tower_03.jpg'),
-          iso:    IK('isometric/unit07_4bhk_(f)_tower_03.jpg'),
-          points: '5,40 30,40 30,67 5,67',
-        },
-        {
-          unitId: 'C-even-05',
-          label:  '3BHK (L) Type G',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),
-          iso:    IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'),
-          points: '35,40 60,40 60,67 35,67',
-        },
-        {
-          unitId: 'C-even-06',
-          label:  '3BHK (L) Type E',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit05_3bhk_l(e)_tower_03.jpg'),
-          iso:    IK('isometric/unit05_3bhk_l(e)_tower_03.jpg'),
-          points: '65,40 90,40 90,67 65,67',
-        },
+        { unitId:'C-even-01', label:'4BHK Type G',               type:'4 BHK', area:'', top:IK('topview/unit01_4bhk_(g)_tower_03.jpg'),          iso:IK('isometric/unit01_4bhk_(g)_tower_03.jpg'),          points:'5,8 30,8 30,35 5,35' },
+        { unitId:'C-even-02', label:'3BHK (S) Type B',           type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_s(b)_tower_03.jpg'),          iso:IK('isometric/unit02_3bhk_s(b)_tower_03.jpg'),          points:'35,8 60,8 60,35 35,35' },
+        { unitId:'C-even-03', label:'3BHK (S) Type B — Podium', type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_s(b)_podium_tower_03.jpg'),   iso:IK('isometric/unit02_3bhk_s(b)_podium_tower_03.jpg'),   points:'65,8 90,8 90,35 65,35' },
+        { unitId:'C-even-04', label:'4BHK Type F',               type:'4 BHK', area:'', top:IK('topview/unit07_4bhk_(f)_tower_03.jpg'),           iso:IK('isometric/unit07_4bhk_(f)_tower_03.jpg'),           points:'5,40 30,40 30,67 5,67' },
+        { unitId:'C-even-05', label:'3BHK (L) Type G',           type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),          iso:IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'),          points:'35,40 60,40 60,67 35,67' },
+        { unitId:'C-even-06', label:'3BHK (L) Type E',           type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_l(e)_tower_03.jpg'),          iso:IK('isometric/unit05_3bhk_l(e)_tower_03.jpg'),          points:'65,40 90,40 90,67 65,67' },
       ],
     },
 
     // ══════════════════════════════════════════════════════════
     // TOWER D
-    // ODD  (2 blue): 3BHK(L)-A, 3BHK(S)-A
-    // EVEN (6 blue): 4BHK-A, 3BHK(L)-B, 3BHK(L)-A, 4BHK-B, 3BHK(S)-A, 4BHK-E
     // ══════════════════════════════════════════════════════════
     'tower-D': {
       label: 'Tower D',
       odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_04.jpg')  },
       even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_04.jpg') },
-
       oddUnits: [
-        {
-          unitId: 'D-odd-01',
-          label:  '3BHK (L) Type A',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit03_3bhk_l(a)_tower_04.jpg'),
-          iso:    IK('isometric/unit03_3bhk_l(a)_tower_04.jpg'),
-          points: '10,15 55,15 55,52 10,52',
-        },
-        {
-          unitId: 'D-odd-02',
-          label:  '3BHK (S) Type A',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),
-          iso:    IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),
-          points: '60,15 90,15 90,52 60,52',
-        },
+        { unitId:'D-odd-01', label:'3BHK (L) Type A', type:'3 BHK', area:'', top:IK('topview/unit03_3bhk_l(a)_tower_04.jpg'), iso:IK('isometric/unit03_3bhk_l(a)_tower_04.jpg'), points:'10,15 55,15 55,52 10,52' },
+        { unitId:'D-odd-02', label:'3BHK (S) Type A', type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'), iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'), points:'60,15 90,15 90,52 60,52' },
       ],
-
       evenUnits: [
-        {
-          unitId: 'D-even-01',
-          label:  '4BHK Type A',
-          type:   '4 BHK',
-          area:   '',
-          top:    IK('topview/unit01_4bhk_(a)_tower_04.jpg'),
-          iso:    IK('isometric/unit01_4bhk_(a)_tower_04.jpg'),
-          points: '10,10 35,10 35,38 10,38',
-        },
-        {
-          unitId: 'D-even-02',
-          label:  '3BHK (L) Type B',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),
-          iso:    IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),
-          points: '40,10 65,10 65,38 40,38',
-        },
-        {
-          unitId: 'D-even-03',
-          label:  '3BHK (L) Type A',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit03_3bhk_l(a)_tower_04.jpg'),
-          iso:    IK('isometric/unit03_3bhk_l(a)_tower_04.jpg'),
-          points: '70,10 90,10 90,38 70,38',
-        },
-        {
-          unitId: 'D-even-04',
-          label:  '4BHK Type B',
-          type:   '4 BHK',
-          area:   '',
-          top:    IK('topview/unit06_4bhk_(b)_tower_04.jpg'),
-          iso:    IK('isometric/unit06_4bhk_(b)_tower_04.jpg'),
-          points: '10,43 35,43 35,75 10,75',
-        },
-        {
-          unitId: 'D-even-05',
-          label:  '3BHK (S) Type A',
-          type:   '3 BHK',
-          area:   '',
-          top:    IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),
-          iso:    IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),
-          points: '40,43 65,43 65,75 40,75',
-        },
-        {
-          unitId: 'D-even-06',
-          label:  '4BHK Type E',
-          type:   '4 BHK',
-          area:   '',
-          top:    IK('topview/unit04_4bhk_(e)_tower_04.jpg'),
-          iso:    IK('isometric/unit04_4bhk_(e)_tower_04.jpg'),
-          points: '70,43 90,43 90,75 70,75',
-        },
+        { unitId:'D-even-01', label:'4BHK Type A',    type:'4 BHK', area:'', top:IK('topview/unit01_4bhk_(a)_tower_04.jpg'),  iso:IK('isometric/unit01_4bhk_(a)_tower_04.jpg'),  points:'10,10 35,10 35,38 10,38' },
+        { unitId:'D-even-02', label:'3BHK (L) Type B',type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'), iso:IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'), points:'40,10 65,10 65,38 40,38' },
+        { unitId:'D-even-03', label:'3BHK (L) Type A',type:'3 BHK', area:'', top:IK('topview/unit03_3bhk_l(a)_tower_04.jpg'), iso:IK('isometric/unit03_3bhk_l(a)_tower_04.jpg'), points:'70,10 90,10 90,38 70,38' },
+        { unitId:'D-even-04', label:'4BHK Type B',    type:'4 BHK', area:'', top:IK('topview/unit06_4bhk_(b)_tower_04.jpg'),  iso:IK('isometric/unit06_4bhk_(b)_tower_04.jpg'),  points:'10,43 35,43 35,75 10,75' },
+        { unitId:'D-even-05', label:'3BHK (S) Type A',type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'), iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'), points:'40,43 65,43 65,75 40,75' },
+        { unitId:'D-even-06', label:'4BHK Type E',    type:'4 BHK', area:'', top:IK('topview/unit04_4bhk_(e)_tower_04.jpg'),  iso:IK('isometric/unit04_4bhk_(e)_tower_04.jpg'),  points:'70,43 90,43 90,75 70,75' },
       ],
     },
   };
 
-  // ─── LEVEL 2 — UNIT IMAGE  ───────────────────────────────────
+  // ─── LEVEL 2 — UNIT IMAGE ────────────────────────────────────
   function unitImagePath(unitData, view) {
     return view === 'iso' ? unitData.iso : unitData.top;
   }
@@ -408,22 +146,16 @@ window.FloorplanModule = (function () {
   let floorParity  = 'odd';
   let viewMode     = 'top';
   let overlayOpen  = false;
-
-  // Blocks ResizeObserver from rebuilding tiles during panel animations
   let _transitioning = false;
 
   // ─── HELPERS ─────────────────────────────────────────────────
   function isOdd(n) { return n % 2 !== 0; }
-
   function getUnits(towerId, parity) {
-    const t = TOWERS[towerId];
-    if (!t) return [];
+    const t = TOWERS[towerId]; if (!t) return [];
     return parity === 'odd' ? t.oddUnits : t.evenUnits;
   }
-
   function getClusterImage(towerId, parity) {
-    const t = TOWERS[towerId];
-    if (!t) return '';
+    const t = TOWERS[towerId]; if (!t) return '';
     return parity === 'odd' ? t.odd.image : t.even.image;
   }
 
@@ -435,67 +167,44 @@ window.FloorplanModule = (function () {
     style.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&display=swap');
 
-      /* ── OVERLAY ── */
       #fp-overlay {
         position: fixed;
-  top: 0; left: 0; right: 0;
-  bottom: calc(62px + env(safe-area-inset-bottom, 0px));
-  z-index: 200; background: #0a0805;
-  display: flex; flex-direction: column;
-  opacity: 0; pointer-events: none;
-  transform: translateY(6px);
-  transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.22,1,0.36,1);
-  font-family: 'Syne', sans-serif; overflow: hidden;
+        top: 0; left: 0; right: 0;
+        bottom: calc(62px + env(safe-area-inset-bottom, 0px));
+        z-index: 200; background: #0a0805;
+        display: flex; flex-direction: column;
+        opacity: 0; pointer-events: none;
+        transform: translateY(6px);
+        transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.22,1,0.36,1);
+        font-family: 'Syne', sans-serif; overflow: hidden;
       }
-      #fp-overlay.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+      #fp-overlay.open   { opacity: 1; pointer-events: all; transform: translateY(0); }
       #fp-overlay.hidden { display: none; }
 
-      /* ── TOPBAR ──
-         Uses a CSS custom property --fp-topbar-h that JS updates whenever
-         the topbar height changes (e.g. wraps to two rows on small screens).
-         Images use this variable so they never go behind the topbar.       */
       :root { --fp-topbar-h: 56px; }
 
       @media (max-width: 480px) {
-  #fp-toggles-row {
-    position: static;
-    transform: none;
-    flex: 1;
-    justify-content: center;
-  }
-  #fp-topbar {
-    flex-wrap: nowrap;
-    padding: 8px;
-    gap: 6px;
-  }
-  .fp-parity-btn,
-  .fp-toggle-btn {
-    padding: 6px 10px;
-    font-size: 8px;
-  }
-}
-  #fp-content { 
-  flex: 1; 
-  position: relative; 
-  overflow: hidden; 
-}
+        #fp-toggles-row { position: static; transform: none; flex: 1; justify-content: center; }
+        #fp-topbar { flex-wrap: nowrap; padding: 8px; gap: 6px; }
+        .fp-parity-btn, .fp-toggle-btn { padding: 6px 10px; font-size: 8px; }
+      }
+
+      #fp-content { flex: 1; position: relative; overflow: hidden; }
 
       #fp-topbar {
-  flex-shrink: 0;
-  display: flex; align-items: center;
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(200,190,154,.18);
-  background: rgba(10,8,5,.92);
-  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
-  gap: 10px; position: relative; z-index: 2;
-}
-#fp-topbar::after {
-  content: ''; position: absolute; bottom: -1px; left: 50%;
-  transform: translateX(-50%); width: 80px; height: 1px;
-  background: linear-gradient(to right, transparent, rgba(200,190,154,.55), transparent);
-}
+        flex-shrink: 0; display: flex; align-items: center;
+        padding: 8px 12px;
+        border-bottom: 1px solid rgba(200,190,154,.18);
+        background: rgba(10,8,5,.92);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        gap: 10px; position: relative; z-index: 2;
+      }
+      #fp-topbar::after {
+        content: ''; position: absolute; bottom: -1px; left: 50%;
+        transform: translateX(-50%); width: 80px; height: 1px;
+        background: linear-gradient(to right, transparent, rgba(200,190,154,.55), transparent);
+      }
 
-      /* ── BACK BUTTON — icon only, no label, no pipe, no breadcrumb ── */
       #fp-back {
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; opacity: 0; pointer-events: none;
@@ -508,11 +217,9 @@ window.FloorplanModule = (function () {
         background: rgba(200,190,154,.08);
         display: flex; align-items: center; justify-content: center;
         transition: background 0.2s, border-color 0.2s;
-        /* larger tap target on touch */
         -webkit-tap-highlight-color: transparent;
       }
-      #fp-back:active #fp-back-arrow,
-      #fp-back:hover  #fp-back-arrow {
+      #fp-back:active #fp-back-arrow, #fp-back:hover #fp-back-arrow {
         background: rgba(200,190,154,.18); border-color: rgba(200,190,154,.65);
       }
       #fp-back-arrow svg {
@@ -520,86 +227,59 @@ window.FloorplanModule = (function () {
         fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;
       }
 
-      /* ── TITLE — shows current level name in the topbar ── */
       #fp-title {
-        flex: 0;
-        font-family: 'Cormorant Garamond', serif;
-        font-size: 15px; font-weight: 400;
-        color: rgba(245,242,235,.85);
+        flex: 0; font-family: 'Cormorant Garamond', serif;
+        font-size: 15px; font-weight: 400; color: rgba(245,242,235,.85);
         white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
       }
 
-      /* ── TOGGLES ── */
-      #fp-toggles-row { 
-      position: absolute; left: 50%; transform: translateX(-50%);
-      display: flex; align-items: center; gap: 8px;
+      #fp-toggles-row {
+        position: absolute; left: 50%; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 8px;
       }
 
-      /* ── TOGGLES — pill style ── */
-      #fp-parity-toggle,
-      #fp-view-toggle {
-        display: flex;
-        background: rgba(30,28,24,0.92);
-        border: 1px solid rgba(200,190,154,.22);
-        border-radius: 999px;
-        padding: 3px;
-        gap: 2px;
+      #fp-parity-toggle, #fp-view-toggle {
+        display: flex; background: rgba(30,28,24,0.92);
+        border: 1px solid rgba(200,190,154,.22); border-radius: 999px;
+        padding: 3px; gap: 2px;
         opacity: 0; pointer-events: none; transition: opacity 0.28s;
       }
-      #fp-parity-toggle.visible,
-      #fp-view-toggle.visible { opacity: 1; pointer-events: all; }
+      #fp-parity-toggle.visible, #fp-view-toggle.visible { opacity: 1; pointer-events: all; }
 
-      .fp-parity-btn,
-      .fp-toggle-btn {
-        padding: 6px 16px;
-        font-family: 'Syne', sans-serif;
-        font-size: 9px; font-weight: 700;
-        letter-spacing: .13em; text-transform: uppercase;
-        color: rgba(200,190,154,.50);
-        cursor: pointer; background: transparent;
-        border: none; outline: none;
-        border-radius: 999px;
+      .fp-parity-btn, .fp-toggle-btn {
+        padding: 6px 16px; font-family: 'Syne', sans-serif;
+        font-size: 9px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase;
+        color: rgba(200,190,154,.50); cursor: pointer; background: transparent;
+        border: none; outline: none; border-radius: 999px;
         transition: background 0.22s, color 0.22s;
-        white-space: nowrap; min-height: 32px;
-        display: flex; align-items: center;
+        white-space: nowrap; min-height: 32px; display: flex; align-items: center;
         -webkit-tap-highlight-color: transparent;
       }
-      .fp-parity-btn.active,
-      .fp-toggle-btn.active {
+      .fp-parity-btn.active, .fp-toggle-btn.active {
         background: linear-gradient(135deg, #c8b96a 0%, #a8943a 100%);
-        color: #1a1608;
-        box-shadow: 0 2px 8px rgba(180,160,60,.35);
+        color: #1a1608; box-shadow: 0 2px 8px rgba(180,160,60,.35);
       }
-      .fp-parity-btn:not(.active):active,
-      .fp-parity-btn:not(.active):hover,
-      .fp-toggle-btn:not(.active):active,
-      .fp-toggle-btn:not(.active):hover {
-        color: rgba(200,190,154,.80);
-        background: rgba(200,190,154,.08);
+      .fp-parity-btn:not(.active):hover, .fp-toggle-btn:not(.active):hover {
+        color: rgba(200,190,154,.80); background: rgba(200,190,154,.08);
       }
 
-      /* ── CLOSE ── */
-#fp-close {
-  flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px;
-  border: 1px solid rgba(200,190,154,.25); background: rgba(200,190,154,.06);
-  display: flex; align-items: center; justify-content: center; cursor: pointer;
-  transition: background 0.2s, border-color 0.2s;
-  -webkit-tap-highlight-color: transparent;
-  margin-left: auto;  /* ← pushes X to far right */
-}
-#fp-close:active, #fp-close:hover {
-  background: rgba(200,190,154,.16); border-color: rgba(200,190,154,.55);
-}
-#fp-close svg { width:12px; height:12px; stroke:rgba(200,190,154,.70); fill:none; stroke-width:2; stroke-linecap:round; }
+      #fp-close {
+        flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px;
+        border: 1px solid rgba(200,190,154,.25); background: rgba(200,190,154,.06);
+        display: flex; align-items: center; justify-content: center; cursor: pointer;
+        transition: background 0.2s, border-color 0.2s;
+        -webkit-tap-highlight-color: transparent; margin-left: auto;
+      }
+      #fp-close:hover { background: rgba(200,190,154,.16); border-color: rgba(200,190,154,.55); }
+      #fp-close svg { width:12px; height:12px; stroke:rgba(200,190,154,.70); fill:none; stroke-width:2; stroke-linecap:round; }
 
       .fp-panel {
-        position: absolute; inset: 0;
-        opacity: 0; pointer-events: none;
+        position: absolute; inset: 0; opacity: 0; pointer-events: none;
         transition: opacity 0.30s ease, transform 0.30s cubic-bezier(0.22,1,0.36,1);
       }
-      .fp-panel.enter  { opacity: 1; pointer-events: all; transform: translateX(0) !important; }
-      .fp-panel.exit-l { opacity: 0; transform: translateX(-32px); }
-      .fp-panel.exit-r { opacity: 0; transform: translateX( 32px); }
+      .fp-panel.enter   { opacity: 1; pointer-events: all; transform: translateX(0) !important; }
+      .fp-panel.exit-l  { opacity: 0; transform: translateX(-32px); }
+      .fp-panel.exit-r  { opacity: 0; transform: translateX( 32px); }
 
       /* ── SITEMAP ── */
       #fp-panel-sitemap {
@@ -613,21 +293,27 @@ window.FloorplanModule = (function () {
         object-fit: contain; border: 1px solid rgba(200,190,154,.12);
       }
 
-      .fp-tower-tile {
-        position: absolute;
-        border: 1px solid rgba(200,190,154,.40); background: rgba(200,190,154,.06);
-        backdrop-filter: blur(2px); border-radius: 4px;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        cursor: pointer; gap: 3px; padding: 6px; box-sizing: border-box;
-        transition: background 0.22s, border-color 0.22s, transform 0.18s;
-        -webkit-tap-highlight-color: transparent;
-        /* minimum 44px touch target */
-        min-width: 44px; min-height: 44px;
+      /* SVG polygon tower tiles */
+      .fp-sitemap-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; }
+      .fp-tower-poly {
+        fill: rgba(200,190,154,.08); stroke: rgba(200,190,154,.50); stroke-width: 0.8;
+        stroke-linejoin: round; cursor: pointer;
+        transition: fill 0.22s, stroke 0.22s;
       }
-      .fp-tower-tile.tapped,
-      .fp-tower-tile:hover  { background: rgba(200,190,154,.18); border-color: rgba(200,190,154,.75); transform: scale(1.04); }
-      .fp-tower-tile-label  { font-family: 'Cormorant Garamond', serif; font-size: 12px; font-weight: 500; color: rgba(245,242,235,.85); white-space: nowrap; text-align: center; }
-      .fp-tower-tile-sub    { font-family: 'Syne', sans-serif; font-size: 7px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase; color: rgba(200,190,154,.55); white-space: nowrap; }
+      .fp-tower-poly:hover, .fp-tower-poly.tapped {
+        fill: rgba(200,190,154,.22); stroke: rgba(200,190,154,.90);
+      }
+      .fp-tower-label {
+        font-family: 'Cormorant Garamond', serif; font-size: 3px; font-weight: 500;
+        fill: rgba(245,242,235,.90); pointer-events: none; text-anchor: middle;
+        dominant-baseline: middle;
+      }
+      .fp-tower-sub {
+        font-family: 'Syne', sans-serif; font-size: 1.8px; font-weight: 700;
+        letter-spacing: 0.08em; fill: rgba(200,190,154,.60);
+        pointer-events: none; text-anchor: middle; dominant-baseline: middle;
+      }
+
       #fp-sitemap-hint {
         position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
         font-family: 'Cormorant Garamond', serif; font-size: 11px; font-style: italic;
@@ -654,8 +340,7 @@ window.FloorplanModule = (function () {
         cursor: pointer; pointer-events: all;
         transition: fill 0.20s, stroke 0.20s; stroke-linejoin: round;
       }
-      .fp-zone:hover,
-      .fp-zone.tapped  { fill: rgba(200,190,154,.30); stroke: rgba(200,190,154,.95); }
+      .fp-zone:hover, .fp-zone.tapped { fill: rgba(200,190,154,.30); stroke: rgba(200,190,154,.95); }
       .fp-zone.selected { fill: rgba(200,190,154,.22); stroke: #e8dfc0; stroke-width: 2; }
 
       #fp-zone-tip {
@@ -663,8 +348,7 @@ window.FloorplanModule = (function () {
         background: rgba(10,8,5,.88); border: 1px solid rgba(200,190,154,.40);
         border-radius: 4px; backdrop-filter: blur(8px);
         pointer-events: none; opacity: 0; transition: opacity 0.18s;
-        z-index: 10; white-space: nowrap;
-        max-width: calc(100vw - 24px);
+        z-index: 10; white-space: nowrap; max-width: calc(100vw - 24px);
       }
       #fp-zone-tip.visible { opacity: 1; }
       #fp-zone-tip-name { font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 500; color: rgba(245,242,235,.90); display: block; }
@@ -675,7 +359,6 @@ window.FloorplanModule = (function () {
       #fp-plan-area {
         flex: 1; display: flex; align-items: center; justify-content: center;
         position: relative; overflow: hidden; padding: 16px; box-sizing: border-box;
-        /* allow pinch-zoom via JS — disable browser default pan/zoom interference */
         touch-action: none;
       }
       #fp-plan-img {
@@ -683,22 +366,17 @@ window.FloorplanModule = (function () {
         border: 1px solid rgba(200,190,154,.15); border-radius: 3px;
         box-shadow: 0 12px 60px rgba(0,0,0,.7);
         opacity: 1; transition: opacity 0.28s; background: rgba(200,190,154,.03);
-        /* transform origin center for pinch-zoom */
-        transform-origin: center center;
-        user-select: none; -webkit-user-select: none;
+        transform-origin: center center; user-select: none; -webkit-user-select: none;
       }
       #fp-plan-img.fading { opacity: 0; }
-      /* Reset zoom hint */
       #fp-zoom-hint {
         position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
         font-family: 'Syne', sans-serif; font-size: 8.5px; font-weight: 600;
         letter-spacing: .12em; text-transform: uppercase;
         color: rgba(200,190,154,.35); pointer-events: none;
-        opacity: 0; transition: opacity 0.4s;
-        white-space: nowrap;
+        opacity: 0; transition: opacity 0.4s; white-space: nowrap;
       }
       #fp-zoom-hint.visible { opacity: 1; }
-
       #fp-unit-info {
         position: absolute; bottom: 20px; left: 20px;
         display: flex; flex-direction: column; gap: 3px;
@@ -713,17 +391,15 @@ window.FloorplanModule = (function () {
 
       /* ── SPINNER ── */
       #fp-spinner {
-        position: absolute; inset: 0;
-        display: flex; align-items: center; justify-content: center;
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
         background: rgba(10,8,5,.50); opacity: 0; pointer-events: none;
         transition: opacity 0.22s; z-index: 5;
       }
       #fp-spinner.visible { opacity: 1; }
       #fp-spinner-ring {
-        width: 34px; height: 34px;
-        border: 2px solid rgba(200,190,154,.20);
-        border-top-color: rgba(200,190,154,.85);
-        border-radius: 50%; animation: fpSpin 0.72s linear infinite;
+        width: 34px; height: 34px; border: 2px solid rgba(200,190,154,.20);
+        border-top-color: rgba(200,190,154,.85); border-radius: 50%;
+        animation: fpSpin 0.72s linear infinite;
       }
       @keyframes fpSpin { to { transform: rotate(360deg); } }
     `;
@@ -732,15 +408,12 @@ window.FloorplanModule = (function () {
     document.body.insertAdjacentHTML('beforeend', `
       <div id="fp-overlay">
         <div id="fp-topbar">
-
           <div id="fp-back">
             <div id="fp-back-arrow">
               <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
             </div>
           </div>
-
           <div id="fp-title">Site Plan</div>
-
           <div id="fp-toggles-row">
             <div id="fp-parity-toggle">
               <button class="fp-parity-btn active" data-parity="odd">Odd</button>
@@ -751,11 +424,9 @@ window.FloorplanModule = (function () {
               <button class="fp-toggle-btn"        data-view="iso">Iso</button>
             </div>
           </div>
-
           <div id="fp-close">
             <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </div>
-
         </div>
 
         <div id="fp-content">
@@ -797,8 +468,6 @@ window.FloorplanModule = (function () {
   }
 
   // ─── TOPBAR HEIGHT TRACKER ────────────────────────────────────
-  // Updates --fp-topbar-h whenever the topbar resizes (wraps to 2 rows).
-  // Images use this var so they never slide behind a taller topbar.
   let _topbarRO = null;
   function watchTopbarHeight() {
     const bar = document.getElementById('fp-topbar');
@@ -815,7 +484,6 @@ window.FloorplanModule = (function () {
     _transitioning = true;
     clearTimeout(showPanel._timer);
     showPanel._timer = setTimeout(() => { _transitioning = false; }, 350);
-
     ['fp-panel-sitemap','fp-panel-cluster','fp-panel-unit'].forEach(pid => {
       const el = document.getElementById(pid);
       if (!el) return;
@@ -824,114 +492,130 @@ window.FloorplanModule = (function () {
     });
   }
 
-  // ─── UPDATE TITLE ────────────────────────────────────────────
   function updateTitle() {
     const el = document.getElementById('fp-title');
     if (!el) return;
-    if (level === 0) { el.textContent = 'Site Plan'; }
-    else if (level === 1) { el.textContent = TOWERS[activeTower]?.label || 'Tower'; }
-    else if (level === 2) { el.textContent = activeUnit?.label || ''; }
+    if      (level === 0) el.textContent = 'Site Plan';
+    else if (level === 1) el.textContent = TOWERS[activeTower]?.label || 'Tower';
+    else if (level === 2) el.textContent = activeUnit?.label || '';
   }
 
-  // ─── RESET TO SITEMAP ────────────────────────────────────────
   function resetToSitemap() {
-    // Disconnect any live ResizeObserver before state/DOM reset to prevent
-    // duplicate tile appends if the overlay is rapidly reopened. (Fix A)
     if (_sitemapRO) { _sitemapRO.disconnect(); _sitemapRO = null; }
-
-    level       = 0;
-    activeTower = null;
-    activeUnit  = null;
-    viewMode    = 'top';
+    level = 0; activeTower = null; activeUnit = null; viewMode = 'top';
 
     const svg = document.getElementById('fp-zone-svg');
     if (svg) svg.innerHTML = '';
     const clusterImg = document.getElementById('fp-cluster-img');
     if (clusterImg) { clusterImg.classList.remove('fading'); clusterImg.removeAttribute('src'); }
     const planImg = document.getElementById('fp-plan-img');
-    if (planImg) {
-      planImg.classList.remove('fading');
-      planImg.removeAttribute('src');
-      planImg.style.transform = '';   // reset pinch-zoom
-    }
+    if (planImg) { planImg.classList.remove('fading'); planImg.removeAttribute('src'); planImg.style.transform = ''; }
     const unitInfo = document.getElementById('fp-unit-info');
     if (unitInfo) unitInfo.classList.remove('visible');
     const spinner = document.getElementById('fp-spinner');
     if (spinner) spinner.classList.remove('visible');
     const zoomHint = document.getElementById('fp-zoom-hint');
     if (zoomHint) zoomHint.classList.remove('visible');
-
     document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
     hideZoneTip();
-
     showPanel('fp-panel-sitemap', 'back');
     updateTopbar();
     updateTitle();
   }
 
-  // ─── SITEMAP TILES ───────────────────────────────────────────
+  // ─── SITEMAP POLYGON TILES ───────────────────────────────────
   let _sitemapRO = null;
 
   function buildSitemapTiles() {
     const wrap = document.getElementById('fp-sitemap-wrap');
     const img  = document.getElementById('fp-sitemap-img');
-    let lastW  = 0;
-    let lastH  = 0;
 
     if (_sitemapRO) { _sitemapRO.disconnect(); _sitemapRO = null; }
 
     function placeTiles() {
-
       const iw = img.offsetWidth;
       const ih = img.offsetHeight;
       if (!iw || !ih) return;
-      if (iw === lastW && ih === lastH) return;
-      lastW = iw; lastH = ih;
 
-      wrap.querySelectorAll('.fp-tower-tile').forEach(t => t.remove());
+      // Remove previous SVG overlay if any
+      const old = wrap.querySelector('.fp-sitemap-svg');
+      if (old) old.remove();
+
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.setAttribute('class', 'fp-sitemap-svg');
+      svg.setAttribute('viewBox', '0 0 100 100');
+      svg.setAttribute('preserveAspectRatio', 'none');
+      svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;';
 
       SITEMAP.towerTiles.forEach(tile => {
-        const el = document.createElement('div');
-        el.className = 'fp-tower-tile';
-        el.style.left   = (tile.x / 100 * iw) + 'px';
-        el.style.top    = (tile.y / 100 * ih) + 'px';
-        el.style.width  = (tile.w / 100 * iw) + 'px';
-        el.style.height = (tile.h / 100 * ih) + 'px';
-        el.innerHTML = `<span class="fp-tower-tile-label">${tile.label}</span><span class="fp-tower-tile-sub">Explore</span>`;
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.style.pointerEvents = 'all';
 
-        const tileId = tile.id;
+        // Polygon
+        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        poly.setAttribute('class', 'fp-tower-poly');
+        poly.setAttribute('points', tile.points);
 
-        // Touch — instant response, no 300ms delay
-        let tileTouchMoved = false;
-        el.addEventListener('touchstart', (e) => {
-          tileTouchMoved = false;
-          el.classList.add('tapped');
-        }, { passive: true });
-        el.addEventListener('touchmove', () => {
-          tileTouchMoved = true;
-          el.classList.remove('tapped');
-        }, { passive: true });
-        el.addEventListener('touchend', (e) => {
-          el.classList.remove('tapped');
-          if (!tileTouchMoved) {
-            e.preventDefault();
-            drillToCluster(tileId);
-          }
+        // Compute centroid for label
+        const pts = tile.points.trim().split(' ').map(p => p.split(',').map(Number));
+        const cx  = pts.reduce((s, p) => s + p[0], 0) / pts.length;
+        const cy  = pts.reduce((s, p) => s + p[1], 0) / pts.length;
+
+        // Label
+        const labelEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        labelEl.setAttribute('class', 'fp-tower-label');
+        labelEl.setAttribute('x', cx);
+        labelEl.setAttribute('y', cy - 1.5);
+        labelEl.textContent = tile.label;
+
+        // Sub label
+        const subEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        subEl.setAttribute('class', 'fp-tower-sub');
+        subEl.setAttribute('x', cx);
+        subEl.setAttribute('y', cy + 2);
+        subEl.textContent = 'Explore';
+
+        // Hover effects
+        poly.addEventListener('mouseenter', () => {
+          poly.setAttribute('fill', 'rgba(200,190,154,0.25)');
+          poly.setAttribute('stroke', 'rgba(200,190,154,0.95)');
+        });
+        poly.addEventListener('mouseleave', () => {
+          poly.setAttribute('fill', 'rgba(200,190,154,0.08)');
+          poly.setAttribute('stroke', 'rgba(200,190,154,0.50)');
         });
 
-        // Mouse (desktop)
-        el.addEventListener('click', () => drillToCluster(tileId));
+        // Touch
+        let touchMoved = false;
+        g.addEventListener('touchstart', () => {
+          touchMoved = false;
+          poly.setAttribute('fill', 'rgba(200,190,154,0.25)');
+        }, { passive: true });
+        g.addEventListener('touchmove', () => {
+          touchMoved = true;
+          poly.setAttribute('fill', 'rgba(200,190,154,0.08)');
+        }, { passive: true });
+        g.addEventListener('touchend', (e) => {
+          poly.setAttribute('fill', 'rgba(200,190,154,0.08)');
+          if (!touchMoved) { e.preventDefault(); drillToCluster(tile.id); }
+        });
 
-        wrap.appendChild(el);
+        // Click
+        g.addEventListener('click', () => drillToCluster(tile.id));
+
+        g.appendChild(poly);
+        g.appendChild(labelEl);
+        g.appendChild(subEl);
+        svg.appendChild(g);
       });
+
+      wrap.appendChild(svg);
     }
 
     if (img.complete && img.naturalWidth > 0) placeTiles();
     else img.addEventListener('load', placeTiles, { once: true });
 
-    _sitemapRO = new ResizeObserver(() => {
-    if (img.offsetWidth > 0) placeTiles();
-    });
+    _sitemapRO = new ResizeObserver(() => { if (img.offsetWidth > 0) placeTiles(); });
     _sitemapRO.observe(wrap);
     _sitemapRO.observe(img);
   }
@@ -943,30 +627,22 @@ window.FloorplanModule = (function () {
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
     });
-
-    const img    = document.getElementById('fp-cluster-img');
-    const svg    = document.getElementById('fp-zone-svg');
-    if (!img || !svg) return; // FIX: null safety
+    const img = document.getElementById('fp-cluster-img');
+    const svg = document.getElementById('fp-zone-svg');
+    if (!img || !svg) return;
     const newSrc = getClusterImage(activeTower, floorParity);
     svg.innerHTML = '';
     img.classList.add('fading');
-
-    // FIX: capture current tower+parity to guard against race conditions
-    // (user rapidly swapping parity / switching towers)
-    const reqTower  = activeTower;
-    const reqParity = floorParity;
-
+    const reqTower = activeTower, reqParity = floorParity;
     setTimeout(() => {
       let done = false;
       function finish() {
         if (done) return; done = true;
-        // Discard if state changed while loading
         if (activeTower !== reqTower || floorParity !== reqParity) return;
         img.classList.remove('fading');
         buildZones(reqTower, reqParity);
       }
-      img.onload  = finish;
-      img.onerror = () => { img.classList.remove('fading'); };
+      img.onload = finish; img.onerror = () => img.classList.remove('fading');
       img.src = newSrc;
       if (img.complete && img.naturalWidth > 0) finish();
     }, 220);
@@ -974,97 +650,64 @@ window.FloorplanModule = (function () {
 
   // ─── DRILL TO CLUSTER ────────────────────────────────────────
   function drillToCluster(towerId) {
-    activeUnit  = null;
-    floorParity = 'odd'; // Reset parity per-tower so Tower A's even/odd state doesn't carry into Tower C etc.
+    activeUnit = null; floorParity = 'odd';
     const unitInfo = document.getElementById('fp-unit-info');
     if (unitInfo) unitInfo.classList.remove('visible');
     const planImg = document.getElementById('fp-plan-img');
     if (planImg) { planImg.removeAttribute('src'); planImg.style.transform = ''; }
     document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
-
     activeTower = towerId;
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
     });
-
-    const img    = document.getElementById('fp-cluster-img');
-    const svg    = document.getElementById('fp-zone-svg');
-    if (!img || !svg) return; // FIX: null safety
-    const newSrc = getClusterImage(towerId, floorParity);
-    svg.innerHTML = '';
-    img.classList.add('fading');
-
-    // FIX: capture current tower+parity to guard against race conditions
-    const reqTower  = towerId;
-    const reqParity = floorParity;
-
+    const img = document.getElementById('fp-cluster-img');
+    const svg = document.getElementById('fp-zone-svg');
+    if (!img || !svg) return;
+    svg.innerHTML = ''; img.classList.add('fading');
+    const reqTower = towerId, reqParity = floorParity;
     setTimeout(() => {
       let done = false;
       function finish() {
         if (done) return; done = true;
-        // Discard if user already drilled to a different tower
         if (activeTower !== reqTower || floorParity !== reqParity) return;
         img.classList.remove('fading');
         buildZones(reqTower, reqParity);
       }
-      img.onload  = finish;
-      img.onerror = () => { img.classList.remove('fading'); };
-      img.src = newSrc;
+      img.onload = finish; img.onerror = () => img.classList.remove('fading');
+      img.src = getClusterImage(towerId, floorParity);
       if (img.complete && img.naturalWidth > 0) finish();
     }, 220);
-
-    level = 1;
-    showPanel('fp-panel-cluster', 'forward');
-    updateTopbar();
-    updateTitle();
+    level = 1; showPanel('fp-panel-cluster', 'forward'); updateTopbar(); updateTitle();
   }
 
   // ─── BUILD ZONES ─────────────────────────────────────────────
   function buildZones(towerId, parity) {
     const svg = document.getElementById('fp-zone-svg');
-    const img = document.getElementById('fp-cluster-img');
     svg.innerHTML = '';
-
-    // FIXED — always use 100×100 to match percentage-based points
     svg.setAttribute('viewBox', '0 0 100 100');
     svg.setAttribute('preserveAspectRatio', 'none');
-
     getUnits(towerId, parity).forEach(u => {
       const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
       poly.setAttribute('class', 'fp-zone');
       poly.setAttribute('points', u.points);
       poly.dataset.unitId = u.unitId;
-
-      // Desktop
       poly.addEventListener('mouseenter', (e) => showZoneTip(u, e));
       poly.addEventListener('mousemove',  (e) => moveZoneTip(e));
       poly.addEventListener('mouseleave', hideZoneTip);
       poly.addEventListener('click', () => drillToUnit(u));
-
-      // Touch — tap to navigate, show tip briefly then auto-hide
-      let touchMoved   = false;
-      let tipHideTimer = null;
+      let touchMoved = false, tipHideTimer = null;
       poly.addEventListener('touchstart', (e) => {
-        touchMoved = false;
-        clearTimeout(tipHideTimer);
+        touchMoved = false; clearTimeout(tipHideTimer);
         showZoneTipTouch(u, e);
-        // auto-hide tip after 1.2s if user doesn't lift finger
         tipHideTimer = setTimeout(hideZoneTip, 1200);
       }, { passive: true });
       poly.addEventListener('touchmove', () => {
-        touchMoved = true;
-        clearTimeout(tipHideTimer);
-        hideZoneTip();
+        touchMoved = true; clearTimeout(tipHideTimer); hideZoneTip();
       }, { passive: true });
       poly.addEventListener('touchend', (e) => {
         clearTimeout(tipHideTimer);
-        if (!touchMoved) {
-          e.preventDefault();
-          hideZoneTip();
-          drillToUnit(u);
-        }
+        if (!touchMoved) { e.preventDefault(); hideZoneTip(); drillToUnit(u); }
       });
-
       svg.appendChild(poly);
     });
   }
@@ -1076,35 +719,27 @@ window.FloorplanModule = (function () {
     document.getElementById('fp-zone-tip').classList.add('visible');
     moveZoneTip(e);
   }
-
   function showZoneTipTouch(u, e) {
     document.getElementById('fp-zone-tip-name').textContent = u.label;
     document.getElementById('fp-zone-tip-type').textContent = `${u.type}${u.area ? '  ·  ' + u.area : ''}`;
-    const tip  = document.getElementById('fp-zone-tip');
+    const tip = document.getElementById('fp-zone-tip');
     tip.classList.add('visible');
     const rect = document.getElementById('fp-cluster-wrap').getBoundingClientRect();
-    const t    = e.touches[0];
-    let left   = t.clientX - rect.left + 14;
-    let top    = t.clientY - rect.top  - 40;
-    const tw   = tip.offsetWidth || 120;
+    const t = e.touches[0];
+    let left = t.clientX - rect.left + 14, top = t.clientY - rect.top - 40;
+    const tw = tip.offsetWidth || 120;
     if (left + tw > rect.width - 8) left = rect.width - tw - 8;
-    if (left < 4) left = 4;
-    if (top  < 4) top  = 4;
-    tip.style.left = left + 'px';
-    tip.style.top  = top  + 'px';
+    if (left < 4) left = 4; if (top < 4) top = 4;
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
   }
-
   function moveZoneTip(e) {
     const rect = document.getElementById('fp-cluster-wrap').getBoundingClientRect();
-    const tip  = document.getElementById('fp-zone-tip');
-    let left   = e.clientX - rect.left + 14;
-    let top    = e.clientY - rect.top  - 14;
-    const tw   = tip.offsetWidth || 120;
+    const tip = document.getElementById('fp-zone-tip');
+    let left = e.clientX - rect.left + 14, top = e.clientY - rect.top - 14;
+    const tw = tip.offsetWidth || 120;
     if (left + tw > rect.width - 8) left = rect.width - tw - 8;
-    tip.style.left = left + 'px';
-    tip.style.top  = top  + 'px';
+    tip.style.left = left + 'px'; tip.style.top = top + 'px';
   }
-
   function hideZoneTip() {
     const tip = document.getElementById('fp-zone-tip');
     if (tip) tip.classList.remove('visible');
@@ -1112,9 +747,7 @@ window.FloorplanModule = (function () {
 
   // ─── DRILL TO UNIT ───────────────────────────────────────────
   function drillToUnit(unitData) {
-    activeUnit = unitData;
-    viewMode   = 'top';
-
+    activeUnit = unitData; viewMode = 'top';
     document.querySelectorAll('.fp-toggle-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.view === 'top');
     });
@@ -1122,202 +755,109 @@ window.FloorplanModule = (function () {
     document.getElementById('fp-unit-info-type').textContent = unitData.type;
     document.getElementById('fp-unit-info-area').textContent = unitData.area || '';
     document.getElementById('fp-unit-info').classList.add('visible');
-
-    // Highlight zone BEFORE panel transition
     document.querySelectorAll('.fp-zone').forEach(z => z.classList.remove('selected'));
     const activeZone = document.querySelector(`.fp-zone[data-unit-id="${unitData.unitId}"]`);
     if (activeZone) activeZone.classList.add('selected');
-
-    // Reset pinch-zoom from any previous unit
     const planImg = document.getElementById('fp-plan-img');
     if (planImg) planImg.style.transform = '';
-
-    level = 2;
-    showPanel('fp-panel-unit', 'forward');
-    updateTopbar();
-    updateTitle();
-    loadUnitImage();
+    level = 2; showPanel('fp-panel-unit', 'forward'); updateTopbar(); updateTitle(); loadUnitImage();
   }
 
   // ─── LOAD UNIT IMAGE ─────────────────────────────────────────
   function loadUnitImage() {
     if (!activeUnit) return;
-    const img     = document.getElementById('fp-plan-img');
+    const img = document.getElementById('fp-plan-img');
     const spinner = document.getElementById('fp-spinner');
-    if (!img || !spinner) return; // FIX: null safety
-    const src     = unitImagePath(activeUnit, viewMode);
-
-    // IK('folder/') with no filename = not set yet
-    if (!src || src.endsWith('/')) {
-      img.removeAttribute('src');
-      spinner.classList.remove('visible');
-      return;
-    }
-
-    // FIX: capture current unit+view so a slow load doesn't apply to
-    // a different unit the user has since navigated to
-    const reqUnit = activeUnit;
-    const reqView = viewMode;
-
-    img.classList.add('fading');
-    spinner.classList.add('visible');
+    if (!img || !spinner) return;
+    const src = unitImagePath(activeUnit, viewMode);
+    if (!src || src.endsWith('/')) { img.removeAttribute('src'); spinner.classList.remove('visible'); return; }
+    const reqUnit = activeUnit, reqView = viewMode;
+    img.classList.add('fading'); spinner.classList.add('visible');
     setTimeout(() => {
-      // Bail if user navigated away during the fade-out delay
-      if (activeUnit !== reqUnit || viewMode !== reqView) {
-        spinner.classList.remove('visible');
-        return;
-      }
+      if (activeUnit !== reqUnit || viewMode !== reqView) { spinner.classList.remove('visible'); return; }
       img.src = src;
-      img.onload  = () => {
+      img.onload = () => {
         if (activeUnit !== reqUnit || viewMode !== reqView) return;
-        img.classList.remove('fading');
-        spinner.classList.remove('visible');
+        img.classList.remove('fading'); spinner.classList.remove('visible');
       };
       img.onerror = () => { img.classList.remove('fading'); spinner.classList.remove('visible'); };
     }, 280);
   }
 
-  // ─── PINCH-ZOOM on floor plan image ─────────────────────────
-  // Handles two-finger pinch to zoom and single-finger pan when zoomed.
-  // Double-tap resets zoom.
+  // ─── PINCH-ZOOM ──────────────────────────────────────────────
   function bindPinchZoom() {
     const area = document.getElementById('fp-plan-area');
     const img  = document.getElementById('fp-plan-img');
     if (!area || !img) return;
-
-    let scale      = 1;
-    let originX    = 0;
-    let originY    = 0;
-    let lastDist   = null;
-    let panStartX  = 0;
-    let panStartY  = 0;
-    let panOriginX = 0;
-    let panOriginY = 0;
-    let lastTap    = 0;
-    const MAX_SCALE = 4;
-    const MIN_SCALE = 1;
-    const zoomHint  = document.getElementById('fp-zoom-hint');
-
+    let scale = 1, originX = 0, originY = 0, lastDist = null;
+    let panStartX = 0, panStartY = 0, panOriginX = 0, panOriginY = 0, lastTap = 0;
+    const MAX_SCALE = 4, MIN_SCALE = 1;
+    const zoomHint = document.getElementById('fp-zoom-hint');
     function applyTransform() {
       img.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
       if (zoomHint) {
-        // Show "Pinch to zoom" only when at 1x; show "Double-tap to reset" when zoomed
-        if (scale > 1.05) {
-          zoomHint.textContent = 'Double-tap to reset';
-          zoomHint.classList.add('visible');
-        } else {
-          zoomHint.classList.remove('visible');
-        }
+        if (scale > 1.05) { zoomHint.textContent = 'Double-tap to reset'; zoomHint.classList.add('visible'); }
+        else zoomHint.classList.remove('visible');
       }
     }
-
     function resetZoom() {
       scale = 1; originX = 0; originY = 0;
-      img.style.transition = 'transform 0.25s ease';
-      applyTransform();
+      img.style.transition = 'transform 0.25s ease'; applyTransform();
       setTimeout(() => { img.style.transition = ''; }, 260);
       if (zoomHint) zoomHint.classList.remove('visible');
     }
-
-    function dist(touches) {
-      const dx = touches[0].clientX - touches[1].clientX;
-      const dy = touches[0].clientY - touches[1].clientY;
-      return Math.sqrt(dx * dx + dy * dy);
-    }
-
-    function midpoint(touches) {
-      return {
-        x: (touches[0].clientX + touches[1].clientX) / 2,
-        y: (touches[0].clientY + touches[1].clientY) / 2,
-      };
-    }
-
+    function dist(t) { return Math.sqrt((t[0].clientX-t[1].clientX)**2 + (t[0].clientY-t[1].clientY)**2); }
+    function mid(t)  { return { x:(t[0].clientX+t[1].clientX)/2, y:(t[0].clientY+t[1].clientY)/2 }; }
     area.addEventListener('touchstart', (e) => {
-      if (e.touches.length === 2) {
-        e.preventDefault();
-        lastDist = dist(e.touches);
-      } else if (e.touches.length === 1) {
-        // Double-tap to reset
+      if (e.touches.length === 2) { e.preventDefault(); lastDist = dist(e.touches); }
+      else if (e.touches.length === 1) {
         const now = Date.now();
-        if (now - lastTap < 300) {
-          e.preventDefault();
-          resetZoom();
-        }
-        lastTap    = now;
-        panStartX  = e.touches[0].clientX;
-        panStartY  = e.touches[0].clientY;
-        panOriginX = originX;
-        panOriginY = originY;
+        if (now - lastTap < 300) { e.preventDefault(); resetZoom(); }
+        lastTap = now; panStartX = e.touches[0].clientX; panStartY = e.touches[0].clientY;
+        panOriginX = originX; panOriginY = originY;
       }
     }, { passive: false });
-
     area.addEventListener('touchmove', (e) => {
       if (e.touches.length === 2) {
         e.preventDefault();
-        const d    = dist(e.touches);
-        const mid  = midpoint(e.touches);
-        const rect = area.getBoundingClientRect();
-
+        const d = dist(e.touches), m = mid(e.touches), rect = area.getBoundingClientRect();
         if (lastDist !== null) {
-          const delta    = d / lastDist;
-          const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * delta));
-
-          // Zoom toward the pinch midpoint
-          const pivotX = mid.x - rect.left - rect.width  / 2;
-          const pivotY = mid.y - rect.top  - rect.height / 2;
+          const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * (d / lastDist)));
+          const pivotX = m.x - rect.left - rect.width / 2;
+          const pivotY = m.y - rect.top  - rect.height / 2;
           originX = pivotX + (originX - pivotX) * (newScale / scale);
           originY = pivotY + (originY - pivotY) * (newScale / scale);
-          scale   = newScale;
-          applyTransform();
+          scale = newScale; applyTransform();
         }
         lastDist = d;
-
       } else if (e.touches.length === 1 && scale > 1) {
-        // Pan when zoomed
         e.preventDefault();
         originX = panOriginX + (e.touches[0].clientX - panStartX);
         originY = panOriginY + (e.touches[0].clientY - panStartY);
         applyTransform();
       }
     }, { passive: false });
-
     area.addEventListener('touchend', (e) => {
       if (e.touches.length < 2) lastDist = null;
-      // Snap back to bounds if over-panned
       if (scale <= MIN_SCALE + 0.05) resetZoom();
     }, { passive: true });
   }
 
-  // ─── SWIPE-BACK gesture ──────────────────────────────────────
-  // Swipe right from left edge (< 40px) triggers goBack().
+  // ─── SWIPE-BACK ──────────────────────────────────────────────
   function bindSwipeBack() {
     const content = document.getElementById('fp-content');
     if (!content) return;
-    let startX = 0;
-    let startY = 0;
-    let active = false;
-
+    let startX = 0, startY = 0, active = false;
     content.addEventListener('touchstart', (e) => {
-      if (e.touches[0].clientX < 40) {
-        startX = e.touches[0].clientX;
-        startY = e.touches[0].clientY;
-        active = true;
-      }
+      if (e.touches[0].clientX < 40) { startX = e.touches[0].clientX; startY = e.touches[0].clientY; active = true; }
     }, { passive: true });
-
     content.addEventListener('touchmove', (e) => {
       if (!active) return;
-      const dx = e.touches[0].clientX - startX;
-      const dy = Math.abs(e.touches[0].clientY - startY);
-      // Cancel if mostly vertical
-      if (dy > 30) { active = false; }
+      if (Math.abs(e.touches[0].clientY - startY) > 30) active = false;
     }, { passive: true });
-
     content.addEventListener('touchend', (e) => {
-      if (!active) return;
-      active = false;
-      const dx = e.changedTouches[0].clientX - startX;
-      if (dx > 60 && level > 0) goBack();
+      if (!active) return; active = false;
+      if (e.changedTouches[0].clientX - startX > 60 && level > 0) goBack();
     }, { passive: true });
   }
 
@@ -1329,13 +869,9 @@ window.FloorplanModule = (function () {
       if (unitInfo) unitInfo.classList.remove('visible');
       const spinner = document.getElementById('fp-spinner');
       if (spinner) spinner.classList.remove('visible');
-      // Reset pinch-zoom when leaving unit panel
       const planImg = document.getElementById('fp-plan-img');
       if (planImg) planImg.style.transform = '';
-      showPanel('fp-panel-cluster', 'back');
-      level = 1;
-      updateTopbar();
-      updateTitle();
+      showPanel('fp-panel-cluster', 'back'); level = 1; updateTopbar(); updateTitle();
     } else if (level === 1) {
       resetToSitemap();
     }
@@ -1343,23 +879,16 @@ window.FloorplanModule = (function () {
 
   // ─── UPDATE TOPBAR ───────────────────────────────────────────
   function updateTopbar() {
-    const back         = document.getElementById('fp-back');
+    const back = document.getElementById('fp-back');
     const parityToggle = document.getElementById('fp-parity-toggle');
     const viewToggle   = document.getElementById('fp-view-toggle');
-    if (!back || !parityToggle || !viewToggle) return; // FIX: null safety
-
+    if (!back || !parityToggle || !viewToggle) return;
     if (level === 0) {
-      back.classList.remove('visible');
-      parityToggle.classList.remove('visible');
-      viewToggle.classList.remove('visible');
+      back.classList.remove('visible'); parityToggle.classList.remove('visible'); viewToggle.classList.remove('visible');
     } else if (level === 1) {
-      back.classList.add('visible');
-      parityToggle.classList.add('visible');
-      viewToggle.classList.remove('visible');
+      back.classList.add('visible'); parityToggle.classList.add('visible'); viewToggle.classList.remove('visible');
     } else if (level === 2) {
-      back.classList.add('visible');
-      parityToggle.classList.remove('visible');
-      viewToggle.classList.add('visible');
+      back.classList.add('visible'); parityToggle.classList.remove('visible'); viewToggle.classList.add('visible');
     }
   }
 
@@ -1367,26 +896,16 @@ window.FloorplanModule = (function () {
   function open(floorNum) {
     if (overlayOpen) return;
     overlayOpen = true;
-
-    // Restore pointer-events that close() disabled, so the overlay is interactive.
     const fpOverlay = document.getElementById('fp-overlay');
-    if (!fpOverlay) return; // FIX: null safety — bail if injectHTML never ran
+    if (!fpOverlay) return;
     fpOverlay.classList.remove('hidden');
     fpOverlay.style.pointerEvents = '';
-
-    // Cancel any pending close→reset so it doesn't wipe state after we open.
     clearTimeout(_closeResetTimer);
-    // NOTE: level/activeTower/activeUnit are NOT reset here.
-    // resetToSitemap() (called from the close timer) handles that after the
-    // close animation completes. Resetting unconditionally here would discard
-    // mid-session state on a quick close→reopen.
     floorParity = (floorNum !== undefined) ? (isOdd(floorNum) ? 'odd' : 'even') : 'odd';
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
     });
-    showPanel('fp-panel-sitemap', 'forward');
-    updateTopbar();
-    updateTitle();
+    showPanel('fp-panel-sitemap', 'forward'); updateTopbar(); updateTitle();
     fpOverlay.classList.add('open');
     buildSitemapTiles();
     setTimeout(() => buildSitemapTiles(), 420);
@@ -1397,18 +916,13 @@ window.FloorplanModule = (function () {
   function close() {
     if (!overlayOpen) return;
     overlayOpen = false;
-    // Cancel any previously queued reset so a rapid open→close→open
-    // sequence never fires a stale resetToSitemap() mid-session.
     clearTimeout(_closeResetTimer);
     const overlay = document.getElementById('fp-overlay');
-    if (!overlay) return; // FIX: null safety — was crashing if init() never ran
+    if (!overlay) return;
     overlay.classList.remove('open');
     overlay.style.pointerEvents = 'none';
     _closeResetTimer = setTimeout(() => {
-      if (!overlayOpen) {
-        resetToSitemap();
-        if (overlay) overlay.classList.add('hidden');
-      }
+      if (!overlayOpen) { resetToSitemap(); if (overlay) overlay.classList.add('hidden'); }
     }, 420);
   }
 
@@ -1416,21 +930,13 @@ window.FloorplanModule = (function () {
   function bindEvents() {
     const closeBtn = document.getElementById('fp-close');
     const backBtn  = document.getElementById('fp-back');
-    if (!closeBtn || !backBtn) return; // FIX: null safety — bail if HTML wasn't injected
-
+    if (!closeBtn || !backBtn) return;
     closeBtn.addEventListener('click', close);
     backBtn.addEventListener('click', goBack);
-
-    // Touch on back button — instant response
-    backBtn.addEventListener('touchend', (e) => {
-      e.preventDefault();
-      goBack();
-    });
-
+    backBtn.addEventListener('touchend', (e) => { e.preventDefault(); goBack(); });
     document.querySelectorAll('.fp-parity-btn').forEach(btn => {
       btn.addEventListener('click', () => swapParity(btn.dataset.parity));
     });
-
     document.querySelectorAll('.fp-toggle-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const v = btn.dataset.view;
@@ -1442,33 +948,23 @@ window.FloorplanModule = (function () {
         loadUnitImage();
       });
     });
-
-    bindPinchZoom();
-    bindSwipeBack();
-    watchTopbarHeight();
+    bindPinchZoom(); bindSwipeBack(); watchTopbarHeight();
   }
 
   // ─── PUBLIC API ──────────────────────────────────────────────
   return {
     init() { injectHTML(); bindEvents(); },
-    open,
-    close,
+    open, close,
     toggle() { overlayOpen ? close() : open(); },
     openTower(towerId, floorNum) {
       if (!overlayOpen) { open(floorNum); setTimeout(() => drillToCluster(towerId), 50); }
       else drillToCluster(towerId);
     },
     openUnit(towerId, unitData, floorNum) {
-      if (!overlayOpen) {
-        open(floorNum);
-        setTimeout(() => { activeTower = towerId; drillToUnit(unitData); }, 50);
-      } else {
-        activeTower = towerId; drillToUnit(unitData);
-      }
+      if (!overlayOpen) { open(floorNum); setTimeout(() => { activeTower = towerId; drillToUnit(unitData); }, 50); }
+      else { activeTower = towerId; drillToUnit(unitData); }
     },
-    TOWERS,
-    SITEMAP,
-    // IK is intentionally not exported — internal utility only.
+    TOWERS, SITEMAP,
   };
 
 })();
