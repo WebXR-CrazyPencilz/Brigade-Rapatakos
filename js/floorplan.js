@@ -280,7 +280,7 @@ window.FloorplanModule = (function () {
       /* SVG polygon tower tiles */
       .fp-sitemap-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; }
       .fp-tower-poly {
-        fill: rgba(200,190,154,.08); stroke: rgba(200,190,154,.50); stroke-width: .3;
+        fill: rgba(212,175,55,.15); stroke: rgba(212,175,55,.80); stroke-width: .3;
         stroke-linejoin: round; cursor: pointer;
         transition: fill 0.22s, stroke 0.22s;
       }
@@ -561,26 +561,26 @@ window.FloorplanModule = (function () {
 
         // Hover effects
         poly.addEventListener('mouseenter', () => {
-          poly.setAttribute('fill', 'rgba(200,190,154,0.25)');
-          poly.setAttribute('stroke', 'rgba(200,190,154,0.95)');
+          poly.setAttribute('fill', 'rgba(212,175,55,.35)');
+          poly.setAttribute('stroke', 'rgba(212,175,55,1)');
         });
         poly.addEventListener('mouseleave', () => {
-          poly.setAttribute('fill', 'rgba(200,190,154,0.08)');
-          poly.setAttribute('stroke', 'rgba(200,190,154,0.50)');
+          poly.setAttribute('fill', 'rgba(212,175,55,0.08)');
+          poly.setAttribute('stroke', 'rgba(212,175,55,0.50)');
         });
 
         // Touch
         let touchMoved = false;
         g.addEventListener('touchstart', () => {
           touchMoved = false;
-          poly.setAttribute('fill', 'rgba(200,190,154,0.25)');
+          poly.setAttribute('fill', 'rgba(212,175,55,.25)');
         }, { passive: true });
         g.addEventListener('touchmove', () => {
           touchMoved = true;
-          poly.setAttribute('fill', 'rgba(200,190,154,0.08)');
+          poly.setAttribute('fill', 'rgba(212,175,55,0.08)');
         }, { passive: true });
         g.addEventListener('touchend', (e) => {
-          poly.setAttribute('fill', 'rgba(200,190,154,0.08)');
+          poly.setAttribute('fill', 'rgba(212,175,55,0.08)');
           if (!touchMoved) { e.preventDefault(); drillToCluster(tile.id); }
         });
 
