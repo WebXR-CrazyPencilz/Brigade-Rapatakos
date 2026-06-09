@@ -84,8 +84,8 @@ window.GalleryModule = (function () {
       /* Stack of cards — prev behind, current on top, next to the right */
       .gl-card {
         position: absolute;
-        width: min(78vw, 560px);
-        height: min(56vw, 400px);
+        width:  min(calc(100vw - 120px), calc((100dvh - 200px) * 1.6));
+        height: min(calc(100dvh - 200px), calc((100vw - 120px) / 1.6));
         border-radius: 4px; overflow: hidden;
         border: 1px solid rgba(200,190,154,.10);
         background: #0d0b07;
