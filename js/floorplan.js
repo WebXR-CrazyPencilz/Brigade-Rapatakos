@@ -31,16 +31,16 @@ window.FloorplanModule = (function () {
         // Right-center building block
         //points: '60,36 68,33 74,38 73,48 64,50 59,45',
       //},
-      {
-        id: 'tower-C', label: 'Tower C',
+      //{
+        //id: 'tower-C', label: 'Tower C',
         // Bottom-center building block
-        points: '40,54 55,50 60,56 57,66 44,68 37,62',
-      },
-      {
-        id: 'tower-D', label: 'Tower D',
+        //points: '40,54 55,50 60,56 57,66 44,68 37,62',
+      //},
+      //{
+        //id: 'tower-D', label: 'Tower D',
         // Left building block
-        points: '27,32 40,27 46,34 43,46 30,48 24,41',
-      },
+        //points: '27,32 40,27 46,34 43,46 30,48 24,41',
+      //},
     ],
   };
 
