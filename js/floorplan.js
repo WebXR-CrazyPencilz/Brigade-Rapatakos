@@ -274,18 +274,18 @@ window.FloorplanModule = (function () {
       #fp-sitemap-img {
         display: block; max-width: 100%;
         max-height: calc(100dvh - var(--fp-topbar-h) - 62px - env(safe-area-inset-bottom, 0px));
-        object-fit: contain; border: 1px solid rgba(200,190,154,.12);
+        object-fit: contain; border: 1px solid rgba(212,175,55,.12);
       }
 
       /* SVG polygon tower tiles */
       .fp-sitemap-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; }
       .fp-tower-poly {
-        fill: rgba(212,175,55,.15); stroke: rgba(212,175,55,.80); stroke-width: .3;
+        fill: rgba(212,175,55,.15); stroke: rgba(212,175,55,.80); stroke-width: .15;
         stroke-linejoin: round; cursor: pointer;
         transition: fill 0.22s, stroke 0.22s;
       }
       .fp-tower-poly:hover, .fp-tower-poly.tapped {
-        fill: rgba(200,190,154,.22); stroke: rgba(200,190,154,.90);
+        fill: rgba(212,175,55,.22); stroke: rgba(212,175,55,.90);
       }
       .fp-tower-label {
         font-family: 'Cormorant Garamond', serif; font-size: 3px; font-weight: 500;
@@ -294,7 +294,7 @@ window.FloorplanModule = (function () {
       }
       .fp-tower-sub {
         font-family: 'Syne', sans-serif; font-size: 1.8px; font-weight: 700;
-        letter-spacing: 0.08em; fill: rgba(200,190,154,.60);
+        letter-spacing: 0.08em; fill: rgba(212,175,55,.60);
         pointer-events: none; text-anchor: middle; dominant-baseline: middle;
       }
 
@@ -320,16 +320,15 @@ window.FloorplanModule = (function () {
 
       #fp-zone-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; }
       .fp-zone {
-        fill: rgba(200,190,154,.12); stroke: rgba(200,190,154,.55); stroke-width: 1.5;
+        fill: rgba(200,190,154,.12); stroke: rgba(200,190,154,.55); stroke-width: .2;
         cursor: pointer; pointer-events: all;
         transition: fill 0.20s, stroke 0.20s; stroke-linejoin: round;
       }
-      .fp-zone:hover, .fp-zone.tapped { fill: rgba(200,190,154,.30); stroke: rgba(200,190,154,.95); }
-      .fp-zone.selected { fill: rgba(200,190,154,.22); stroke: #e8dfc0; stroke-width: 2; }
-
+      .fp-zone:hover, .fp-zone.tapped { fill: rgba(212,175,55,.30); stroke: rgba(212,175,55,1); }
+      .fp-zone.selected { fill: rgba(212,175,55,.22); stroke: #d4af37; stroke-width: 1; }
       #fp-zone-tip {
         position: absolute; padding: 6px 12px;
-        background: rgba(10,8,5,.88); border: 1px solid rgba(200,190,154,.40);
+        background: rgba(10,8,5,.88); border: 1px solid rgba(212,175,55,.40);
         border-radius: 4px; backdrop-filter: blur(8px);
         pointer-events: none; opacity: 0; transition: opacity 0.18s;
         z-index: 10; white-space: nowrap; max-width: calc(100vw - 24px);
