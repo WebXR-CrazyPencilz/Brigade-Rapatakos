@@ -23,7 +23,7 @@ window.FloorplanModule = (function () {
       {
         id: 'tower-A', label: 'Tower A',
         // Top-right building block on the sitemap
-        points: '65,34 74,31 80,36 79,45 69,47 64,42',
+        points: '53,22 62,19 68,24 67,33 57,35 52,30',
       },
       {
         id: 'tower-B', label: 'Tower B',
@@ -296,7 +296,7 @@ window.FloorplanModule = (function () {
       /* SVG polygon tower tiles */
       .fp-sitemap-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; }
       .fp-tower-poly {
-        fill: rgba(200,190,154,.08); stroke: rgba(200,190,154,.50); stroke-width: 1.5;
+        fill: rgba(200,190,154,.08); stroke: rgba(200,190,154,.50); stroke-width: .3;
         stroke-linejoin: round; cursor: pointer;
         transition: fill 0.22s, stroke 0.22s;
       }
