@@ -21,7 +21,7 @@ window.FloorplanModule = (function () {
     image: IK('Cluster/site_cluster.jpg'),
     towerTiles: [
       { id: 'tower-A', label: 'Tower A', points: '40,16 59,16 59,34 40,34' },
-      { id: 'tower-B', label: 'Tower B', points: '45,35 65,35 65,62 45,62' },
+      { id: 'tower-B', label: 'Tower B', points: '45,40 65,40 65,57 45,57' },
       { id: 'tower-C', label: 'Tower C', points: '21,55 43,55 43,73 21,73' },
       { id: 'tower-D', label: 'Tower D', points: '21,30 39,30 39,52 21,52' },
     ],
