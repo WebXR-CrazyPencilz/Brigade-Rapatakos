@@ -386,6 +386,7 @@ function dismissGateAndStart() {
   // Start the 3D modules — same as firebase-auth.js did
   if (window.HomeModule      && typeof HomeModule.init      === 'function') HomeModule.init();
   if (window.FloorplanModule && typeof FloorplanModule.init === 'function') FloorplanModule.init();
+  if (window.GalleryModule   && typeof GalleryModule.init   === 'function') GalleryModule.init();
 }
 
 /* ─── APP CONTROLLER ─── */

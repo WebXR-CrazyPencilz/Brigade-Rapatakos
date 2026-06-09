@@ -1,200 +1,250 @@
 // gallery.js — Full-screen gallery overlay with 3D cube slide transitions
 window.GalleryModule = (function () {
 
-  // ─── ALL IMAGES (pulled from home.js IMAGES array + extras) ──────
   const IMAGES = [
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928756/patch-through-agreen-forest_mpveu7.jpg',  caption: 'Exterior View',        label: '01' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928747/freepik__edit-img1-to-change-the-sunglasses-on-the-orange-t__10223_copy2_hunmds.jpg',  caption: 'Grand Entrance',       label: '02' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780926778/Brigade_High_35122-_%C2%AA_qvaqsy.jpg',                                 caption: 'Living Spaces',        label: '03' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928748/freepik__a-modern-luxury-indooroutdoor-lounge-with-a-serene__3441_bjy7ga.jpg',                                 caption: 'Master Suite',         label: '04' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928750/freepik__design-a-luxurious-rooftop-outdoor-kitchen-with-a-__33482_qqyhyf.jpg',                                 caption: 'Kitchen & Dining',     label: '05' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928754/freepik__design-a-highend-luxury-lobby-with-marble-floors-a__33481_ryap0w.jpg',                                 caption: 'Balcony & Views',      label: '06' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928756/close-up-woman-relaxing-spa_ryzwuw.jpg',                                 caption: 'Clubhouse',            label: '07' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928748/freepik__a-modern-luxury-indooroutdoor-lounge-with-a-serene__3441_bjy7ga.jpg',  caption: 'Amenities',            label: '08' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928747/freepik__edit-img1-to-change-the-sunglasses-on-the-orange-t__10223_copy2_hunmds.jpg',                                 caption: 'Swimming Pool',        label: '09' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928829/beautiful-green-trees-bright-sunlight_h19cfq.jpg',                                 caption: 'Landscape & Gardens',  label: '10' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928756/patch-through-agreen-forest_mpveu7.jpg',  caption: 'Exterior View',       label: '01' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928747/freepik__edit-img1-to-change-the-sunglasses-on-the-orange-t__10223_copy2_hunmds.jpg', caption: 'Grand Entrance',      label: '02' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780926778/Brigade_High_35122-_%C2%AA_qvaqsy.jpg',  caption: 'Living Spaces',       label: '03' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928748/freepik__a-modern-luxury-indooroutdoor-lounge-with-a-serene__3441_bjy7ga.jpg', caption: 'Master Suite',        label: '04' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928750/freepik__design-a-luxurious-rooftop-outdoor-kitchen-with-a-__33482_qqyhyf.jpg', caption: 'Kitchen & Dining',    label: '05' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928754/freepik__design-a-highend-luxury-lobby-with-marble-floors-a__33481_ryap0w.jpg', caption: 'Balcony & Views',     label: '06' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928756/close-up-woman-relaxing-spa_ryzwuw.jpg',  caption: 'Clubhouse',           label: '07' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928748/freepik__a-modern-luxury-indooroutdoor-lounge-with-a-serene__3441_bjy7ga.jpg', caption: 'Amenities',           label: '08' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928747/freepik__edit-img1-to-change-the-sunglasses-on-the-orange-t__10223_copy2_hunmds.jpg', caption: 'Swimming Pool',       label: '09' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928829/beautiful-green-trees-bright-sunlight_h19cfq.jpg', caption: 'Landscape & Gardens', label: '10' },
   ];
 
-  let current    = 0;
+  let current     = 0;
   let isAnimating = false;
-  let startX     = 0;
-  let startY     = 0;
-  let injected   = false;
+  let startX      = 0;
+  let startY      = 0;
+  let injected    = false;
 
-  // ─── INJECT STYLES & HTML ─────────────────────────────────────────
+  // ─── INJECT STYLES & HTML ────────────────────────────────────────
   function inject() {
     if (injected) return;
     injected = true;
 
-    /* ── Styles ── */
     const style = document.createElement('style');
     style.textContent = `
-      @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
-
       /* ── Overlay shell ── */
       #gallery-overlay {
-        position: fixed; inset: 0; bottom: 62px; z-index: 200;
-        background: #080604;
-        opacity: 0; pointer-events: none;
-        transform: translateY(6px);
-        transition: opacity .38s cubic-bezier(0.22,1,0.36,1),
-                    transform .38s cubic-bezier(0.22,1,0.36,1);
+        position: fixed;
+        top: 0; left: 0; right: 0;
+        bottom: 62px;           /* sits above bottom panel */
+        z-index: 200;
+        background: #07060400;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity .38s cubic-bezier(0.22,1,0.36,1);
+        display: flex;
+        flex-direction: column;
         overflow: hidden;
-        display: flex; flex-direction: column;
+        background: #080604;
       }
       #gallery-overlay.open {
-        opacity: 1; pointer-events: all; transform: translateY(0);
+        opacity: 1;
+        pointer-events: all;
       }
 
-      /* ── Header bar ── */
-      #gl-header {
-        position: absolute; top: 0; left: 0; right: 0; z-index: 10;
-        display: flex; align-items: center; justify-content: space-between;
-        padding: 20px 24px 0;
+      /* ── Grain texture — BEHIND everything (z-index:0) ── */
+      #gallery-overlay::before {
+        content: '';
+        position: absolute; inset: 0;
+        z-index: 0;
         pointer-events: none;
+        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+        background-size: 180px 180px;
+        opacity: .5;
       }
-      #gl-title-wrap { pointer-events: none; }
-      #gl-title {
-        font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+
+      /* ── HEADER ── */
+      #gl-header {
+        flex-shrink: 0;
+        position: relative; z-index: 10;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 20px 14px;
+        background: linear-gradient(to bottom, rgba(8,6,4,.95) 60%, transparent);
+      }
+      #gl-title-wrap { min-width: 0; }
+      #gl-label {
+        font-family: 'Syne', sans-serif;
+        font-size: 9px; font-weight: 700;
         letter-spacing: .22em; text-transform: uppercase;
-        color: rgba(200,190,154,.45); margin: 0 0 3px;
+        color: rgba(200,190,154,.40);
+        margin: 0 0 4px;
       }
       #gl-caption {
-        font-family: 'Cormorant Garamond', serif; font-style: italic;
-        font-size: 20px; font-weight: 300; color: rgba(200,190,154,.72);
-        margin: 0; transition: opacity .3s;
-        min-height: 28px;
+        font-family: 'Cormorant Garamond', serif;
+        font-style: italic; font-size: 22px; font-weight: 300;
+        color: rgba(200,190,154,.80);
+        margin: 0;
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        transition: opacity .25s;
       }
+      #gl-caption.fading { opacity: 0; }
+
       #gl-close {
-        pointer-events: all; width: 38px; height: 38px;
+        flex-shrink: 0;
+        width: 36px; height: 36px;
         border: 1px solid rgba(200,190,154,.22);
         background: rgba(200,190,154,.06);
-        border-radius: 9px; display: flex; align-items: center;
-        justify-content: center; cursor: pointer;
-        color: rgba(200,190,154,.6); font-size: 17px;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        color: rgba(200,190,154,.65); font-size: 16px;
         transition: background .2s, border-color .2s;
         -webkit-tap-highlight-color: transparent;
+        margin-left: 16px;
       }
       #gl-close:hover { background: rgba(200,190,154,.14); border-color: rgba(200,190,154,.5); }
 
-      /* ── 3-D cube stage ── */
+      /* ── CUBE STAGE ── */
       #gl-scene {
-        flex: 1; display: flex; align-items: center; justify-content: center;
-        perspective: 1100px; perspective-origin: 50% 50%;
+        flex: 1;
+        position: relative; z-index: 2;
+        display: flex; align-items: center; justify-content: center;
+        perspective: 1200px;
         overflow: hidden;
+        /* no ::after vignette — was blocking arrows */
       }
+
+      /* Vignette as a sibling div so it never blocks pointer events */
+      #gl-vignette {
+        position: absolute; inset: 0; z-index: 3;
+        pointer-events: none;
+        background: radial-gradient(ellipse 85% 75% at 50% 50%, transparent 50%, rgba(4,3,2,.60) 100%);
+      }
+
       #gl-cube {
-        width: min(78vw, 520px); height: min(52vw, 350px);
-        position: relative; transform-style: preserve-3d;
-        /* transition set dynamically per direction */
+        position: relative;
+        transform-style: preserve-3d;
+        /* Size: fill available space nicely on all screens */
+        width: min(72vw, 580px);
+        height: min(48vw, 390px);
       }
+
       .gl-face {
         position: absolute; inset: 0;
-        display: flex; align-items: center; justify-content: center;
-        background: #0d0b07; overflow: hidden;
-        border: 1px solid rgba(200,190,154,.08);
-        border-radius: 4px;
-        backface-visibility: hidden; -webkit-backface-visibility: hidden;
+        overflow: hidden;
+        border: 1px solid rgba(200,190,154,.10);
+        border-radius: 3px;
+        background: #0d0b07;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
       }
       .gl-face img {
         width: 100%; height: 100%;
-        object-fit: cover; display: block; pointer-events: none;
+        object-fit: cover; display: block;
+        pointer-events: none;
         user-select: none; -webkit-user-drag: none;
       }
-      /* face transforms (cube right/left) */
-      #gl-face-current  { transform: rotateY(0deg)   translateZ(calc(min(39vw, 260px))); }
-      #gl-face-next     { transform: rotateY(90deg)   translateZ(calc(min(39vw, 260px))); }
-      #gl-face-prev     { transform: rotateY(-90deg)  translateZ(calc(min(39vw, 260px))); }
-      /* cube rotations applied to #gl-cube */
-      #gl-cube.to-next  { transform: rotateY(-90deg); }
-      #gl-cube.to-prev  { transform: rotateY(90deg);  }
 
-      /* ── Bottom strip: counter + dots + thumbs ── */
+      /*
+        Half-width of cube = half of min(72vw, 580px) in translateZ.
+        We use a CSS variable so mobile override is easy.
+      */
+      :root { --gl-tz: min(36vw, 290px); }
+
+      #gl-face-current { transform: rotateY(  0deg) translateZ(var(--gl-tz)); }
+      #gl-face-next    { transform: rotateY( 90deg) translateZ(var(--gl-tz)); }
+      #gl-face-prev    { transform: rotateY(-90deg) translateZ(var(--gl-tz)); }
+
+      #gl-cube.to-next { transform: rotateY(-90deg); }
+      #gl-cube.to-prev { transform: rotateY( 90deg); }
+
+      /* ── ARROWS — z-index:4 so they sit above vignette ── */
+      .gl-arrow {
+        position: absolute; top: 50%; transform: translateY(-50%);
+        z-index: 4;
+        width: 40px; height: 40px;
+        background: rgba(10,8,5,.55);
+        border: 1px solid rgba(200,190,154,.22);
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        transition: background .2s, border-color .2s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .gl-arrow:hover { background: rgba(200,190,154,.16); border-color: rgba(200,190,154,.55); }
+      #gl-arrow-prev { left: 16px; }
+      #gl-arrow-next { right: 16px; }
+      .gl-arrow svg {
+        width: 16px; height: 16px;
+        stroke: rgba(200,190,154,.70); fill: none;
+        stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+      }
+
+      /* ── FOOTER ── */
       #gl-footer {
-        position: absolute; bottom: 0; left: 0; right: 0; z-index: 10;
-        padding: 0 20px 18px; display: flex;
-        flex-direction: column; align-items: center; gap: 12px;
-      }
-
-      /* Dots */
-      #gl-dots { display: flex; gap: 7px; }
-      .gl-dot {
-        width: 4px; height: 4px; border-radius: 50%;
-        background: rgba(200,190,154,.22);
-        transition: background .3s, transform .3s, width .3s;
-      }
-      .gl-dot.active {
-        background: rgba(200,190,154,.85);
-        width: 18px; border-radius: 2px; transform: none;
+        flex-shrink: 0;
+        position: relative; z-index: 10;
+        display: flex; flex-direction: column; align-items: center;
+        gap: 10px;
+        padding: 12px 20px 16px;
+        background: linear-gradient(to top, rgba(8,6,4,.95) 60%, transparent);
       }
 
       /* Counter */
       #gl-counter {
-        font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
-        letter-spacing: .20em; color: rgba(200,190,154,.30);
-        text-transform: uppercase;
+        font-family: 'Syne', sans-serif;
+        font-size: 9px; font-weight: 700;
+        letter-spacing: .20em; text-transform: uppercase;
+        color: rgba(200,190,154,.28);
       }
 
-      /* Thumbnails strip */
+      /* Dots */
+      #gl-dots { display: flex; gap: 6px; align-items: center; }
+      .gl-dot {
+        height: 4px; width: 4px; border-radius: 2px;
+        background: rgba(200,190,154,.22);
+        transition: width .3s, background .3s;
+        flex-shrink: 0;
+      }
+      .gl-dot.active {
+        width: 20px;
+        background: rgba(200,190,154,.80);
+      }
+
+      /* Thumbnails */
       #gl-thumbs {
-        display: flex; gap: 7px; overflow-x: auto; padding: 0 4px 2px;
-        scrollbar-width: none; max-width: 100%;
+        display: flex; gap: 6px;
+        overflow-x: auto; scrollbar-width: none;
+        padding: 2px 2px 0;
+        max-width: 100%;
       }
       #gl-thumbs::-webkit-scrollbar { display: none; }
       .gl-thumb {
-        flex-shrink: 0; width: 42px; height: 28px;
-        border-radius: 3px; overflow: hidden; cursor: pointer;
+        flex-shrink: 0;
+        width: 44px; height: 30px;
+        border-radius: 3px; overflow: hidden;
         border: 1.5px solid rgba(200,190,154,.12);
-        transition: border-color .22s, transform .22s, opacity .22s;
-        opacity: .45;
+        cursor: pointer; opacity: .4;
+        transition: opacity .22s, border-color .22s, transform .22s;
       }
-      .gl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
+      .gl-thumb img {
+        width: 100%; height: 100%; object-fit: cover;
+        display: block; pointer-events: none;
+      }
       .gl-thumb.active {
-        border-color: rgba(200,190,154,.75); opacity: 1;
-        transform: scaleY(1.06);
+        opacity: 1;
+        border-color: rgba(200,190,154,.75);
+        transform: scaleY(1.08);
       }
-      .gl-thumb:hover { opacity: .75; }
+      .gl-thumb:not(.active):hover { opacity: .7; }
 
-      /* ── Prev/Next arrow buttons ── */
-      .gl-arrow {
-        position: absolute; top: 50%; transform: translateY(-50%);
-        z-index: 10; width: 38px; height: 38px;
-        background: rgba(200,190,154,.07); border: 1px solid rgba(200,190,154,.20);
-        border-radius: 9px; display: flex; align-items: center; justify-content: center;
-        cursor: pointer; transition: background .2s;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .gl-arrow:hover { background: rgba(200,190,154,.16); }
-      #gl-arrow-prev { left: 14px; }
-      #gl-arrow-next { right: 14px; }
-      .gl-arrow svg { width: 16px; height: 16px; stroke: rgba(200,190,154,.65); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-      /* ── Grain overlay for atmosphere ── */
-      #gallery-overlay::before {
-        content: ''; position: absolute; inset: 0; z-index: 1;
-        pointer-events: none;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
-        background-size: 180px 180px; opacity: .45;
-      }
-
-      /* ── Vignette ── */
-      #gl-scene::after {
-        content: ''; position: absolute; inset: 0; pointer-events: none;
-        background: radial-gradient(ellipse 80% 70% at 50% 50%, transparent 55%, rgba(4,3,2,.55) 100%);
-      }
-
-      /* mobile */
-      @media (max-width: 480px) {
+      /* ── Mobile tweaks ── */
+      @media (max-width: 520px) {
+        :root { --gl-tz: 44vw; }
         #gl-cube { width: 88vw; height: 60vw; }
-        #gl-face-current { transform: rotateY(0deg)   translateZ(44vw); }
-        #gl-face-next    { transform: rotateY(90deg)  translateZ(44vw); }
-        #gl-face-prev    { transform: rotateY(-90deg) translateZ(44vw); }
-        #gl-caption { font-size: 16px; }
+        #gl-caption { font-size: 17px; }
+        #gl-arrow-prev { left: 6px; }
+        #gl-arrow-next { right: 6px; }
+        .gl-thumb { width: 36px; height: 24px; }
       }
     `;
     document.head.appendChild(style);
 
-    /* ── Build thumbs HTML ── */
     const thumbsHTML = IMAGES.map((img, i) => `
       <div class="gl-thumb${i === 0 ? ' active' : ''}" data-idx="${i}">
         <img src="${img.src}" alt="${img.caption}" loading="lazy"/>
@@ -203,34 +253,32 @@ window.GalleryModule = (function () {
     const dotsHTML = IMAGES.map((_, i) =>
       `<div class="gl-dot${i === 0 ? ' active' : ''}"></div>`).join('');
 
-    /* ── Insert overlay ── */
     document.body.insertAdjacentHTML('beforeend', `
       <div id="gallery-overlay">
 
-        <!-- Header -->
         <div id="gl-header">
           <div id="gl-title-wrap">
-            <p id="gl-title">Gallery</p>
+            <p id="gl-label">Gallery</p>
             <p id="gl-caption">${IMAGES[0].caption}</p>
           </div>
           <div id="gl-close">✕</div>
         </div>
 
-        <!-- Cube stage -->
         <div id="gl-scene">
           <div id="gl-cube">
             <div class="gl-face" id="gl-face-current">
               <img src="${IMAGES[0].src}" alt="${IMAGES[0].caption}"/>
             </div>
             <div class="gl-face" id="gl-face-next">
-              <img src="${IMAGES[1].src}" alt="${IMAGES[1].caption}"/>
+              <img src="${IMAGES[1 % IMAGES.length].src}" alt="${IMAGES[1 % IMAGES.length].caption}"/>
             </div>
             <div class="gl-face" id="gl-face-prev">
               <img src="${IMAGES[IMAGES.length - 1].src}" alt=""/>
             </div>
           </div>
 
-          <!-- Arrows (inside scene for centering) -->
+          <div id="gl-vignette"></div>
+
           <div class="gl-arrow" id="gl-arrow-prev">
             <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
           </div>
@@ -239,7 +287,6 @@ window.GalleryModule = (function () {
           </div>
         </div>
 
-        <!-- Footer -->
         <div id="gl-footer">
           <div id="gl-counter">01 / ${String(IMAGES.length).padStart(2,'0')}</div>
           <div id="gl-dots">${dotsHTML}</div>
@@ -252,19 +299,20 @@ window.GalleryModule = (function () {
     bindEvents();
   }
 
-  // ─── CUBE TRANSITION ──────────────────────────────────────────────
-  function cubeTo(targetIdx, direction /* 'next' | 'prev' */) {
+  // ─── CUBE TRANSITION ─────────────────────────────────────────────
+  function cubeTo(targetIdx, direction) {
     if (isAnimating || targetIdx === current) return;
     isAnimating = true;
 
-    const cube    = document.getElementById('gl-cube');
-    const faceCur = document.getElementById('gl-face-current');
+    const cube     = document.getElementById('gl-cube');
     const faceNext = document.getElementById('gl-face-next');
     const facePrev = document.getElementById('gl-face-prev');
+    const faceCur  = document.getElementById('gl-face-current');
+    const caption  = document.getElementById('gl-caption');
 
     const img = IMAGES[targetIdx];
 
-    // Load image into the arriving face
+    // Load arriving face
     if (direction === 'next') {
       faceNext.querySelector('img').src = img.src;
       faceNext.querySelector('img').alt = img.caption;
@@ -273,76 +321,61 @@ window.GalleryModule = (function () {
       facePrev.querySelector('img').alt = img.caption;
     }
 
-    // Preload the face after/before for next rotation
-    const afterIdx = ((targetIdx + 1) % IMAGES.length);
-    const beforeIdx = ((targetIdx - 1 + IMAGES.length) % IMAGES.length);
-
-    // Apply cube rotation
-    const duration = 580; // ms
+    const duration = 560;
     cube.style.transition = `transform ${duration}ms cubic-bezier(0.22,1,0.36,1)`;
     cube.classList.add(direction === 'next' ? 'to-next' : 'to-prev');
 
-    // Update caption mid-transition
+    // Caption fade swap
+    caption.classList.add('fading');
     setTimeout(() => {
-      document.getElementById('gl-caption').textContent = img.caption;
-    }, duration * 0.4);
+      caption.textContent = img.caption;
+      caption.classList.remove('fading');
+    }, duration * 0.45);
 
-    // After transition: reset cube instantly, swap face contents
+    // After rotation: snap-reset cube, restage faces
     setTimeout(() => {
       cube.style.transition = 'none';
       cube.classList.remove('to-next', 'to-prev');
 
-      // Current face gets the arrived image
       faceCur.querySelector('img').src = img.src;
       faceCur.querySelector('img').alt = img.caption;
 
-      // Pre-stage next faces for future transitions
+      const afterIdx  = (targetIdx + 1) % IMAGES.length;
+      const beforeIdx = (targetIdx - 1 + IMAGES.length) % IMAGES.length;
       faceNext.querySelector('img').src = IMAGES[afterIdx].src;
       facePrev.querySelector('img').src = IMAGES[beforeIdx].src;
 
       current = targetIdx;
       updateUI();
       isAnimating = false;
-    }, duration + 20);
+    }, duration + 30);
   }
 
-  // ─── DIRECT JUMP (thumbnail click) ───────────────────────────────
   function jumpTo(targetIdx) {
     if (targetIdx === current || isAnimating) return;
-    const dir = targetIdx > current ? 'next' : 'prev';
-    // For non-adjacent jumps, just prep the target face immediately
-    cubeTo(targetIdx, dir);
+    cubeTo(targetIdx, targetIdx > current ? 'next' : 'prev');
   }
 
-  // ─── UPDATE DOTS, COUNTER, THUMBS ─────────────────────────────────
+  // ─── UI SYNC ─────────────────────────────────────────────────────
   function updateUI() {
-    const idx = current;
-    const n   = IMAGES.length;
-
-    // counter
+    const n = IMAGES.length;
     document.getElementById('gl-counter').textContent =
-      `${String(idx + 1).padStart(2,'0')} / ${String(n).padStart(2,'0')}`;
+      `${String(current + 1).padStart(2,'0')} / ${String(n).padStart(2,'0')}`;
 
-    // dots
     document.querySelectorAll('.gl-dot').forEach((d, i) =>
-      d.classList.toggle('active', i === idx));
+      d.classList.toggle('active', i === current));
 
-    // thumbs
-    document.querySelectorAll('.gl-thumb').forEach((t, i) => {
-      t.classList.toggle('active', i === idx);
-    });
+    document.querySelectorAll('.gl-thumb').forEach((t, i) =>
+      t.classList.toggle('active', i === current));
 
-    // scroll active thumb into view
-    const activeThumb = document.querySelector('.gl-thumb.active');
-    if (activeThumb) activeThumb.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    const active = document.querySelector('.gl-thumb.active');
+    if (active) active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }
 
-  // ─── BIND EVENTS ─────────────────────────────────────────────────
+  // ─── EVENTS ──────────────────────────────────────────────────────
   function bindEvents() {
-    // Close
     document.getElementById('gl-close').addEventListener('click', close);
 
-    // Arrows
     document.getElementById('gl-arrow-prev').addEventListener('click', (e) => {
       e.stopPropagation();
       cubeTo((current - 1 + IMAGES.length) % IMAGES.length, 'prev');
@@ -360,7 +393,7 @@ window.GalleryModule = (function () {
       jumpTo(parseInt(thumb.dataset.idx));
     });
 
-    // Swipe on cube scene
+    // Touch swipe on scene
     const scene = document.getElementById('gl-scene');
     scene.addEventListener('touchstart', e => {
       startX = e.touches[0].clientX;
@@ -376,13 +409,13 @@ window.GalleryModule = (function () {
       }
     }, { passive: true });
 
-    // Mouse drag on cube
-    let mStartX = 0, mDragging = false;
-    scene.addEventListener('mousedown', e => { mStartX = e.clientX; mDragging = true; });
+    // Mouse drag
+    let mStart = 0, mDrag = false;
+    scene.addEventListener('mousedown', e => { mStart = e.clientX; mDrag = true; });
     window.addEventListener('mouseup', e => {
-      if (!mDragging) return;
-      mDragging = false;
-      const dx = e.clientX - mStartX;
+      if (!mDrag) return;
+      mDrag = false;
+      const dx = e.clientX - mStart;
       if (Math.abs(dx) > 50) {
         dx < 0
           ? cubeTo((current + 1) % IMAGES.length, 'next')
@@ -391,7 +424,7 @@ window.GalleryModule = (function () {
     });
 
     // Keyboard
-    document.addEventListener('keydown', (e) => {
+    document.addEventListener('keydown', e => {
       const overlay = document.getElementById('gallery-overlay');
       if (!overlay || !overlay.classList.contains('open')) return;
       if (e.key === 'ArrowRight') cubeTo((current + 1) % IMAGES.length, 'next');
@@ -400,30 +433,31 @@ window.GalleryModule = (function () {
     });
   }
 
-  // ─── PUBLIC API ───────────────────────────────────────────────────
+  // ─── PUBLIC API ──────────────────────────────────────────────────
   function open(startIndex = 0) {
     inject();
     const overlay = document.getElementById('gallery-overlay');
     if (!overlay) return;
 
-    // Reset to requested slide
     current = ((startIndex % IMAGES.length) + IMAGES.length) % IMAGES.length;
+
     const faceCur  = document.getElementById('gl-face-current');
     const faceNext = document.getElementById('gl-face-next');
     const facePrev = document.getElementById('gl-face-prev');
     const cube     = document.getElementById('gl-cube');
 
+    // Instant reset — no transition flash
     cube.style.transition = 'none';
     cube.classList.remove('to-next', 'to-prev');
 
     const nextIdx = (current + 1) % IMAGES.length;
     const prevIdx = (current - 1 + IMAGES.length) % IMAGES.length;
-
     faceCur.querySelector('img').src  = IMAGES[current].src;
     faceNext.querySelector('img').src = IMAGES[nextIdx].src;
     facePrev.querySelector('img').src = IMAGES[prevIdx].src;
 
     document.getElementById('gl-caption').textContent = IMAGES[current].caption;
+    document.getElementById('gl-caption').classList.remove('fading');
     updateUI();
 
     requestAnimationFrame(() => overlay.classList.add('open'));
@@ -432,8 +466,6 @@ window.GalleryModule = (function () {
   function close() {
     const overlay = document.getElementById('gallery-overlay');
     if (overlay) overlay.classList.remove('open');
-
-    // Deactivate the panel-slot button
     document.querySelectorAll('.panel-slot').forEach(s => {
       if (s.dataset.slot === 'gallery') s.classList.remove('active');
     });
