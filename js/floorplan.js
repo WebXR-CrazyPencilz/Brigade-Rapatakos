@@ -23,8 +23,9 @@ window.FloorplanModule = (function () {
       {
         id: 'tower-A', label: 'Tower A',
         // Top-right building block on the sitemap
-        points: '53,22 57.5,20.5 62,19 65,21.5 68,24 67.5,28.5 67,33 62,34 57,35 54.5,32.5 52,30 52.5,26',
+        points: '58,22 68,22 68,50 52,50 52,40 57,40 57,33 52,33 52,26 57,26 57,22',
       },
+
       {
         id: 'tower-B', label: 'Tower B',
         // Right-center building block
