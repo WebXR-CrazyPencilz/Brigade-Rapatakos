@@ -83,7 +83,7 @@ window.FloorplanModule = (function () {
       odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_03.jpg')  },
       even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_03.jpg') },
       oddUnits: [
-        { unitId:'C-odd-01', label:'3BHK (L) Type G',          type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),        iso:IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'),        points:'19,52 55,52 55,90 19,90' },
+        { unitId:'C-odd-01', label:'3BHK (L) Type G',          type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),        iso:IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'),        points:'35,47 55,47 55,90 35,90' },
         { unitId:'C-odd-02', label:'3BHK (L) Type G — Podium', type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(g)_podium_tower_03.jpg'), iso:IK('isometric/unit06_3bhk_l(g)_podium_tower_03.jpg'), points:'60,15 90,15 90,52 60,52' },
       ],
       evenUnits: [
