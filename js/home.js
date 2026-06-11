@@ -18,18 +18,8 @@ window.HomeModule = (function () {
 
   // ─── CAROUSEL IMAGES ─────────────────────────────────────────────
   const IMAGES = [
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780926126/a_ah6xbh.jpg', label: 'View 1' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780926127/b_nkoj38.jpg', label: 'View 2' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/c.jpg', label: 'View 3' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/d.jpg', label: 'View 4' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/e.jpg', label: 'View 5' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/g.jpg', label: 'View 6' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/h.jpg', label: 'View 7' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780926131/i_toh5q7.jpg', label: 'View 8' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/j.jpg', label: 'View 9' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/l.jpg', label: 'View 10' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/m.jpg', label: 'View 11' },
-    { src: 'https://ik.imagekit.io/pwzaetheh/Home/n.jpg', label: 'View 12' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/01_abyzw2.jpg', label: 'View 1' },
+
   ];
 
   // ─── INJECT HTML & STYLES ────────────────────────────────────────

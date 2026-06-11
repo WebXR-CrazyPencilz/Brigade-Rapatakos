@@ -3,7 +3,6 @@ window.GalleryModule = (function () {
 
   const IMAGES = [
   
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/01_abyzw2.jpg',      label: '01' },
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157232/05_w03okg.jpg',      label: '02' },
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/09_gytlb3.jpg',         label: '03' },
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158354/14_nwgerk.jpg',      label: '03' },
