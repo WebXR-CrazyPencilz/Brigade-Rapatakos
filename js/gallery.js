@@ -13,7 +13,6 @@ window.GalleryModule = (function () {
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/12_sv6p4o.jpg',      label: '07' },
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/08_y7htgv.jpg',      label: '08' },
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/10_mj07h8.jpg',      label: '09' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/09_gytlb3.jpg',      label: '10' },
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158364/13_mv0mfy.jpg',      label: '11' },
   ];
 

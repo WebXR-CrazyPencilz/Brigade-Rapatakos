@@ -19,8 +19,11 @@ window.HomeModule = (function () {
   // ─── CAROUSEL IMAGES ─────────────────────────────────────────────
   const IMAGES = [
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/01_abyzw2.jpg', label: 'View 1' },
-
   ];
+
+  // ─── LOCATION MAP IMAGE ──────────────────────────────────────────
+  // Replace this URL with your actual location map image
+  const MAP_IMAGE_SRC = 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/01_abyzw2.jpg';
 
   // ─── INJECT HTML & STYLES ────────────────────────────────────────
   function injectHTML() {
@@ -51,7 +54,6 @@ window.HomeModule = (function () {
         overflow: hidden;
       }
 
-      /* CSS variable for half-cube-width (translateZ depth) */
       :root { --hc-tz: min(45vw, 440px); }
       @media (max-width: 520px) { :root { --hc-tz: 46vw; } }
 
@@ -83,13 +85,11 @@ window.HomeModule = (function () {
       #hc-cube.to-next { transform: rotateY(-90deg); }
       #hc-cube.to-prev { transform: rotateY( 90deg); }
 
-      /* Vignette — pointer-events none */
       #hc-vignette {
         position: absolute; inset: 0; z-index: 2; pointer-events: none;
         background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 45%, rgba(4,3,2,.55) 100%);
       }
 
-      /* Counter label */
       #hc-counter {
         position: absolute; bottom: 22px; left: 50%;
         transform: translateX(-50%);
@@ -99,7 +99,6 @@ window.HomeModule = (function () {
         pointer-events: none; z-index: 3;
       }
 
-      /* Dots */
       #hc-dots {
         position: absolute; bottom: 10px; left: 50%;
         transform: translateX(-50%);
@@ -141,6 +140,90 @@ window.HomeModule = (function () {
         cursor: pointer; color: rgba(200,190,154,.7); font-size: 18px;
         z-index: 2; -webkit-tap-highlight-color: transparent;
       }
+
+      /* ── Location Map Overlay ── */
+      #map-overlay {
+        position: fixed; inset: 0; bottom: 62px; z-index: 300;
+        background: #0a0805;
+        display: flex; flex-direction: column;
+        opacity: 0; pointer-events: none;
+        transform: translateY(8px);
+        transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1);
+      }
+      #map-overlay.open {
+        opacity: 1; pointer-events: all; transform: translateY(0);
+      }
+
+      /* Map topbar */
+      #map-topbar {
+        flex-shrink: 0;
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 14px;
+        background: rgba(10,8,5,.92);
+        border-bottom: 1px solid rgba(200,190,154,.18);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        position: relative; z-index: 2;
+      }
+      #map-topbar::after {
+        content: ''; position: absolute; bottom: -1px; left: 50%;
+        transform: translateX(-50%); width: 80px; height: 1px;
+        background: linear-gradient(to right, transparent, rgba(200,190,154,.55), transparent);
+      }
+      #map-back {
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; flex-shrink: 0;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #map-back-btn {
+        width: 32px; height: 32px; border-radius: 8px;
+        border: 1px solid rgba(200,190,154,.35);
+        background: rgba(200,190,154,.08);
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.2s, border-color 0.2s;
+      }
+      #map-back:hover #map-back-btn, #map-back:active #map-back-btn {
+        background: rgba(200,190,154,.18); border-color: rgba(200,190,154,.65);
+      }
+      #map-back-btn svg {
+        width: 13px; height: 13px; stroke: rgba(200,190,154,.80);
+        fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+      }
+      #map-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 15px; font-weight: 400; color: rgba(245,242,235,.85);
+        letter-spacing: 0.04em;
+      }
+
+      /* Map image area */
+      #map-body {
+        flex: 1;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; padding: 16px; box-sizing: border-box;
+        position: relative;
+      }
+      #map-img {
+        max-width: 100%; max-height: 100%;
+        object-fit: contain;
+        border: 1px solid rgba(200,190,154,.12);
+        border-radius: 4px;
+        box-shadow: 0 12px 60px rgba(0,0,0,.6);
+        display: block;
+        user-select: none; -webkit-user-drag: none;
+      }
+      #map-spinner {
+        position: absolute; inset: 0;
+        display: flex; align-items: center; justify-content: center;
+        opacity: 0; pointer-events: none; transition: opacity 0.22s;
+      }
+      #map-spinner.visible { opacity: 1; }
+      #map-spinner-ring {
+        width: 32px; height: 32px;
+        border: 2px solid rgba(200,190,154,.20);
+        border-top-color: rgba(200,190,154,.85);
+        border-radius: 50%;
+        animation: fpSpin 0.72s linear infinite;
+      }
+      @keyframes fpSpin { to { transform: rotate(360deg); } }
 
       /* ── Unit Row ── */
       #unit-row {
@@ -238,7 +321,22 @@ window.HomeModule = (function () {
       <div id="lightbox">
         <img id="lb-img" src="" alt=""/>
         <div id="lb-empty">Image coming soon</div>
-        <div id="lb-close">✕</div>
+        <div id="lb-close">&#x2715;</div>
+      </div>
+
+      <div id="map-overlay">
+        <div id="map-topbar">
+          <div id="map-back">
+            <div id="map-back-btn">
+              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+          </div>
+          <div id="map-title">Location Map</div>
+        </div>
+        <div id="map-body">
+          <div id="map-spinner"><div id="map-spinner-ring"></div></div>
+          <img id="map-img" src="" alt="Location Map" />
+        </div>
       </div>
 
       <div id="unit-row">
@@ -261,10 +359,8 @@ window.HomeModule = (function () {
       </div>
     `);
 
-    // FIX: set carousel face images imperatively after injection.
-    // Accessing IMAGES[1] inside a template literal crashes when IMAGES
-    // has only 1 entry. All face srcs are now set safely here with
-    // modulo-wrapping so any array length >= 1 works correctly.
+    // FIX: set carousel face images imperatively — avoids crash when
+    // IMAGES has only 1 entry and IMAGES[1] would be undefined
     const _cur  = document.getElementById('hc-img-current');
     const _next = document.getElementById('hc-img-next');
     const _prev = document.getElementById('hc-img-prev');
@@ -340,9 +436,7 @@ window.HomeModule = (function () {
 
   function initCarousel() {
     const carousel = document.getElementById('carousel');
-    const cube     = document.getElementById('hc-cube');
 
-    // Tap → lightbox (only if not a drag/swipe)
     let tapMoved = false;
     carousel.addEventListener('touchstart', e => {
       startX = e.touches[0].clientX;
@@ -365,7 +459,6 @@ window.HomeModule = (function () {
       }
     }, { passive: true });
 
-    // Mouse drag
     let mStart = 0, mDrag = false, mMoved = false;
     carousel.addEventListener('mousedown', e => { mStart = e.clientX; mDrag = true; mMoved = false; });
     window.addEventListener('mousemove', e => { if (mDrag && Math.abs(e.clientX - mStart) > 8) mMoved = true; });
@@ -383,7 +476,6 @@ window.HomeModule = (function () {
       }
     });
 
-    // Pause on hover
     carousel.addEventListener('mouseenter', () => clearInterval(autoTimer));
     carousel.addEventListener('mouseleave', startAuto);
 
@@ -460,6 +552,61 @@ window.HomeModule = (function () {
     });
   }
 
+  // ─── LOCATION MAP ────────────────────────────────────────────────
+  let _mapLoaded = false;
+
+  function openMap() {
+    const overlay = document.getElementById('map-overlay');
+    if (!overlay) return;
+    overlay.classList.add('open');
+
+    // Load the image only once
+    if (!_mapLoaded) {
+      _mapLoaded = true;
+      const img     = document.getElementById('map-img');
+      const spinner = document.getElementById('map-spinner');
+      img.style.opacity = '0';
+      spinner.classList.add('visible');
+      img.addEventListener('load', () => {
+        spinner.classList.remove('visible');
+        img.style.transition = 'opacity 0.3s ease';
+        img.style.opacity = '1';
+      }, { once: true });
+      img.addEventListener('error', () => {
+        spinner.classList.remove('visible');
+        img.style.opacity = '1';
+      }, { once: true });
+      img.src = MAP_IMAGE_SRC;
+    }
+  }
+
+  function closeMap() {
+    const overlay = document.getElementById('map-overlay');
+    if (overlay) overlay.classList.remove('open');
+  }
+
+  function bindMapEvents() {
+    // Back button
+    document.getElementById('map-back').addEventListener('click', () => {
+      closeMap();
+      // Deactivate the map panel slot
+      document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+    });
+    // touchend guard against synthetic click double-fire
+    document.getElementById('map-back').addEventListener('touchend', (e) => {
+      e.preventDefault();
+      closeMap();
+      document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+    });
+    // Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('map-overlay').classList.contains('open')) {
+        closeMap();
+        document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+      }
+    });
+  }
+
   // ─── UNIT VIEWER ─────────────────────────────────────────────────
   function openUnitViewer(unit) {
     const overlay = document.getElementById('unit-viewer-overlay');
@@ -489,21 +636,16 @@ window.HomeModule = (function () {
   // ─── CLOSE ALL MODULES ───────────────────────────────────────────
   function closeAllModules() {
     closeUnitViewer();
+    closeMap();
     unitRowVisible = false;
     const row = document.getElementById('unit-row');
     if (row) row.classList.remove('visible');
     document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
-    let floorplanWasOpen = false;
     const fpOverlay = document.getElementById('fp-overlay');
-    if (fpOverlay) {
-      floorplanWasOpen = fpOverlay.classList.contains('open');
-      fpOverlay.style.pointerEvents = 'none';
-    }
+    if (fpOverlay) fpOverlay.style.pointerEvents = 'none';
     if (window.FloorplanModule && typeof FloorplanModule.close === 'function') FloorplanModule.close();
     setTimeout(() => { if (fpOverlay) fpOverlay.style.pointerEvents = ''; }, 420);
     if (window.GalleryModule && typeof GalleryModule.close === 'function') GalleryModule.close();
-    if (window.MapModule     && typeof MapModule.close     === 'function') MapModule.close();
-    return floorplanWasOpen;
   }
 
   // ─── PANEL EVENTS ────────────────────────────────────────────────
@@ -520,7 +662,7 @@ window.HomeModule = (function () {
         if (slot === '360view')   { setTimeout(() => { unitRowVisible = true; document.getElementById('unit-row')?.classList.add('visible'); }, 420); return; }
         if (slot === 'floorplan') { if (window.FloorplanModule) FloorplanModule.open(); return; }
         if (slot === 'gallery')   { if (window.GalleryModule)   GalleryModule.open();   return; }
-        if (slot === 'map')       { if (window.MapModule)        MapModule.open();        return; }
+        if (slot === 'map')       { openMap(); return; }
       });
     });
 
@@ -539,12 +681,14 @@ window.HomeModule = (function () {
       const overlay   = document.getElementById('unit-viewer-overlay');
       const fpOverlay = document.getElementById('fp-overlay');
       const lb        = document.getElementById('lightbox');
-      if (lb && lb.classList.contains('open')) return;
+      const mapOvl    = document.getElementById('map-overlay');
+      if (lb    && lb.classList.contains('open'))    return;
+      if (mapOvl && mapOvl.classList.contains('open') && mapOvl.contains(e.target)) return;
       const clickedOutside =
         bar && row &&
         !bar.contains(e.target) &&
         !row.contains(e.target) &&
-        !(overlay  && overlay.contains(e.target)) &&
+        !(overlay   && overlay.contains(e.target)) &&
         !(fpOverlay && fpOverlay.contains(e.target));
       if (clickedOutside) {
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
@@ -572,6 +716,7 @@ window.HomeModule = (function () {
       injectHTML();
       initCarousel();
       bindLightboxZoom();
+      bindMapEvents();
       bindPanelEvents();
       bindOrientationCheck();
       if (window.App && typeof window.App.finishLoad === 'function') App.finishLoad();
