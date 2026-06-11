@@ -23,7 +23,7 @@ window.HomeModule = (function () {
 
   // ─── LOCATION MAP IMAGE ──────────────────────────────────────────
   // Replace this URL with your actual location map image
-  const MAP_IMAGE_SRC = 'https://ik.imagekit.io/pwzaetheh/Home/locationmap.jpg';
+  const MAP_IMAGE_SRC = 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781162438/locationmap_cvfs0z.jpg';
 
   // ─── INJECT HTML & STYLES ────────────────────────────────────────
   function injectHTML() {
