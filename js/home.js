@@ -222,13 +222,13 @@ window.HomeModule = (function () {
       <div id="carousel">
         <div id="hc-cube">
           <div class="hc-face" id="hc-face-current">
-            <img src="${IMAGES[0].src}" alt="${IMAGES[0].label}"/>
+            <img id="hc-img-current" src="" alt=""/>
           </div>
           <div class="hc-face" id="hc-face-next">
-            <img src="${IMAGES[1].src}" alt="${IMAGES[1].label}"/>
+            <img id="hc-img-next" src="" alt=""/>
           </div>
           <div class="hc-face" id="hc-face-prev">
-            <img src="${IMAGES[IMAGES.length - 1].src}" alt=""/>
+            <img id="hc-img-prev" src="" alt=""/>
           </div>
         </div>
         <div id="hc-vignette"></div>
@@ -260,6 +260,22 @@ window.HomeModule = (function () {
         <iframe id="unit-iframe" src="" allow="fullscreen"></iframe>
       </div>
     `);
+
+    // FIX: set carousel face images imperatively after injection.
+    // Accessing IMAGES[1] inside a template literal crashes when IMAGES
+    // has only 1 entry. All face srcs are now set safely here with
+    // modulo-wrapping so any array length >= 1 works correctly.
+    const _cur  = document.getElementById('hc-img-current');
+    const _next = document.getElementById('hc-img-next');
+    const _prev = document.getElementById('hc-img-prev');
+    if (_cur && IMAGES.length > 0) {
+      _cur.src  = IMAGES[0].src;
+      _cur.alt  = IMAGES[0].label || '';
+      _next.src = IMAGES[IMAGES.length > 1 ? 1 : 0].src;
+      _next.alt = IMAGES[IMAGES.length > 1 ? 1 : 0].label || '';
+      _prev.src = IMAGES[IMAGES.length - 1].src;
+      _prev.alt = '';
+    }
   }
 
   // ─── CUBE NAVIGATION ─────────────────────────────────────────────
