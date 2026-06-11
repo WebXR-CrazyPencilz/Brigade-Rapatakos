@@ -3,14 +3,19 @@ window.GalleryModule = (function () {
 
   const IMAGES = [
   
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928747/freepik__edit-img1-to-change-the-sunglasses-on-the-orange-t__10223_copy2_hunmds.jpg', caption: 'Grand Entrance',      label: '01' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928756/close-up-woman-relaxing-spa_ryzwuw.jpg',  caption: 'Spa & Wellness',           label: '02' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780926778/Brigade_High_35122-_%C2%AA_qvaqsy.jpg',  caption: 'Living Spaces',       label: '03' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928748/freepik__a-modern-luxury-indooroutdoor-lounge-with-a-serene__3441_bjy7ga.jpg', caption: 'Master Suite',        label: '04' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928750/freepik__design-a-luxurious-rooftop-outdoor-kitchen-with-a-__33482_qqyhyf.jpg', caption: 'Kitchen & Dining',    label: '05' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928754/freepik__design-a-highend-luxury-lobby-with-marble-floors-a__33481_ryap0w.jpg', caption: 'Balcony & Views',     label: '06' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928829/beautiful-green-trees-bright-sunlight_h19cfq.jpg', caption: 'Landscape & Gardens', label: '07' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1780928756/patch-through-agreen-forest_mpveu7.jpg',  caption: 'Exterior View',       label: '08' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/01_abyzw2.jpg',      label: '01' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157232/05_w03okg.jpg',      label: '02' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/09_gytlb3.jpg',         label: '03' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158354/14_nwgerk.jpg',      label: '03' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/11_si2bfi.jpg',       label: '04' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157229/03_nsutjt.jpg',      label: '05' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/04_guuouq.jpg',      label: '06' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/06_nz4s5w.jpg',       label: '07' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/12_sv6p4o.jpg',         label: '08' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/08_y7htgv.jpg',      label: '01' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/10_mj07h8.jpg',            label: '02' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/09_gytlb3.jpg',        label: '03' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158364/13_mv0mfy.jpg',        label: '08' },
   ];
 
   let current     = 0;
