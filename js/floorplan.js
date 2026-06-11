@@ -12,7 +12,7 @@ window.FloorplanModule = (function () {
   const SITEMAP = {
     image: IK('Cluster/sitemap.jpg'),
     towerTiles: [
-      { id: 'tower-A', label: 'Tower A', points: '40,16 59,16 59,34 40,34' },
+      { id: 'tower-A', label: 'Tower A', points: '41,10 59,10 59,32 41,32' },
       { id: 'tower-B', label: 'Tower B', points: '45,39 65,39 65,59 45,59' },
       { id: 'tower-C', label: 'Tower C', points: '21,55 43,55 43,73 21,73' },
       { id: 'tower-D', label: 'Tower D', points: '21,30 39,30 39,52 21,52' },
