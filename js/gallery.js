@@ -3,18 +3,18 @@ window.GalleryModule = (function () {
 
   const IMAGES = [
   
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157232/05_w03okg.jpg',      label: '02' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/09_gytlb3.jpg',         label: '03' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157232/05_w03okg.jpg',      label: '01' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/09_gytlb3.jpg',      label: '02' },
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158354/14_nwgerk.jpg',      label: '03' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/11_si2bfi.jpg',       label: '04' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157229/03_nsutjt.jpg',      label: '05' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/04_guuouq.jpg',      label: '06' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/06_nz4s5w.jpg',       label: '07' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/12_sv6p4o.jpg',         label: '08' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/08_y7htgv.jpg',      label: '01' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/10_mj07h8.jpg',            label: '02' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/09_gytlb3.jpg',        label: '03' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158364/13_mv0mfy.jpg',        label: '08' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/11_si2bfi.jpg',      label: '04' },
+
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/04_guuouq.jpg',      label: '05' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/06_nz4s5w.jpg',      label: '06' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/12_sv6p4o.jpg',      label: '07' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/08_y7htgv.jpg',      label: '08' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/10_mj07h8.jpg',      label: '09' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/09_gytlb3.jpg',      label: '10' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158364/13_mv0mfy.jpg',      label: '11' },
   ];
 
   let current     = 0;
