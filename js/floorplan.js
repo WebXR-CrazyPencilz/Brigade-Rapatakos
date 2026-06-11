@@ -15,7 +15,7 @@ window.FloorplanModule = (function () {
       { id: 'tower-A', label: 'Tower A', points: '41,8 59,8 59,32 41,32' },
       { id: 'tower-B', label: 'Tower B', points: '45,36 64,36 64,60 45,60' },
       { id: 'tower-C', label: 'Tower C', points: '23,54 43,54 43,76 23,76' },
-      { id: 'tower-D', label: 'Tower D', points: '23,30 39,30 39,52 23,52' },
+      { id: 'tower-D', label: 'Tower D', points: '23,30 41,30 41,52 23,52' },
     ],
   };
 
