@@ -118,7 +118,7 @@ window.FloorplanModule = (function () {
   let floorParity    = 'odd';
   let viewMode       = 'top';
   let overlayOpen    = false;
-  let _transitioning = false;        // FIX-2: now actively guarded
+  let _transitioning = false;
 
   // ─── HELPERS ─────────────────────────────────────────────────
   function isOdd(n) { return n % 2 !== 0; }
@@ -405,7 +405,7 @@ window.FloorplanModule = (function () {
 
           <div id="fp-panel-sitemap" class="fp-panel">
             <div id="fp-sitemap-wrap">
-              <img id="fp-sitemap-img" src="${SITEMAP.image}" alt="Site Plan" />
+              <img id="fp-sitemap-img" src="" alt="Site Plan" />
               <div id="fp-sitemap-hint">Select a tower to explore floor plans</div>
             </div>
           </div>
@@ -436,6 +436,12 @@ window.FloorplanModule = (function () {
         </div>
       </div>
     `);
+
+    // FIX: set sitemap src imperatively after injection — avoids bundler
+    // scope issues when template literals inside insertAdjacentHTML are
+    // minified and SITEMAP reference is lost
+    const sitemapImg = document.getElementById('fp-sitemap-img');
+    if (sitemapImg) sitemapImg.src = SITEMAP.image;
   }
 
   // ─── TOPBAR HEIGHT TRACKER ────────────────────────────────────
@@ -452,7 +458,6 @@ window.FloorplanModule = (function () {
 
   // ─── PANEL TRANSITIONS ───────────────────────────────────────
   function showPanel(id, direction) {
-    // FIX-2: set _transitioning and clear after animation completes
     _transitioning = true;
     clearTimeout(showPanel._timer);
     showPanel._timer = setTimeout(() => { _transitioning = false; }, 350);
@@ -490,7 +495,6 @@ window.FloorplanModule = (function () {
     if (spinner) spinner.classList.remove('visible');
     const zoomHint = document.getElementById('fp-zoom-hint');
     if (zoomHint) zoomHint.classList.remove('visible');
-    // FIX-1 (also in reset): clear any lingering selected zones
     document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
     hideZoneTip();
     showPanel('fp-panel-sitemap', 'back');
@@ -499,8 +503,8 @@ window.FloorplanModule = (function () {
   }
 
   // ─── SITEMAP POLYGON TILES ───────────────────────────────────
-  let _sitemapRO    = null;
-  let _sitemapROTimer = null; // FIX-3: debounce timer for ResizeObserver
+  let _sitemapRO      = null;
+  let _sitemapROTimer = null;
 
   function buildSitemapTiles() {
     const wrap = document.getElementById('fp-sitemap-wrap');
@@ -569,9 +573,9 @@ window.FloorplanModule = (function () {
           if (!touchMoved) { e.preventDefault(); drillToCluster(tile.id); }
         });
 
-        // FIX-1: guard synthetic click fired after touchend on mobile
+        // Guard synthetic click fired after touchend on mobile
         g.addEventListener('click', (e) => {
-          if (e.detail === 0) return; // synthetic touch-generated click — skip
+          if (e.detail === 0) return;
           drillToCluster(tile.id);
         });
 
@@ -587,7 +591,7 @@ window.FloorplanModule = (function () {
     if (img.complete && img.naturalWidth > 0) placeTiles();
     else img.addEventListener('load', placeTiles, { once: true });
 
-    // FIX-3: debounce ResizeObserver to prevent cascade from SVG insertion
+    // Debounced ResizeObserver — prevents cascade loop from SVG insertion
     _sitemapRO = new ResizeObserver(() => {
       clearTimeout(_sitemapROTimer);
       _sitemapROTimer = setTimeout(() => {
@@ -601,9 +605,7 @@ window.FloorplanModule = (function () {
   // ─── SWAP PARITY ─────────────────────────────────────────────
   function swapParity(newParity) {
     if (!activeTower || newParity === floorParity) return;
-    // FIX-2a: ignore if called outside level 1 (e.g. programmatic race)
     if (level !== 1) return;
-    // FIX-2b: clear stale activeUnit ref when parity changes
     activeUnit = null;
 
     floorParity = newParity;
@@ -615,7 +617,6 @@ window.FloorplanModule = (function () {
     const svg = document.getElementById('fp-zone-svg');
     if (!img || !svg) return;
 
-    // FIX-1: clear selected zone when parity swaps (units are different set)
     document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
 
     const newSrc = getClusterImage(activeTower, floorParity);
@@ -632,7 +633,6 @@ window.FloorplanModule = (function () {
         img.classList.remove('fading');
         buildZones(reqTower, reqParity);
       }
-      // FIX-4: use addEventListener instead of .onload to avoid overwrite
       img.addEventListener('load',  finish, { once: true });
       img.addEventListener('error', () => img.classList.remove('fading'), { once: true });
       img.src = newSrc;
@@ -642,20 +642,17 @@ window.FloorplanModule = (function () {
 
   // ─── DRILL TO CLUSTER ────────────────────────────────────────
   function drillToCluster(towerId) {
-    // FIX-2: block navigation during panel transition animation
     if (_transitioning) return;
 
-    // FIX-3 (viewMode) + FIX-1 (selected): full clean slate on entry
-    activeUnit    = null;
-    viewMode      = 'top';   // FIX-3: reset stale viewMode
-    floorParity   = 'odd';
+    activeUnit  = null;
+    viewMode    = 'top';
+    floorParity = 'odd';
 
     const unitInfo = document.getElementById('fp-unit-info');
     if (unitInfo) unitInfo.classList.remove('visible');
     const planImg = document.getElementById('fp-plan-img');
     if (planImg) { planImg.removeAttribute('src'); planImg.style.transform = ''; }
 
-    // FIX-1: clear selected zones from any previous visit to this cluster
     document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
 
     activeTower = towerId;
@@ -680,7 +677,6 @@ window.FloorplanModule = (function () {
         img.classList.remove('fading');
         buildZones(reqTower, reqParity);
       }
-      // FIX-4: use addEventListener instead of .onload to avoid overwrite
       img.addEventListener('load',  finish, { once: true });
       img.addEventListener('error', () => img.classList.remove('fading'), { once: true });
       img.src = getClusterImage(towerId, floorParity);
@@ -710,7 +706,7 @@ window.FloorplanModule = (function () {
       poly.addEventListener('mousemove',  (e) => moveZoneTip(e));
       poly.addEventListener('mouseleave', hideZoneTip);
 
-      // FIX-1: guard synthetic click on zone polygons too
+      // Guard synthetic click on zone polygons too
       poly.addEventListener('click', (e) => {
         if (e.detail === 0) return;
         drillToUnit(u);
@@ -774,7 +770,6 @@ window.FloorplanModule = (function () {
 
   // ─── DRILL TO UNIT ───────────────────────────────────────────
   function drillToUnit(unitData) {
-    // FIX-2: block navigation during panel transition animation
     if (_transitioning) return;
 
     activeUnit = unitData;
@@ -789,7 +784,6 @@ window.FloorplanModule = (function () {
     document.getElementById('fp-unit-info-area').textContent = unitData.area || '';
     document.getElementById('fp-unit-info').classList.add('visible');
 
-    // FIX-1: clear all, then mark only the tapped zone selected
     document.querySelectorAll('.fp-zone').forEach(z => z.classList.remove('selected'));
     const activeZone = document.querySelector(`.fp-zone[data-unit-id="${unitData.unitId}"]`);
     if (activeZone) activeZone.classList.add('selected');
@@ -823,12 +817,11 @@ window.FloorplanModule = (function () {
     spinner.classList.add('visible');
 
     setTimeout(() => {
-      // FIX-5: always hide spinner on stale-check bail (fast back-tap)
+      // Always hide spinner on stale-check bail (fast back-tap)
       if (activeUnit !== reqUnit || viewMode !== reqView) {
         spinner.classList.remove('visible');
         return;
       }
-      // FIX-4: use addEventListener instead of .onload / .onerror assignment
       img.addEventListener('load', () => {
         if (activeUnit !== reqUnit || viewMode !== reqView) return;
         img.classList.remove('fading');
@@ -938,14 +931,12 @@ window.FloorplanModule = (function () {
 
   // ─── BACK NAV ────────────────────────────────────────────────
   function goBack() {
-    // FIX-2: block during transition to prevent level desync
     if (_transitioning) return;
 
     if (level === 2) {
       activeUnit = null;
-      viewMode   = 'top'; // FIX-3: reset viewMode on back so next unit opens clean
+      viewMode   = 'top';
 
-      // FIX-1: clear selected zone border on back navigation
       document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
 
       const unitInfo = document.getElementById('fp-unit-info');
@@ -1008,7 +999,7 @@ window.FloorplanModule = (function () {
     updateTitle();
     fpOverlay.classList.add('open');
 
-    // FIX-5: only call buildSitemapTiles once — ResizeObserver handles late layout
+    // Single call only — ResizeObserver inside handles late-layout cases
     buildSitemapTiles();
   }
 
@@ -1038,7 +1029,6 @@ window.FloorplanModule = (function () {
 
     closeBtn.addEventListener('click', close);
     backBtn.addEventListener('click', goBack);
-    // Prevent touchend → click double-fire on back button
     backBtn.addEventListener('touchend', (e) => { e.preventDefault(); goBack(); });
 
     document.querySelectorAll('.fp-parity-btn').forEach(btn => {
