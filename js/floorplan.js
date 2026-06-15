@@ -994,8 +994,8 @@ window.FloorplanModule = (function () {
     } else if (level === 2) {
       back.classList.add('visible');
       parityToggle.classList.remove('visible');
-      viewToggle.classList.add('visible');
-      viewToggle.classList.toggle('visible', hasIso);  // only shown if iso exists
+      const hasIso = !!(activeUnit && activeUnit.iso);
+      viewToggle.classList.toggle('visible', hasIso);
     }
   }
 
