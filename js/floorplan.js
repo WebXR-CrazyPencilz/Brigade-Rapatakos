@@ -29,12 +29,13 @@ window.FloorplanModule = (function () {
       odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_01.jpg')  },
       even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_01.jpg') },
       oddUnits: [
-        { unitId:'A-odd-01', label:'4BHK Type C',        type:'4 BHK', area:'', top:IK('topview/unit03_4bhk_(c)_tower_01.jpg'),       iso:IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),       points:'59,12 78,12 78,42 59,42' },
-        { unitId:'A-odd-02', label:'3BHK (L) Type D',    type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),      iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),      points:'26,63 42.5,63 42.5,91 26,91' },
-        { unitId:'A-odd-03', label:'3BHK (S) Type A',    type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),      iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),      points:'44,65 62,65 62,90 44,90' },
-        { unitId:'A-odd-04', label:'3BHK (L) Type C — Podium', type:'3 BHK', area:'', top:IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'),  points:'20,25 36,25 36,56 20,56' },
+        { unitId:'A-odd-01', label:'4BHK Type C',              type:'4 BHK', area:'', top:IK('topview/unit03_4bhk_(c)_tower_01.jpg'),       iso:IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),       points:'59,12 78,12 78,42 59,42' },
+        { unitId:'A-odd-02', label:'3BHK (L) Type D',          type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),      iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),      points:'26,63 42.5,63 42.5,91 26,91' },
+        { unitId:'A-odd-03', label:'3BHK (S) Type A',          type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),      iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),      points:'44,65 62,65 62,90 44,90' },
+        { unitId:'A-odd-04', label:'3BHK (L) Type C — Podium', type:'3 BHK', area:'', top:IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'), points:'20,25 36,25 36,56 20,56' },
         { unitId:'A-odd-02', label:'3BHK (L) Type B',          type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),        points:'37.5,13 56,13 56,41 37.5,41' },
-        { unitId:'A-odd-02', label:'3BHK (L) Type C',          type:'3 BHK', area:'', top:IK('Plan/odd_tower_01_3BHK(L)_C.jpg'),        points:'37.5,13 56,13 56,41 37.5,41' },
+        { unitId:'A-odd-02', label:'4BHK Type E',              type:'4 BHK', area:'', top:IK('Plan/odd_tower_01_3BHK(L)_C.jpg'),              points:'62,50 91,50 91,93 62,93' },
+        
       ],
       evenUnits: [
         { unitId:'A-even-01', label:'3BHK (L) Type C — Podium', type:'3 BHK', area:'', top:IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'),  iso:IK('isometric/unit01_3bhk_l(c)_podium_tower_02.jpg'),  points:'20,25 36,25 36,56 20,56' },
