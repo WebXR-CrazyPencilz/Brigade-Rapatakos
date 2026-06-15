@@ -113,7 +113,7 @@ window.FloorplanModule = (function () {
         { unitId:'D-odd-01', label:'4BHK Type A',     type:'4 BHK', area:'', top:IK('topview/unit01_4bhk_(a)_tower_04.jpg'),  points:'17,21 38,21 38,58 17,58' },
         { unitId:'D-odd-02', label:'3BHK (L) Type B', type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'), points:'39,10 59,10 59,38 39,38' },
         { unitId:'D-odd-06', label:'4BHK Type E',     type:'4 BHK', area:'', top:IK('topview/unit04_4bhk_(e)_tower_04.jpg'),  points:'63,41 80,41 80,84 63,84' },
-        { unitId:'D-odd-01', label:'4BHK Type A',     type:'4 BHK', area:'', top:IK('topview/unit01_4bhk_(a)_tower_04.jpg'), points:'17,21 38,21 38,58 17,58' },
+         { unitId:'D-even-04', label:'4BHK Type B',     type:'4 BHK', area:'', top:IK('topview/unit06_4bhk_(b)_tower_04.jpg'),  iso:IK('isometric/unit06_4bhk_(b)_tower_04.jpg'),  points:'22,60 42,60 42,93 22,93' },
       ],
       evenUnits: [
         { unitId:'D-even-01', label:'4BHK Type A',     type:'4 BHK', area:'', top:IK('topview/unit01_4bhk_(a)_tower_04.jpg'),  iso:IK('isometric/unit01_4bhk_(a)_tower_04.jpg'),  points:'17,21 38,21 38,58 17,58' },
