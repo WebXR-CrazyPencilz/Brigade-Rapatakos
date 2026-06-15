@@ -82,12 +82,12 @@ window.FloorplanModule = (function () {
       oddUnits: [
         { unitId:'C-odd-01', label:'3BHK (L) Type G', type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(g)_tower_03.jpg'), iso:IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'), points:'43,60 65,60 65,92 43,92' },
         
-        { unitId:'C-odd-02', label:'3BHK (S) Type B', type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_s(b)_tower_03.jpg'),       points:'29,8 49.5,8 49.5,38 29,38' },
-        { unitId:'C-odd-03', label:'3BHK (S) Type B', type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_s(b)_tower_03.jpg'),       points:'51,16 72,16 72,46 51,46' },
+        { unitId:'C-odd-02', label:'3BHK (S) Type B', type:'3 BHK', area:'', top:IK('Plan/odd_tower_03_3BHK(S)_B.jpg'),       points:'29,8 49.5,8 49.5,38 29,38' },
+        { unitId:'C-odd-03', label:'3BHK (S) Type B', type:'3 BHK', area:'', top:IK('Plan/odd_tower_03_3BHK(S)_B.jpg'),       points:'51,16 72,16 72,46 51,46' },
         { unitId:'C-odd-04', label:'3BHK (L) Type F', type:'3 BHK', area:'', top:IK('topview/unit04_3bhk_l(f)_tower_03.jpg'),       points:'73,25 93,25 93,55 73,55' },
-        { unitId:'C-odd-05', label:'3BHK (L) Type G', type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),       points:'43,60 65,60 65,92 43,92' },
+        { unitId:'C-odd-05', label:'3BHK (L) Type G', type:'3 BHK', area:'', top:IK('Plan/odd_tower_03_4BHK_G.jpg'),                points:'43,60 65,60 65,92 43,92' },
         { unitId:'C-odd-06', label:'3BHK (L) Type E', type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_l(e)_tower_03.jpg'),       points:'66,60 88,60 88,92 66,92' },
-        { unitId:'C-odd-07', label:'4BHK Type F',     type:'4 BHK', area:'', top:IK('topview/unit07_4bhk_(f)_odd_tower_03.jpg'),   points:'16,60 41.5,60 41.5,92 16,92' },
+        { unitId:'C-odd-07', label:'4BHK Type F',     type:'4 BHK', area:'', top:IK('Plan/odd_tower_03_4BHK_F.jpg'),    points:'16,60 41.5,60 41.5,92 16,92' },
       ],
       evenUnits: [
         { unitId:'C-even-01', label:'4BHK Type G',     type:'4 BHK', area:'', top:IK('topview/unit01_4bhk_(g)_tower_03.jpg'),       iso:IK('isometric/unit01_4bhk_(g)_tower_03.jpg'),       points:'10,11 28,11 28,54.5 10,54.5' },
