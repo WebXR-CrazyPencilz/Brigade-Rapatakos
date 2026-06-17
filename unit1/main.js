@@ -332,7 +332,7 @@ const panoMaterial = new THREE.MeshBasicMaterial()
 scene.add(new THREE.Mesh(sGeo, panoMaterial))
 
 // ─── STATE ─────────────────────────────────────────────────────
-let currentRoom   = 'lobby'
+let currentRoom   = 'foyer'
 let hotspotMeshes = []
 let labelSprites  = []
 let camRX = 0, camRY = 0
@@ -746,5 +746,5 @@ function animate(ts) {
 // ─── INIT ──────────────────────────────────────────────────────
 buildPanel()
 preloadInitial()
-loadRoom('lobby')
+loadRoom('foyer')
 animate(0)
