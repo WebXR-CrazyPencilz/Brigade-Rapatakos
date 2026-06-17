@@ -680,12 +680,20 @@ function bindPanelToggle() {
     _toggle.classList.toggle('open', isOpen);
     _toggle.innerHTML = isOpen ? '\u276E' : '\u276F';
   });
+  // NEW
+  let _lastTouch = 0;
+  _toggle.addEventListener('touchend', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    _lastTouch = Date.now();
+    const isOpen = _panel.classList.toggle('open');
+    _toggle.classList.toggle('open', isOpen);
+    _toggle.innerHTML = isOpen ? '\u276E' : '\u276F';
+  });
   document.addEventListener('click', (e) => {
     if (Date.now() - _lastTouch < 400) return;
     if (!_panel || !_toggle) return;
     if (!_panel.contains(e.target) && !_toggle.contains(e.target)) closePanel();
   });
-}
 
 // ─── RAYCASTER ─────────────────────────────────────────────────────
 const raycaster  = new THREE.Raycaster();
