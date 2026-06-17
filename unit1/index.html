@@ -246,20 +246,20 @@
       inset: 0;
       width: 100%; height: 100%;
       object-fit: cover;
-      opacity: 0.18;
+      opacity: 0.55;
       transition: opacity 0.3s, transform 0.4s;
       display: block;
     }
 
-    .room-btn:hover .thumb    { opacity: 0.32; transform: scale(1.04); }
-    .room-btn.active .thumb   { opacity: 0.22; }
+    .room-btn:hover .thumb    { opacity: 0.75; transform: scale(1.04); }
+    .room-btn.active .thumb   { opacity: 0.50; }
 
     /* Gradient scrim so text stays readable */
     .room-btn::after {
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(90deg, rgba(248,244,240,0.6) 0%, rgba(248,244,240,0.1) 100%);
+      background: transparent;
       pointer-events: none;
     }
 
