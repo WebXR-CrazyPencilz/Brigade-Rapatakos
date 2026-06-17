@@ -457,21 +457,22 @@ function makeLabelSprite(text) {
 }
 
 // ─── FADE ──────────────────────────────────────────────────────────
-const fadeOverlay = document.getElementById('fade-overlay');
-
+// Grabbed lazily at call-time so DOM is guaranteed to exist
 function fadeOut(cb) {
-  if (fadeOverlay) {
-    fadeOverlay.style.transition    = 'opacity 0.2s ease';
-    fadeOverlay.style.opacity       = '1';
-    fadeOverlay.style.pointerEvents = 'all';
+  const ov = document.getElementById('fade-overlay');
+  if (ov) {
+    ov.style.transition    = 'opacity 0.2s ease';
+    ov.style.opacity       = '1';
+    ov.style.pointerEvents = 'all';
     setTimeout(cb, 220);
   } else { cb(); }
 }
 function fadeIn() {
-  if (fadeOverlay) {
-    fadeOverlay.style.transition    = 'opacity 0.25s ease';
-    fadeOverlay.style.opacity       = '0';
-    fadeOverlay.style.pointerEvents = 'none';
+  const ov = document.getElementById('fade-overlay');
+  if (ov) {
+    ov.style.transition    = 'opacity 0.25s ease';
+    ov.style.opacity       = '0';
+    ov.style.pointerEvents = 'none';
   }
 }
 
@@ -594,29 +595,34 @@ function buildPanel() {
 }
 
 // ─── PANEL TOGGLE ──────────────────────────────────────────────────
-const toggle = document.getElementById('toggle');
-const panel  = document.getElementById('side-panel');
+// All lookups deferred — bindPanelToggle() is called after buildPanel() in init()
+let _toggle = null;
+let _panel  = null;
 
 function closePanel() {
-  if (!panel || !toggle) return;
-  panel.classList.remove('open');
-  toggle.classList.remove('open');
-  toggle.innerHTML = '❯';
+  if (!_panel || !_toggle) return;
+  _panel.classList.remove('open');
+  _toggle.classList.remove('open');
+  _toggle.innerHTML = '\u276F';
 }
 
-if (toggle) {
-  toggle.addEventListener('click', (e) => {
+function bindPanelToggle() {
+  _toggle = document.getElementById('toggle');
+  _panel  = document.getElementById('side-panel');
+  if (!_toggle || !_panel) return;
+
+  _toggle.addEventListener('click', (e) => {
     e.stopPropagation();
-    const isOpen = panel.classList.toggle('open');
-    toggle.classList.toggle('open', isOpen);
-    toggle.innerHTML = isOpen ? '❮' : '❯';
+    const isOpen = _panel.classList.toggle('open');
+    _toggle.classList.toggle('open', isOpen);
+    _toggle.innerHTML = isOpen ? '\u276E' : '\u276F';
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!_panel || !_toggle) return;
+    if (!_panel.contains(e.target) && e.target !== _toggle) closePanel();
   });
 }
-
-document.addEventListener('click', (e) => {
-  if (!panel || !toggle) return;
-  if (!panel.contains(e.target) && e.target !== toggle) closePanel();
-});
 
 // ─── RAYCASTER ─────────────────────────────────────────────────────
 const raycaster  = new THREE.Raycaster();
@@ -740,7 +746,8 @@ function animate(ts) {
 }
 
 // ─── INIT ──────────────────────────────────────────────────────────
-buildPanel();
+buildPanel();        // inject room buttons into DOM first
+bindPanelToggle();   // then bind toggle — DOM exists now
 preloadInitial();
 loadRoom('foyer');
 animate(0);
