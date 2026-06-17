@@ -136,8 +136,14 @@ const hotspots = {
       font-family: 'Syne', sans-serif;
     }
 
-    /* ── Canvas ── */
-    canvas { display: block; }
+    /* ── Canvas — sits at z-index 1, all UI layers above it ── */
+    canvas {
+      display: block;
+      position: fixed !important;
+      top: 0; left: 0;
+      width: 100% !important; height: 100% !important;
+      z-index: 1;
+    }
 
     /* ── Fade overlay ── */
     #fade-overlay {
@@ -171,7 +177,8 @@ const hotspots = {
     /* ── Side Panel — cream light panel matching PDF ── */
     #side-panel {
       position: fixed; top: 0; left: 0; bottom: 0;
-      width: 220px; z-index: 70;
+      width: 220px; z-index: 79;
+      pointer-events: all;
       display: flex; flex-direction: column;
       background: #f5f1eb;
       border-right: 1px solid rgba(122,62,30,.15);
@@ -246,19 +253,21 @@ const hotspots = {
     #toggle {
       position: fixed; top: 50%; left: 0;
       transform: translateY(-50%);
-      z-index: 75;
-      width: 24px; height: 48px;
+      z-index: 80;
+      pointer-events: all;
+      width: 28px; height: 52px;
       display: flex; align-items: center; justify-content: center;
       background: #f5f1eb;
       border: 1px solid rgba(122,62,30,.20);
       border-left: none;
       border-radius: 0 8px 8px 0;
       cursor: pointer; color: rgba(122,62,30,.70);
-      font-size: 10px; line-height: 1;
+      font-size: 11px; line-height: 1;
       transition: background .22s, border-color .22s,
                   left .38s cubic-bezier(0.22,1,0.36,1);
       -webkit-tap-highlight-color: transparent;
-      box-shadow: 3px 0 10px rgba(0,0,0,.10);
+      box-shadow: 3px 0 10px rgba(0,0,0,.12);
+      user-select: none;
     }
     #toggle:hover { background: rgba(122,62,30,.10); border-color: rgba(122,62,30,.45); }
     #toggle.open { left: 220px; }
@@ -328,7 +337,7 @@ camera.position.set(0, 0, 0.1);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-document.body.appendChild(renderer.domElement);
+document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
 // ─── PANO SPHERE ───────────────────────────────────────────────────
 const sGeo = new THREE.SphereGeometry(10, 64, 64);
