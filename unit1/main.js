@@ -519,35 +519,40 @@ renderer.domElement.addEventListener('wheel', (e) => {
 
 // ─── RESIZE ────────────────────────────────────────────────────
 window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
+  camera.aspect = window.innerWidth / window.innerHeight
+  camera.updateProjectionMatrix()
+  renderer.setSize(window.innerWidth, window.innerHeight)
+})
 
-// ─── ANIMATE ───────────────────────────────────────────────────────
-let lastFrame = 0;
+// ─── ANIMATE ───────────────────────────────────────────────────
+let lastFrame = 0
+
 function animate(ts) {
-  requestAnimationFrame(animate);
+  requestAnimationFrame(animate)
+
   if (ts - lastFrame > 33) {
-    lastFrame = ts;
-    const t = ts * 0.001;
+    lastFrame = ts
+    const t = ts * 0.001
+
     hotspotMeshes.forEach(h => {
       if (h.geometry.type === 'RingGeometry') {
-        const s = 1 + Math.sin(t * 2) * 0.07;
-        h.scale.set(s, s, s);
-        h.material.opacity = 0.7 + Math.sin(t * 2) * 0.25;
+        const s = 1 + Math.sin(t * 2) * 0.07
+        h.scale.set(s, s, s)
+        h.material.opacity = 0.7 + Math.sin(t * 2) * 0.25
       }
-    });
+    })
+
     labelSprites.forEach((s, i) => {
-      const offset = i * 0.8;
-      s.position.y = s.userData.baseY + Math.sin(t * 1.8 + offset) * 0.04;
-      s.material.opacity = 0.82 + Math.sin(t * 1.4 + offset) * 0.15;
-    });
+      const offset       = i * 0.8
+      s.position.y       = s.userData.baseY + Math.sin(t * 1.8 + offset) * 0.04
+      s.material.opacity = 0.82 + Math.sin(t * 1.4 + offset) * 0.15
+    })
   }
-  camera.rotation.order = 'YXZ';
-  camera.rotation.y = -camRY;
-  camera.rotation.x = -camRX;
-  renderer.render(scene, camera);
+
+  camera.rotation.order = 'YXZ'
+  camera.rotation.y = -camRY
+  camera.rotation.x = -camRX
+  renderer.render(scene, camera)
 }
 
 // ─── INIT ──────────────────────────────────────────────────────────
