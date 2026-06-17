@@ -333,16 +333,15 @@ function buildPanel() {
   if (!list) return;
 
   const keys = Object.keys(rooms);
-  if (footer) footer.textContent = `${keys.length} Spaces · 360° Tour`;
+  if (footer) footer.textContent = `Brigade Stellaris`;
 
-  keys.forEach((key) => {
+  keys.forEach((key, index) => {
     const btn = document.createElement('div');
     btn.className = 'room-btn' + (key === currentRoom ? ' active' : '');
     btn.id = 'btn-' + key;
-    const thumbSrc = thumbnails[key]?.image || rooms[key].image;
     btn.innerHTML = `
-      <img class="thumb" src="${thumbSrc}" alt="${rooms[key].label}" loading="lazy" />
-      <div class="room-name">${rooms[key].label}</div>
+      <span class="room-num">${String(index + 1).padStart(2, '0')}.</span>
+      <span class="room-name">${rooms[key].label}</span>
     `;
     btn.addEventListener('click', () => {
       if (key === currentRoom) return;
