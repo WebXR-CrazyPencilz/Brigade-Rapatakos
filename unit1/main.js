@@ -339,9 +339,13 @@ function buildPanel() {
     const btn = document.createElement('div');
     btn.className = 'room-btn' + (key === currentRoom ? ' active' : '');
     btn.id = 'btn-' + key;
+    const thumbSrc = thumbnails[key]?.image || rooms[key].image;
     btn.innerHTML = `
-      <span class="room-num">${String(index + 1).padStart(2, '0')}.</span>
-      <span class="room-name">${rooms[key].label}</span>
+      <img class="thumb" src="${thumbSrc}" alt="${rooms[key].label}" loading="lazy" />
+      <div class="room-btn-inner">
+        <span class="room-num">${String(index + 1).padStart(2, '0')}.</span>
+        <span class="room-name">${rooms[key].label}</span>
+      </div>
     `;
     btn.addEventListener('click', () => {
       if (key === currentRoom) return;
