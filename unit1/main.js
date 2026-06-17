@@ -671,7 +671,17 @@ function bindPanelToggle() {
   });
 
   // FIX: use .contains() instead of !== so clicks on child text nodes are handled correctly
+  // NEW
+  let _lastTouch = 0;
+  _toggle.addEventListener('touchend', (e) => {
+    e.preventDefault(); e.stopPropagation();
+    _lastTouch = Date.now();
+    const isOpen = _panel.classList.toggle('open');
+    _toggle.classList.toggle('open', isOpen);
+    _toggle.innerHTML = isOpen ? '\u276E' : '\u276F';
+  });
   document.addEventListener('click', (e) => {
+    if (Date.now() - _lastTouch < 400) return;
     if (!_panel || !_toggle) return;
     if (!_panel.contains(e.target) && !_toggle.contains(e.target)) closePanel();
   });
@@ -682,8 +692,10 @@ const raycaster  = new THREE.Raycaster();
 const mouse      = new THREE.Vector2();
 let   mouseMoved = false;
 
-renderer.domElement.addEventListener('mousedown', () => { mouseMoved = false; });
-renderer.domElement.addEventListener('mousemove', () => { mouseMoved = true; });
+// NEW
+let mouseDownX = 0, mouseDownY = 0;
+renderer.domElement.addEventListener('mousedown', e => { mouseMoved = false; mouseDownX = e.clientX; mouseDownY = e.clientY; });
+renderer.domElement.addEventListener('mousemove', e => { const dx = e.clientX - mouseDownX, dy = e.clientY - mouseDownY; if (Math.sqrt(dx*dx+dy*dy) > 4) mouseMoved = true; });
 
 // FIX: guard against clicks that originated from UI elements above the canvas
 renderer.domElement.addEventListener('mouseup', (e) => {
@@ -721,7 +733,10 @@ renderer.domElement.addEventListener('touchstart', e => {
 });
 renderer.domElement.addEventListener('touchmove', e => {
   e.preventDefault();
-  tMoved = true;
+  // NEW
+  const _dx = e.touches[0].clientX - ttx, _dy = e.touches[0].clientY - tty;
+  if (Math.sqrt(_dx*_dx+_dy*_dy) > 4) tMoved = true;
+
   camRY += (e.touches[0].clientX - ttx) * 0.003;
   camRX += (e.touches[0].clientY - tty) * 0.003;
   camRX  = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camRX));
