@@ -319,7 +319,7 @@ window.HomeModule = (function () {
       }
       #unit-viewer-overlay.open { transform: translateY(0); }
       #unit-viewer-card {
-        flex: 1; border-radius: 12px; overflow: hidden;
+        flex: 1; height: 100%; border-radius: 12px; overflow: hidden;
         box-shadow: 0 8px 40px rgba(0,0,0,.18);
         position: relative; background: #0a0805;
       }
@@ -331,13 +331,6 @@ window.HomeModule = (function () {
       @keyframes spinRing { to{transform:rotate(360deg);} }
     `;
     document.head.appendChild(style);
-
-    const icons = {
-      floorplan: `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>`,
-      view360:   `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 5C7 5 2.73 8.11 1 12.5 2.73 16.89 7 20 12 20s9.27-3.11 11-7.5C21.27 8.11 17 5 12 5z"/></svg>`,
-      gallery:   `<svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="5" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="3" y="11" width="18" height="10" rx="1"/></svg>`,
-      map:       `<svg viewBox="0 0 24 24"><path d="M9 3L3 6v15l6-3 6 3 6-3V3l-6 3-6-3z"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>`,
-    };
 
     const dotsHTML = IMAGES.map((_, i) =>
       `<div class="hc-dot${i === 0 ? ' active' : ''}"></div>`).join('');
@@ -620,6 +613,103 @@ window.HomeModule = (function () {
   }
 
   // ─── UNIT VIEWER ─────────────────────────────────────────────────
+  const UNIT_THEME_CSS = `
+    /* ── Stellaris theme override — injected by parent ── */
+    :root {
+      --accent:        #7a3e1e;
+      --accent-light:  #9a5030;
+      --accent-bg:     rgba(122,62,30,.12);
+      --gold:          #7a3e1e;
+      --gold-dim:      rgba(122,62,30,.55);
+      --gold-faint:    rgba(122,62,30,.18);
+      --text-primary:  rgba(245,240,232,.92);
+      --text-dim:      rgba(200,185,165,.65);
+      --bg-panel:      rgba(15,12,8,.96);
+      --border:        rgba(122,62,30,.28);
+    }
+    /* Sidebar panel background */
+    .room-list, #room-list, .sidebar, #sidebar,
+    [class*="room-panel"], [class*="room-list"],
+    [class*="side-panel"], [class*="sidebar"] {
+      background: rgba(15,12,8,.96) !important;
+      border-right: 1px solid rgba(122,62,30,.25) !important;
+    }
+    /* Panel header */
+    .room-list-header, .sidebar-header, [class*="panel-header"],
+    .unit-type, [class*="unit-type"] {
+      color: rgba(200,185,165,.55) !important;
+      letter-spacing: .14em !important;
+    }
+    .room-list-title, .sidebar-title, [class*="panel-title"] {
+      color: rgba(245,240,232,.90) !important;
+    }
+    /* Room items */
+    .room-item, [class*="room-item"], li[class*="room"],
+    .scene-item, [class*="scene-item"] {
+      border-bottom: 1px solid rgba(122,62,30,.14) !important;
+      background: transparent !important;
+    }
+    .room-item:hover, [class*="room-item"]:hover,
+    .scene-item:hover, [class*="scene-item"]:hover {
+      background: rgba(122,62,30,.10) !important;
+    }
+    /* Active / selected room */
+    .room-item.active, .room-item.selected,
+    [class*="room-item"].active, [class*="room-item"].selected,
+    .scene-item.active, .scene-item.selected,
+    [class*="scene-item"].active, [class*="scene-item"].selected {
+      background: transparent !important;
+      border: 1px solid rgba(122,62,30,.55) !important;
+      border-left: 3px solid #7a3e1e !important;
+    }
+    /* Room numbers / index labels */
+    .room-num, [class*="room-num"], .scene-num,
+    .index, [class*="-index"], [class*="item-num"] {
+      color: rgba(122,62,30,.65) !important;
+    }
+    /* Room name labels */
+    .room-name, [class*="room-name"], .scene-name,
+    [class*="scene-name"], [class*="item-label"] {
+      color: rgba(245,240,232,.85) !important;
+      font-weight: 600 !important;
+      letter-spacing: .08em !important;
+    }
+    /* Collapse toggle arrow */
+    .toggle-btn, [class*="toggle"], .collapse-btn,
+    #sidebar-toggle, [id*="toggle"] {
+      background: rgba(15,12,8,.90) !important;
+      border: 1px solid rgba(122,62,30,.35) !important;
+      color: rgba(122,62,30,.80) !important;
+    }
+    /* Hotspot labels in the 360 viewer */
+    .hotspot-label, [class*="hotspot"] .label,
+    .pnlm-hotspot-base span {
+      background: #7a3e1e !important;
+      color: #f5f0e8 !important;
+      border-color: rgba(122,62,30,.45) !important;
+    }
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: rgba(15,12,8,.5); }
+    ::-webkit-scrollbar-thumb { background: rgba(122,62,30,.40); border-radius: 2px; }
+    ::-webkit-scrollbar-thumb:hover { background: rgba(122,62,30,.70); }
+  `;
+
+  function injectUnitTheme(iframe) {
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) return;
+      const existing = doc.getElementById('stellaris-theme-override');
+      if (existing) existing.remove();
+      const style = doc.createElement('style');
+      style.id = 'stellaris-theme-override';
+      style.textContent = UNIT_THEME_CSS;
+      (doc.head || doc.documentElement).appendChild(style);
+    } catch (e) {
+      // cross-origin iframe — can't inject; skip silently
+    }
+  }
+
   function openUnitViewer(unit) {
     const overlay = document.getElementById('unit-viewer-overlay');
     const iframe  = document.getElementById('unit-iframe');
@@ -634,8 +724,16 @@ window.HomeModule = (function () {
       if (loader) loader.classList.add('visible');
       setTimeout(() => {
         iframe.src = url;
-        iframe.onload = () => { iframe.classList.remove('fading'); if (loader) loader.classList.remove('visible'); iframe.onload = null; };
+        iframe.onload = () => {
+          iframe.classList.remove('fading');
+          if (loader) loader.classList.remove('visible');
+          injectUnitTheme(iframe);
+          iframe.onload = null;
+        };
       }, 350);
+    } else {
+      // Same unit re-opened — re-inject theme in case it was lost
+      injectUnitTheme(iframe);
     }
     overlay.classList.add('open');
   }
@@ -688,20 +786,22 @@ window.HomeModule = (function () {
     });
 
     document.addEventListener('click', (e) => {
-      const bar     = document.getElementById('bottom-panel');
-      const row     = document.getElementById('unit-row');
-      const overlay = document.getElementById('unit-viewer-overlay');
-      const fpOvl   = document.getElementById('fp-overlay');
-      const lb      = document.getElementById('lightbox');
-      const mapOvl  = document.getElementById('map-overlay');
+      const bar      = document.getElementById('bottom-panel');
+      const row      = document.getElementById('unit-row');
+      const overlay  = document.getElementById('unit-viewer-overlay');
+      const fpOvl    = document.getElementById('fp-overlay');
+      const lb       = document.getElementById('lightbox');
+      const mapOvl   = document.getElementById('map-overlay');
+      const chatBtn  = document.getElementById('panel-chat-btn');
       if (lb     && lb.classList.contains('open'))                           return;
       if (mapOvl && mapOvl.classList.contains('open') && mapOvl.contains(e.target)) return;
       const clickedOutside =
         bar && row &&
         !bar.contains(e.target) &&
         !row.contains(e.target) &&
-        !(overlay && overlay.contains(e.target)) &&
-        !(fpOvl   && fpOvl.contains(e.target));
+        !(chatBtn  && chatBtn.contains(e.target)) &&
+        !(overlay  && overlay.contains(e.target)) &&
+        !(fpOvl    && fpOvl.contains(e.target));
       if (clickedOutside) {
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
         closeAllModules();
