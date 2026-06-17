@@ -69,8 +69,8 @@ const hotspots = {
     { target: 'kidsbedroomcorridor', position: [2.25, -2.2, -2.0] },
   ],
   guestbedroomcorridor: [
-    { target: 'foyertoliving1',   position: [ 0.0,  -2.2,  4.0 ] },
-    { target: 'guestbedroom',     position: [-2.5,  -2.2, -8.5 ] },
+    { target: 'foyertoliving1',     position: [ 0.0,  -2.2,  4.0 ] },
+    { target: 'guestbedroom',       position: [-2.5,  -2.2, -8.5 ] },
     { target: 'guestbedroomtoilet', position: [-2.50, -2.2,  1.50] },
   ],
   guestbedroom: [
@@ -94,13 +94,13 @@ const hotspots = {
     { target: 'foyertoliving1', position: [2.5, -2.2, -1.5] },
   ],
   foyertoliving1: [
-    { target: 'foyertoliving2',       position: [ 3.5, -2.2,  0.0] },
-    { target: 'foyer',                position: [-2.5, -2.2,  1.80] },
-    { target: 'guestbedroomcorridor', position: [ 0.10, -2.2, -2.3] },
+    { target: 'foyertoliving2',       position: [ 3.5,  -2.2,  0.0 ] },
+    { target: 'foyer',                position: [-2.5,  -2.2,  1.80] },
+    { target: 'guestbedroomcorridor', position: [ 0.10, -2.2, -2.3 ] },
   ],
   foyertoliving2: [
-    { target: 'living',         position: [ 4.8,  -2.5, -5.35] },
-    { target: 'foyertoliving1', position: [-4.0,  -2.2, -0.350] },
+    { target: 'living',          position: [ 4.8,  -2.5, -5.35] },
+    { target: 'foyertoliving1',  position: [-4.0,  -2.2, -0.350] },
     { target: 'livingtokitchen', position: [ 5.35, -2.2,  0.40] },
   ],
   livingtokitchen: [
@@ -146,8 +146,9 @@ const hotspots = {
     }
 
     /* ── Fade overlay ── */
+    /* FIX: lowered from 50 to 45 so it never sits above the toggle (z:90) or panel (z:79) */
     #fade-overlay {
-      position: fixed; inset: 0; z-index: 50;
+      position: fixed; inset: 0; z-index: 45;
       background: #0a0805;
       opacity: 0; pointer-events: none;
       transition: opacity 0.2s ease;
@@ -174,7 +175,7 @@ const hotspots = {
       color: rgba(200,190,154,.35);
     }
 
-    /* ── Side Panel — cream light panel matching PDF ── */
+    /* ── Side Panel — cream light panel ── */
     #side-panel {
       position: fixed; top: 0; left: 0; bottom: 0;
       width: 220px; z-index: 79;
@@ -229,7 +230,6 @@ const hotspots = {
       border-bottom-color: transparent;
     }
 
-    /* Number + name combined label */
     .room-label-text {
       font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 600;
       letter-spacing: .08em; text-transform: uppercase;
@@ -250,10 +250,11 @@ const hotspots = {
     }
 
     /* ── Toggle chevron — right edge of panel ── */
+    /* FIX: raised z-index from 80 to 90 so it always sits above fade-overlay (45) */
     #toggle {
       position: fixed; top: 50%; left: 0;
       transform: translateY(-50%);
-      z-index: 80;
+      z-index: 90;
       pointer-events: all;
       width: 28px; height: 52px;
       display: flex; align-items: center; justify-content: center;
@@ -316,7 +317,7 @@ const hotspots = {
       <div id="room-list"></div>
       <div id="panel-footer"></div>
     </div>
-    <div id="toggle">❯</div>
+    <div id="toggle">&#x276F;</div>
   `);
 
   // Room label
@@ -355,11 +356,15 @@ const minFov = 30, maxFov = 90;
 
 // ─── TEXTURE CACHE ─────────────────────────────────────────────────
 const textureCache = {};
+const loadingSet   = new Set(); // FIX: track in-flight loads to prevent duplicates
 const loader       = new THREE.TextureLoader();
 
 function loadTexture(key, onDone) {
   if (!rooms[key]) { console.warn('loadTexture: unknown key', key); onDone && onDone(null); return; }
   if (textureCache[key]) { onDone && onDone(textureCache[key]); return; }
+  // FIX: skip if already loading — prevents duplicate network requests
+  if (loadingSet.has(key)) { return; }
+  loadingSet.add(key);
   loader.load(
     rooms[key].image,
     (tex) => {
@@ -368,10 +373,15 @@ function loadTexture(key, onDone) {
       tex.generateMipmaps = false;
       if (typeof THREE.SRGBColorSpace !== 'undefined') tex.colorSpace = THREE.SRGBColorSpace;
       textureCache[key] = tex;
+      loadingSet.delete(key); // FIX: clear in-flight flag on success
       onDone && onDone(tex);
     },
     undefined,
-    (err) => { console.warn('Texture load failed:', rooms[key].image, err); onDone && onDone(null); }
+    (err) => {
+      console.warn('Texture load failed:', rooms[key].image, err);
+      loadingSet.delete(key); // FIX: clear in-flight flag on error too
+      onDone && onDone(null);
+    }
   );
 }
 
@@ -385,7 +395,9 @@ let preloadQueue = [], isPreloading = false;
 function preloadConnected(key) {
   const connected = (hotspots[key] || []).map(h => h.target);
   connected.forEach(k => {
-    if (!textureCache[k] && !preloadQueue.includes(k)) preloadQueue.unshift(k);
+    if (!textureCache[k] && !loadingSet.has(k) && !preloadQueue.includes(k)) {
+      preloadQueue.unshift(k);
+    }
   });
   processPreloadQueue();
 }
@@ -445,7 +457,7 @@ function makeLabelSprite(text) {
   ctx.font         = `bold ${FONT_SIZE + 4}px Arial`;
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillText('↑', PAD_L, H / 2);
+  ctx.fillText('\u2191', PAD_L, H / 2);
 
   // Label text
   ctx.fillStyle    = '#f0ebe0';
@@ -466,7 +478,6 @@ function makeLabelSprite(text) {
 }
 
 // ─── FADE ──────────────────────────────────────────────────────────
-// Grabbed lazily at call-time so DOM is guaranteed to exist
 function fadeOut(cb) {
   const ov = document.getElementById('fade-overlay');
   if (ov) {
@@ -491,10 +502,14 @@ function loadRoom(key) {
   if (isTransitioning) return;
   isTransitioning = true;
 
+  // FIX: save previous room so we can restore state on texture failure
+  const prevRoom = currentRoom;
+
   fadeOut(() => {
     currentRoom = key;
-    camRX = rooms[key].startPitch ?? 0;
-    camRY = rooms[key].startYaw  ?? 0;
+    // FIX: use startYaw only — startPitch was an undefined reference, defaulting to 0
+    camRX = 0;
+    camRY = rooms[key].startYaw ?? 0;
 
     // Update label
     const labelEl = document.getElementById('room-label');
@@ -509,7 +524,17 @@ function loadRoom(key) {
     }
 
     loadTexture(key, (tex) => {
-      if (!tex) { isTransitioning = false; fadeIn(); return; }
+      // FIX: restore previous room state if texture fails
+      if (!tex) {
+        currentRoom = prevRoom;
+        document.querySelectorAll('.room-btn').forEach(b => b.classList.remove('active'));
+        const prevBtn = document.getElementById('btn-' + prevRoom);
+        if (prevBtn) prevBtn.classList.add('active');
+        isTransitioning = false;
+        fadeIn();
+        return;
+      }
+
       panoMaterial.map = tex;
       panoMaterial.needsUpdate = true;
 
@@ -531,8 +556,19 @@ function loadRoom(key) {
 
 // ─── CREATE HOTSPOTS ───────────────────────────────────────────────
 function createHotspots(roomKey) {
-  hotspotMeshes.forEach(h => scene.remove(h));
-  labelSprites.forEach(s => scene.remove(s));
+  // FIX: properly dispose geometries, materials, and textures to prevent GPU memory leaks
+  hotspotMeshes.forEach(h => {
+    scene.remove(h);
+    h.geometry && h.geometry.dispose();
+    h.material && h.material.dispose();
+  });
+  labelSprites.forEach(s => {
+    scene.remove(s);
+    if (s.material) {
+      s.material.map && s.material.map.dispose(); // dispose CanvasTexture
+      s.material.dispose();
+    }
+  });
   hotspotMeshes = [];
   labelSprites  = [];
 
@@ -569,8 +605,8 @@ function createHotspots(roomKey) {
     const sprite = makeLabelSprite(label);
     const baseY  = hy + 0.95;
     sprite.position.set(hx, baseY, hz);
-    sprite.userData.target  = h.target;
-    sprite.userData.baseY   = baseY;
+    sprite.userData.target = h.target;
+    sprite.userData.baseY  = baseY;
     scene.add(sprite);
     labelSprites.push(sprite);
   });
@@ -589,8 +625,6 @@ function buildPanel() {
     const btn = document.createElement('div');
     btn.className = 'room-btn' + (key === currentRoom ? ' active' : '');
     btn.id        = 'btn-' + key;
-
-    // PDF style: "01. LOBBY" — number + dot + name in one line
     btn.innerHTML = `
       <span class="room-label-text">${String(index + 1).padStart(2, '0')}. ${rooms[key].label}</span>
     `;
@@ -604,7 +638,6 @@ function buildPanel() {
 }
 
 // ─── PANEL TOGGLE ──────────────────────────────────────────────────
-// All lookups deferred — bindPanelToggle() is called after buildPanel() in init()
 let _toggle = null;
 let _panel  = null;
 
@@ -620,6 +653,7 @@ function bindPanelToggle() {
   _panel  = document.getElementById('side-panel');
   if (!_toggle || !_panel) return;
 
+  // Mouse click handler
   _toggle.addEventListener('click', (e) => {
     e.stopPropagation();
     const isOpen = _panel.classList.toggle('open');
@@ -627,9 +661,19 @@ function bindPanelToggle() {
     _toggle.innerHTML = isOpen ? '\u276E' : '\u276F';
   });
 
+  // FIX: add touchend handler for mobile — prevents synthesised click double-firing
+  _toggle.addEventListener('touchend', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const isOpen = _panel.classList.toggle('open');
+    _toggle.classList.toggle('open', isOpen);
+    _toggle.innerHTML = isOpen ? '\u276E' : '\u276F';
+  });
+
+  // FIX: use .contains() instead of !== so clicks on child text nodes are handled correctly
   document.addEventListener('click', (e) => {
     if (!_panel || !_toggle) return;
-    if (!_panel.contains(e.target) && e.target !== _toggle) closePanel();
+    if (!_panel.contains(e.target) && !_toggle.contains(e.target)) closePanel();
   });
 }
 
@@ -640,8 +684,11 @@ let   mouseMoved = false;
 
 renderer.domElement.addEventListener('mousedown', () => { mouseMoved = false; });
 renderer.domElement.addEventListener('mousemove', () => { mouseMoved = true; });
+
+// FIX: guard against clicks that originated from UI elements above the canvas
 renderer.domElement.addEventListener('mouseup', (e) => {
   if (mouseMoved) return;
+  if (e.target !== renderer.domElement) return; // skip if a UI element was clicked
   mouse.x =  (e.clientX / window.innerWidth)  * 2 - 1;
   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
@@ -681,8 +728,10 @@ renderer.domElement.addEventListener('touchmove', e => {
   ttx = e.touches[0].clientX; tty = e.touches[0].clientY;
 }, { passive: false });
 
+// FIX: guard against touch taps that originated from UI elements above the canvas
 renderer.domElement.addEventListener('touchend', e => {
   if (tMoved) return;
+  if (e.target !== renderer.domElement) return; // skip if a UI element was tapped
   const touch = e.changedTouches[0];
   mouse.x =  (touch.clientX / window.innerWidth)  * 2 - 1;
   mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;

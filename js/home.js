@@ -198,7 +198,9 @@ window.HomeModule = (function () {
       /* ── Unit Row — tab strip ── */
       #unit-row {
         position: fixed; bottom: 62px; left: 0; right: 0;
-        width: 100%; z-index: 101;
+        width: 100%;
+        /* FIX #10: lowered from 101 so it doesn't overlap unit-viewer-overlay (z:99) top edge */
+        z-index: 98;
         display: flex; flex-direction: row;
         align-items: stretch; justify-content: center;
         opacity: 0; pointer-events: none;
@@ -348,8 +350,6 @@ window.HomeModule = (function () {
       #unit-loader.visible { opacity:1; }
       #unit-loader-ring { width:36px; height:36px; border:2.5px solid rgba(200,190,154,.25); border-top-color:rgba(200,190,154,.9); border-radius:50%; animation:spinRing .75s linear infinite; }
       @keyframes spinRing { to{transform:rotate(360deg);} }
-
-
     `;
     document.head.appendChild(style);
 
@@ -471,6 +471,12 @@ window.HomeModule = (function () {
     autoTimer = setInterval(() => {
       if (!isAnimating) goTo((current + 1) % IMAGES.length);
     }, 3800);
+  }
+
+  // FIX #9: stop carousel timer cleanly
+  function stopAuto() {
+    clearInterval(autoTimer);
+    autoTimer = null;
   }
 
   function initCarousel() {
@@ -735,14 +741,15 @@ window.HomeModule = (function () {
     if (!isSameUnit) {
       iframe.classList.add('fading');
       if (loader) loader.classList.add('visible');
+      // FIX: set onload BEFORE setting src to avoid missing the load event on cached content
       setTimeout(() => {
-        iframe.src = url;
         iframe.onload = () => {
           iframe.classList.remove('fading');
           if (loader) loader.classList.remove('visible');
           injectUnitTheme(iframe);
           iframe.onload = null;
         };
+        iframe.src = url;
       }, 350);
     } else {
       injectUnitTheme(iframe);
@@ -757,6 +764,9 @@ window.HomeModule = (function () {
 
   // ─── CLOSE ALL MODULES ───────────────────────────────────────────
   function closeAllModules() {
+    // FIX #9: stop carousel auto-timer when navigating away
+    stopAuto();
+
     closeUnitViewer();
     closeMap();
     unitRowVisible = false;
@@ -768,6 +778,10 @@ window.HomeModule = (function () {
     if (window.FloorplanModule && typeof FloorplanModule.close === 'function') FloorplanModule.close();
     setTimeout(() => { if (fpOverlay) fpOverlay.style.pointerEvents = ''; }, 420);
     if (window.GalleryModule && typeof GalleryModule.close === 'function') GalleryModule.close();
+
+    // Restart carousel auto-play after closing modules
+    // (only matters if carousel becomes visible again)
+    startAuto();
   }
 
   // ─── PANEL EVENTS ────────────────────────────────────────────────
@@ -803,24 +817,34 @@ window.HomeModule = (function () {
       });
     });
 
-    // Click-outside to collapse
+    // ─── CLICK-OUTSIDE TO COLLAPSE ───────────────────────────────
+    // FIX #1 + #3: Added #side-panel and #toggle to the exclusion list so
+    // clicking the 360° viewer's room panel toggle does not trigger closeAllModules()
     document.addEventListener('click', (e) => {
-      const bar     = document.getElementById('bottom-panel');
-      const row     = document.getElementById('unit-row');
-      const overlay = document.getElementById('unit-viewer-overlay');
-      const fpOvl   = document.getElementById('fp-overlay');
-      const lb      = document.getElementById('lightbox');
-      const mapOvl  = document.getElementById('map-overlay');
-      const chatBtn = document.getElementById('panel-chat-btn');
-      if (lb    && lb.classList.contains('open'))                                      return;
-      if (mapOvl && mapOvl.classList.contains('open') && mapOvl.contains(e.target))   return;
+      const bar       = document.getElementById('bottom-panel');
+      const row       = document.getElementById('unit-row');
+      const overlay   = document.getElementById('unit-viewer-overlay');
+      const fpOvl     = document.getElementById('fp-overlay');
+      const lb        = document.getElementById('lightbox');
+      const mapOvl    = document.getElementById('map-overlay');
+      const chatBtn   = document.getElementById('panel-chat-btn');
+      // FIX: also exclude the 360 side-panel and its toggle button
+      const sidePanel  = document.getElementById('side-panel');
+      const sideToggle = document.getElementById('toggle');
+
+      if (lb    && lb.classList.contains('open'))                                    return;
+      if (mapOvl && mapOvl.classList.contains('open') && mapOvl.contains(e.target)) return;
+
       const clickedOutside =
         bar && row &&
         !bar.contains(e.target) &&
         !row.contains(e.target) &&
-        !(chatBtn  && chatBtn.contains(e.target)) &&
-        !(overlay  && overlay.contains(e.target)) &&
-        !(fpOvl    && fpOvl.contains(e.target));
+        !(chatBtn    && chatBtn.contains(e.target)) &&
+        !(overlay    && overlay.contains(e.target)) &&
+        !(fpOvl      && fpOvl.contains(e.target))  &&
+        !(sidePanel  && sidePanel.contains(e.target))  && // FIX #3: exclude 360 side-panel
+        !(sideToggle && sideToggle.contains(e.target));   // FIX #3: exclude 360 toggle btn
+
       if (clickedOutside) {
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
         closeAllModules();
