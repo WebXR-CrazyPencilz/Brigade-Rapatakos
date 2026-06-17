@@ -1,3 +1,6 @@
+//unit2/main.js — Brigade Rapatakos · 360° Unit2 Viewer
+
+
 function cloudThumb(url) {
   return url.replace('/upload/','/upload/w_300,h_90,c_fill,q_auto,f_auto/')
 }
