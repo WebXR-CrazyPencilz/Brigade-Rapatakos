@@ -399,8 +399,10 @@ function buildPanel() {
 
     btn.innerHTML = `
       <img class="thumb" src="${thumbSrc}" alt="${rooms[key].label}" loading="lazy" />
-      <span class="room-num">${String(index + 1).padStart(2, '0')}</span>
-      <div class="room-name">${rooms[key].label}</div>
+      <div class="room-btn-inner">
+        <span class="room-num">${String(index + 1).padStart(2, '0')}.</span>
+        <span class="room-name">${rooms[key].label}</span>
+      </div>
     `
     btn.addEventListener('click', () => {
       if (key === currentRoom) return

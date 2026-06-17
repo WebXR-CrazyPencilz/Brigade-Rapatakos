@@ -2,7 +2,7 @@
   'use strict'
 
   // ─── CONFIG ─────────────────────────────────────────────────────
-  const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/24-4BHK%20%20F_Even%20Floor_TOP%20VIEW_Enlarged_Tower_03.jpg?updatedAt=1777903887248'
+  const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Dimension/4BHKF.jpg?updatedAt=1779451208452'
 
   // The viewBox matches the image's natural pixel size.
   // All polygon coordinates are based on these dimensions.
@@ -45,16 +45,11 @@
       position: relative;
       display: inline-block;
       line-height: 0;
-<<<<<<< HEAD
       border-radius: 8px;
       overflow: hidden;
       box-shadow: 0 0 0 1px rgba(201,162,58,0.6), 0 0 40px rgba(201,162,58,0.15), 0 20px 60px rgba(0,0,0,0.5);
       outline: 1px solid rgba(201,162,58,0.2);
       outline-offset: 14px;
-=======
-      border-radius: 6px;
-      overflow: hidden;
->>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
     `
 
     // ── The floorplan image
@@ -155,7 +150,6 @@
         transition: filter 0.15s;
       `
       svg.appendChild(poly)
-<<<<<<< HEAD
 
       // Label text in the center of each zone
       const pts = zone.points.trim().split(/\s+/).map(p => p.split(',').map(Number))
@@ -166,10 +160,6 @@
     })
 
     // ── Hover effect
-=======
-    })
-
->>>>>>> 8d135a47a04b9acb8895a8ea36224b18e9b0a241
     svg.addEventListener('mouseover', e => {
       const z = e.target.closest('.fpz')
       if (!z) return
