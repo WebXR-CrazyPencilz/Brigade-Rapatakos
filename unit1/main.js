@@ -401,24 +401,24 @@ renderer.domElement.addEventListener('mouseup', (e) => {
 
 // ─── PANEL ─────────────────────────────────────────────────────
 function buildPanel() {
-  const list   = document.getElementById('room-list');
-  const footer = document.getElementById('panel-footer');
-  if (!list) return;
+  const list   = document.getElementById('room-list')
+  const footer = document.getElementById('panel-footer')
+  if (!list) return
 
-  const keys = Object.keys(rooms);
-  if (footer) footer.textContent = `${keys.length} Spaces · 360° Tour`;
+  const keys = Object.keys(rooms)
+  if (footer) footer.textContent = `${keys.length} SPACES`
 
-  keys.forEach((key) => {
-    const btn = document.createElement('div');
-    btn.className = 'room-btn' + (key === currentRoom ? ' active' : '');
-    btn.id = 'btn-' + key;
+  keys.forEach((key, index) => {
+    const btn      = document.createElement('div')
+    btn.className  = 'room-btn' + (key === currentRoom ? ' active' : '')
+    btn.id         = 'btn-' + key
+    const thumbSrc = thumbnails[key]?.image || rooms[key].image
 
-    const thumbSrc = thumbnails[key]?.image || rooms[key].image;
     btn.innerHTML = `
       <img class="thumb" src="${thumbSrc}" alt="${rooms[key].label}" loading="lazy" />
+      <span class="room-num">${String(index + 1).padStart(2, '0')}</span>
       <div class="room-name">${rooms[key].label}</div>
-    `;
-
+    `
     btn.addEventListener('click', () => {
       if (key === currentRoom) return
       closePanel(); loadRoom(key)
