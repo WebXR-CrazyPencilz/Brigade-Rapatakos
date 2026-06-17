@@ -10,16 +10,15 @@
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
-    /* ── Design tokens — matched exactly from PDF ── */
     :root {
       --rust:         #7a3e1e;
       --rust-light:   #9b5030;
       --rust-dim:     rgba(122,62,30,0.15);
       --rust-border:  rgba(122,62,30,0.25);
-      --bg:           #f2ede8;       /* warm off-white page bg */
-      --panel-bg:     #ffffff;       /* pure white panel */
-      --text-dark:    #1a1208;       /* near-black for headings */
-      --text-mid:     #3d2e1e;       /* body text */
+      --bg:           #f2ede8;
+      --panel-bg:     #ffffff;
+      --text-dark:    #1a1208;
+      --text-mid:     #3d2e1e;
       --text-dim:     rgba(61,46,30,0.45);
       --cream:        #f5f0ea;
       --shadow:       rgba(30,16,6,0.12);
@@ -33,7 +32,6 @@
       color: var(--text-dark);
     }
 
-    /* ── Canvas sits behind everything ── */
     canvas {
       position: fixed !important;
       top: 0; left: 0;
@@ -42,10 +40,7 @@
       z-index: 1;
     }
 
-    /* ══════════════════════════════════════════
-       VIEW SWITCH PILL  (top-center)
-       PDF: white pill, rust active segment
-    ══════════════════════════════════════════ */
+    /* ── VIEW SWITCH PILL ── */
     #view-switch {
       position: fixed;
       top: 18px;
@@ -64,7 +59,6 @@
       box-shadow: 0 2px 20px var(--shadow), 0 1px 4px rgba(0,0,0,0.08);
     }
 
-    /* Sliding rust indicator */
     #vs-track {
       position: absolute;
       top: 4px;
@@ -100,13 +94,7 @@
       -webkit-tap-highlight-color: transparent;
     }
 
-    .vs-btn svg {
-      width: 12px; height: 12px;
-      fill: currentColor;
-      flex-shrink: 0;
-    }
-
-    /* Active = white text on rust track */
+    .vs-btn svg { width: 12px; height: 12px; fill: currentColor; flex-shrink: 0; }
     .vs-btn.active { color: #ffffff; }
 
     @media (max-width: 480px) {
@@ -116,45 +104,39 @@
       #toggle.open { left: 100vw; }
     }
 
-    /* ══════════════════════════════════════════
-       PANEL TOGGLE ARROW
-       PDF: rust-brown tab on left edge
-    ══════════════════════════════════════════ */
+    /* ── PANEL TOGGLE — white, rust arrow ── */
     #toggle {
-  position: fixed;
-  top: 50%;
-  left: 0;
-  transform: translateY(-50%);
-  z-index: 700;
-  width: 26px;
-  height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #ffffff !important;
-  border: 1px solid var(--rust-border) !important;
-  border-left: none !important;
-  border-radius: 0 10px 10px 0;
-  cursor: pointer;
-  color: var(--rust) !important;
-  font-size: 12px;
-  transition: background 0.2s,
-              left 0.32s cubic-bezier(0.4,0,0.2,1);
-  box-shadow: 3px 0 14px rgba(122,62,30,0.15);
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-}
+      position: fixed;
+      top: 50%;
+      left: 0;
+      transform: translateY(-50%);
+      z-index: 700;
+      width: 26px;
+      height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ffffff;
+      border: 1px solid rgba(122,62,30,0.25);
+      border-left: none;
+      border-radius: 0 10px 10px 0;
+      cursor: pointer;
+      color: #7a3e1e;
+      font-size: 12px;
+      transition: left 0.32s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: 3px 0 14px rgba(122,62,30,0.15);
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
 
     #toggle:hover {
-  background: #f5ede0 !important;
-  border-color: var(--rust) !important;
-}
+      background: #f5ede0;
+      border-color: #7a3e1e;
+    }
 
     #toggle.open { left: 260px; }
 
-    /* ══════════════════════════════════════════
-       SIDE PANEL — white, PDF-matched
-    ══════════════════════════════════════════ */
+    /* ── SIDE PANEL ── */
     #side-panel {
       position: fixed;
       left: 0; top: 0;
@@ -174,7 +156,6 @@
     #side-panel::-webkit-scrollbar { width: 0; }
     #side-panel.open { transform: translateX(0); }
 
-    /* Rust top accent bar */
     #side-panel::before {
       content: '';
       display: block;
@@ -183,7 +164,6 @@
       flex-shrink: 0;
     }
 
-    /* Panel header */
     #panel-header {
       padding: 20px 18px 14px;
       flex-shrink: 0;
@@ -204,11 +184,9 @@
       font-size: 26px;
       font-weight: 600;
       color: var(--text-dark);
-      letter-spacing: 0px;
       line-height: 1.15;
     }
 
-    /* Divider */
     .panel-divider {
       height: 1px;
       margin: 0;
@@ -216,7 +194,6 @@
       flex-shrink: 0;
     }
 
-    /* Room list */
     #room-list {
       flex: 1;
       padding: 0;
@@ -224,12 +201,11 @@
       flex-direction: column;
     }
 
-    /* ── Room buttons — smart tile with thumbnail bg ── */
+    /* ── Room tiles ── */
     .room-btn {
       position: relative;
       display: flex;
       align-items: center;
-      gap: 10px;
       padding: 0;
       height: 56px;
       cursor: pointer;
@@ -242,10 +218,9 @@
       overflow: hidden;
     }
 
-    .room-btn:hover { background:  #0d0a06; }
+    .room-btn:hover  { background: #0d0a06; }
     .room-btn.active { background: var(--rust); }
 
-    /* Thumbnail — fills the button as background tile */
     .room-btn .thumb {
       position: absolute;
       inset: 0;
@@ -256,10 +231,9 @@
       display: block;
     }
 
-    .room-btn:hover .thumb    { opacity: 0.75; transform: scale(1.04); }
-    .room-btn.active .thumb   { opacity: 0.50; }
+    .room-btn:hover .thumb  { opacity: 0.75; transform: scale(1.04); }
+    .room-btn.active .thumb { opacity: 0.40; }
 
-    /* Gradient scrim so text stays readable */
     .room-btn::after {
       content: '';
       position: absolute;
@@ -269,10 +243,9 @@
     }
 
     .room-btn.active::after {
-       background: linear-gradient(90deg, rgba(122,62,30,0.75) 0%, rgba(122,62,30,0.2) 100%);
+      background: linear-gradient(90deg, rgba(122,62,30,0.75) 0%, rgba(122,62,30,0.2) 100%);
     }
 
-    /* Text container sits above the image */
     .room-btn-inner {
       position: relative;
       z-index: 2;
@@ -283,7 +256,6 @@
       width: 100%;
     }
 
-    /* Row number */
     .room-num {
       font-size: 10px;
       font-weight: 500;
@@ -294,9 +266,8 @@
       font-family: 'Montserrat', sans-serif;
     }
 
-    .room-btn.active .room-num { color: rgba(255,255,255,0.7); opacity: 1; }
+    .room-btn.active .room-num { color: rgba(255,255,255,0.7); }
 
-    /* Room name */
     .room-name {
       font-family: 'Montserrat', sans-serif;
       font-size: 11px;
@@ -312,7 +283,6 @@
 
     .room-btn.active .room-name { color: #ffffff; font-weight: 600; }
 
-    /* Panel footer */
     #panel-footer {
       padding: 14px 18px;
       font-size: 9px;
@@ -325,9 +295,7 @@
       background: #ffffff;
     }
 
-    /* ══════════════════════════════════════════
-       ROOM LABEL (bottom center)
-    ══════════════════════════════════════════ */
+    /* ── Room label ── */
     #room-label {
       position: fixed;
       bottom: 26px;
@@ -351,9 +319,7 @@
       white-space: nowrap;
     }
 
-    /* ══════════════════════════════════════════
-       FADE OVERLAY
-    ══════════════════════════════════════════ */
+    /* ── Fade overlay ── */
     #fade-overlay {
       position: fixed; inset: 0;
       z-index: 500;
@@ -363,14 +329,9 @@
       transition: opacity 0.22s ease;
     }
 
-    #fade-overlay.fading {
-      opacity: 1;
-      pointer-events: all;
-    }
+    #fade-overlay.fading { opacity: 1; pointer-events: all; }
 
-    /* ══════════════════════════════════════════
-       ROTATE WARNING
-    ══════════════════════════════════════════ */
+    /* ── Rotate warning ── */
     #rotate-warning {
       position: fixed; inset: 0;
       background: var(--bg);
@@ -390,9 +351,7 @@
 
     #rotate-warning span { font-size: 30px; }
 
-    /* ══════════════════════════════════════════
-       CORNER ACCENTS
-    ══════════════════════════════════════════ */
+    /* ── Corner accents ── */
     .corner-accent {
       position: fixed;
       width: 32px; height: 32px;
@@ -412,34 +371,26 @@
 
 <body>
 
-  <!-- ── Corner Accents ── -->
   <div class="corner-accent tl"></div>
   <div class="corner-accent tr"></div>
   <div class="corner-accent bl"></div>
   <div class="corner-accent br"></div>
 
-  <!-- ── VIEW SWITCH PILL ── -->
   <div id="view-switch">
     <div id="vs-track"></div>
-
     <button class="vs-btn active" id="btn-fp" onclick="AppView.switchTo('floorplan')" aria-label="Floor Plan view">
       <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
       Floor Plan
     </button>
-
     <button class="vs-btn" id="btn-360" onclick="AppView.switchTo('360')" aria-label="360° view">
       <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><ellipse cx="8" cy="8" rx="3" ry="7" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
       360° View
     </button>
   </div>
 
-  <!-- ── PANEL TOGGLE ── -->
   <div id="toggle" aria-label="Toggle side panel">❯</div>
-
-  <!-- ── FADE OVERLAY ── -->
   <div id="fade-overlay"></div>
 
-  <!-- ── SIDE PANEL ── -->
   <div id="side-panel">
     <div id="panel-header">
       <div class="ph-eyebrow">4 BHK Virtual</div>
@@ -450,16 +401,13 @@
     <div id="panel-footer">Brigade Stellaris</div>
   </div>
 
-  <!-- ── ROOM LABEL ── -->
   <div id="room-label">LOBBY</div>
 
-  <!-- ── ROTATE WARNING ── -->
   <div id="rotate-warning">
     <span>🔄</span>
     Please rotate your device to landscape
   </div>
 
-  <!-- ── ORIENTATION CHECK ── -->
   <script>
     function checkOrientation () {
       const warn = document.getElementById('rotate-warning')
@@ -472,7 +420,6 @@
     checkOrientation()
   </script>
 
-  <!-- ── APP VIEW CONTROLLER ── -->
   <script>
     window.AppView = (function () {
       const viewer360Els = () => [
@@ -482,6 +429,16 @@
       ]
 
       function getCanvas () { return document.querySelector('canvas') }
+
+      // ── Force toggle white style after it becomes visible ──
+      function styleToggleWhite () {
+        const tog = document.getElementById('toggle')
+        if (!tog) return
+        tog.style.background   = '#ffffff'
+        tog.style.color        = '#7a3e1e'
+        tog.style.border       = '1px solid rgba(122,62,30,0.25)'
+        tog.style.borderLeft   = 'none'
+      }
 
       let currentView = 'floorplan'
 
@@ -518,6 +475,7 @@
           viewer360Els().forEach(el => { if (el) el.style.display = '' })
           const cvs = getCanvas()
           if (cvs) cvs.style.display = 'block'
+          styleToggleWhite()  // ← re-apply white after display is restored
         }
       }
 
@@ -544,17 +502,10 @@
     })()
   </script>
 
-  <!-- ── THREE.JS ── -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-  <!-- ── 360 VIEWER ── -->
   <script src="main.js"></script>
-
-  <!-- ── FLOORPLAN ── -->
   <script src="floorplan.js"></script>
-  <script>
-    window.FloorPlan.show()
-  </script>
+  <script>window.FloorPlan.show()</script>
 
 </body>
 </html>
