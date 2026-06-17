@@ -416,8 +416,8 @@ window.FloorplanModule = (function () {
                 <button class="fp-parity-btn"        data-parity="even">Even</button>
               </div>
               <div id="fp-view-toggle">
-                <button class="fp-toggle-btn active" data-view="top">Floor Plan</button>
-                <button class="fp-toggle-btn"        data-view="iso">360° View</button>
+                <button class="fp-toggle-btn active" data-view="top">Plan</button>
+                <button class="fp-toggle-btn"        data-view="iso">ISO</button>
               </div>
             </div>
             <div id="fp-close">
