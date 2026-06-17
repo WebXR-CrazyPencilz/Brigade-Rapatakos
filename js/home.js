@@ -672,9 +672,10 @@ window.HomeModule = (function () {
     }
     .toggle-btn, [class*="toggle"], .collapse-btn,
     #sidebar-toggle, [id*="toggle"] {
-      background: rgba(15,12,8,.90) !important;
-      border: 1px solid rgba(122,62,30,.35) !important;
-      color: rgba(122,62,30,.80) !important;
+      background: #ffffff !important;
+      border: 1px solid rgba(122,62,30,.25) !important;
+      border-left: none !important;
+      color: #7a3e1e !important;
     }
     .hotspot-label, [class*="hotspot"] .label,
     .pnlm-hotspot-base span {
