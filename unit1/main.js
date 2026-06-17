@@ -136,7 +136,6 @@ const hotspots = {
       font-family: 'Syne', sans-serif;
     }
 
-    /* ── Canvas — sits at z-index 1, all UI layers above it ── */
     canvas {
       display: block;
       position: fixed !important;
@@ -145,8 +144,6 @@ const hotspots = {
       z-index: 1;
     }
 
-    /* ── Fade overlay ── */
-    /* FIX: lowered from 50 to 45 so it never sits above the toggle (z:90) or panel (z:79) */
     #fade-overlay {
       position: fixed; inset: 0; z-index: 45;
       background: #0a0805;
@@ -154,7 +151,6 @@ const hotspots = {
       transition: opacity 0.2s ease;
     }
 
-    /* ── Loading screen ── */
     #loading {
       position: fixed; inset: 0; z-index: 200;
       background: #0a0805;
@@ -175,7 +171,6 @@ const hotspots = {
       color: rgba(200,190,154,.35);
     }
 
-    /* ── Side Panel — cream light panel ── */
     #side-panel {
       position: fixed; top: 0; left: 0; bottom: 0;
       width: 220px; z-index: 79;
@@ -189,7 +184,6 @@ const hotspots = {
     }
     #side-panel.open { transform: translateX(0); }
 
-    /* Panel header */
     #panel-header {
       flex-shrink: 0;
       padding: 22px 18px 16px;
@@ -206,7 +200,6 @@ const hotspots = {
       letter-spacing: .01em; line-height: 1.2;
     }
 
-    /* Room list */
     #room-list {
       flex: 1; overflow-y: auto; overflow-x: hidden;
       padding: 4px 0;
@@ -239,7 +232,6 @@ const hotspots = {
     .room-btn:hover .room-label-text { color: rgba(30,18,6,.90); }
     .room-btn.active .room-label-text { color: #f5f0e8; }
 
-    /* Panel footer */
     #panel-footer {
       flex-shrink: 0;
       padding: 10px 18px;
@@ -249,8 +241,6 @@ const hotspots = {
       color: rgba(122,62,30,.35);
     }
 
-    /* ── Toggle chevron — right edge of panel ── */
-    /* FIX: raised z-index from 80 to 90 so it always sits above fade-overlay (45) */
     #toggle {
       position: fixed; top: 50%; left: 0;
       transform: translateY(-50%);
@@ -273,7 +263,6 @@ const hotspots = {
     #toggle:hover { background: rgba(122,62,30,.10); border-color: rgba(122,62,30,.45); }
     #toggle.open { left: 220px; }
 
-    /* ── Room label pill (bottom-centre) ── */
     #room-label-wrap {
       position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
       z-index: 60; pointer-events: none;
@@ -294,12 +283,10 @@ const hotspots = {
 
 // ─── BUILD DOM ─────────────────────────────────────────────────────
 (function buildDOM() {
-  // Fade overlay
   const fadeDiv = document.createElement('div');
   fadeDiv.id = 'fade-overlay';
   document.body.appendChild(fadeDiv);
 
-  // Loading screen
   document.body.insertAdjacentHTML('beforeend', `
     <div id="loading">
       <div id="loading-ring"></div>
@@ -307,7 +294,6 @@ const hotspots = {
     </div>
   `);
 
-  // Side panel
   document.body.insertAdjacentHTML('beforeend', `
     <div id="side-panel">
       <div id="panel-header">
@@ -320,7 +306,6 @@ const hotspots = {
     <div id="toggle">&#x276F;</div>
   `);
 
-  // Room label
   document.body.insertAdjacentHTML('beforeend', `
     <div id="room-label-wrap">
       <div id="room-label">LOBBY</div>
@@ -356,13 +341,12 @@ const minFov = 30, maxFov = 90;
 
 // ─── TEXTURE CACHE ─────────────────────────────────────────────────
 const textureCache = {};
-const loadingSet   = new Set(); // FIX: track in-flight loads to prevent duplicates
+const loadingSet   = new Set();
 const loader       = new THREE.TextureLoader();
 
 function loadTexture(key, onDone) {
   if (!rooms[key]) { console.warn('loadTexture: unknown key', key); onDone && onDone(null); return; }
   if (textureCache[key]) { onDone && onDone(textureCache[key]); return; }
-  // FIX: skip if already loading — prevents duplicate network requests
   if (loadingSet.has(key)) { return; }
   loadingSet.add(key);
   loader.load(
@@ -373,13 +357,13 @@ function loadTexture(key, onDone) {
       tex.generateMipmaps = false;
       if (typeof THREE.SRGBColorSpace !== 'undefined') tex.colorSpace = THREE.SRGBColorSpace;
       textureCache[key] = tex;
-      loadingSet.delete(key); // FIX: clear in-flight flag on success
+      loadingSet.delete(key);
       onDone && onDone(tex);
     },
     undefined,
     (err) => {
       console.warn('Texture load failed:', rooms[key].image, err);
-      loadingSet.delete(key); // FIX: clear in-flight flag on error too
+      loadingSet.delete(key);
       onDone && onDone(null);
     }
   );
@@ -431,7 +415,6 @@ function makeLabelSprite(text) {
   canvas.height = H;
   const ctx = canvas.getContext('2d');
 
-  // Pill background
   const r = H / 2;
   ctx.clearRect(0, 0, W, H);
   ctx.beginPath();
@@ -447,19 +430,16 @@ function makeLabelSprite(text) {
   ctx.fillStyle = 'rgba(10,8,5,0.82)';
   ctx.fill();
 
-  // Gold border
   ctx.strokeStyle = 'rgba(122,62,30,0.90)';
   ctx.lineWidth   = 4;
   ctx.stroke();
 
-  // Arrow icon
   ctx.fillStyle    = '#c9a23a';
   ctx.font         = `bold ${FONT_SIZE + 4}px Arial`;
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillText('\u2191', PAD_L, H / 2);
 
-  // Label text
   ctx.fillStyle    = '#f0ebe0';
   ctx.font         = `600 ${FONT_SIZE}px Arial`;
   ctx.textAlign    = 'left';
@@ -502,20 +482,16 @@ function loadRoom(key) {
   if (isTransitioning) return;
   isTransitioning = true;
 
-  // FIX: save previous room so we can restore state on texture failure
   const prevRoom = currentRoom;
 
   fadeOut(() => {
     currentRoom = key;
-    // FIX: use startYaw only — startPitch was an undefined reference, defaulting to 0
     camRX = 0;
     camRY = rooms[key].startYaw ?? 0;
 
-    // Update label
     const labelEl = document.getElementById('room-label');
     if (labelEl) labelEl.innerText = rooms[key].label;
 
-    // Update sidebar active state
     document.querySelectorAll('.room-btn').forEach(b => b.classList.remove('active'));
     const activeBtn = document.getElementById('btn-' + key);
     if (activeBtn) {
@@ -524,7 +500,6 @@ function loadRoom(key) {
     }
 
     loadTexture(key, (tex) => {
-      // FIX: restore previous room state if texture fails
       if (!tex) {
         currentRoom = prevRoom;
         document.querySelectorAll('.room-btn').forEach(b => b.classList.remove('active'));
@@ -538,7 +513,6 @@ function loadRoom(key) {
       panoMaterial.map = tex;
       panoMaterial.needsUpdate = true;
 
-      // Remove loading screen
       const loading = document.getElementById('loading');
       if (loading) {
         loading.style.transition = 'opacity 0.5s';
@@ -556,7 +530,6 @@ function loadRoom(key) {
 
 // ─── CREATE HOTSPOTS ───────────────────────────────────────────────
 function createHotspots(roomKey) {
-  // FIX: properly dispose geometries, materials, and textures to prevent GPU memory leaks
   hotspotMeshes.forEach(h => {
     scene.remove(h);
     h.geometry && h.geometry.dispose();
@@ -565,7 +538,7 @@ function createHotspots(roomKey) {
   labelSprites.forEach(s => {
     scene.remove(s);
     if (s.material) {
-      s.material.map && s.material.map.dispose(); // dispose CanvasTexture
+      s.material.map && s.material.map.dispose();
       s.material.dispose();
     }
   });
@@ -578,7 +551,6 @@ function createHotspots(roomKey) {
   data.forEach(h => {
     const [hx, hy, hz] = h.position;
 
-    // Animated ring
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(0.25, 0.42, 32),
       new THREE.MeshBasicMaterial({ color: 0xc9a23a, side: THREE.DoubleSide, transparent: true, opacity: 0.92 })
@@ -589,7 +561,6 @@ function createHotspots(roomKey) {
     scene.add(ring);
     hotspotMeshes.push(ring);
 
-    // Centre dot
     const dot = new THREE.Mesh(
       new THREE.CircleGeometry(0.10, 24),
       new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide, transparent: true, opacity: 0.6 })
@@ -600,7 +571,6 @@ function createHotspots(roomKey) {
     scene.add(dot);
     hotspotMeshes.push(dot);
 
-    // Label sprite
     const label  = rooms[h.target] ? rooms[h.target].label : h.target;
     const sprite = makeLabelSprite(label);
     const baseY  = hy + 0.95;
@@ -653,7 +623,7 @@ function bindPanelToggle() {
   _panel  = document.getElementById('side-panel');
   if (!_toggle || !_panel) return;
 
-  // Mouse click handler
+  // Desktop click
   _toggle.addEventListener('click', (e) => {
     e.stopPropagation();
     const isOpen = _panel.classList.toggle('open');
@@ -661,54 +631,43 @@ function bindPanelToggle() {
     _toggle.innerHTML = isOpen ? '\u276E' : '\u276F';
   });
 
-  // FIX: add touchend handler for mobile — prevents synthesised click double-firing
+  // Mobile touch — single handler, tracks timestamp to suppress synthesized click
+  let _lastTouch = 0;
   _toggle.addEventListener('touchend', (e) => {
     e.preventDefault();
     e.stopPropagation();
+    _lastTouch = Date.now();
     const isOpen = _panel.classList.toggle('open');
     _toggle.classList.toggle('open', isOpen);
     _toggle.innerHTML = isOpen ? '\u276E' : '\u276F';
   });
 
-  // FIX: use .contains() instead of !== so clicks on child text nodes are handled correctly
-  // NEW
-  let _lastTouch = 0;
-  _toggle.addEventListener('touchend', (e) => {
-    e.preventDefault(); e.stopPropagation();
-    _lastTouch = Date.now();
-    const isOpen = _panel.classList.toggle('open');
-    _toggle.classList.toggle('open', isOpen);
-    _toggle.innerHTML = isOpen ? '\u276E' : '\u276F';
-  });
-  // NEW
-  let _lastTouch = 0;
-  _toggle.addEventListener('touchend', (e) => {
-    e.preventDefault(); e.stopPropagation();
-    _lastTouch = Date.now();
-    const isOpen = _panel.classList.toggle('open');
-    _toggle.classList.toggle('open', isOpen);
-    _toggle.innerHTML = isOpen ? '\u276E' : '\u276F';
-  });
+  // Close panel on outside click — skips synthesized clicks within 400ms of a touch
   document.addEventListener('click', (e) => {
     if (Date.now() - _lastTouch < 400) return;
     if (!_panel || !_toggle) return;
     if (!_panel.contains(e.target) && !_toggle.contains(e.target)) closePanel();
   });
+}
 
 // ─── RAYCASTER ─────────────────────────────────────────────────────
 const raycaster  = new THREE.Raycaster();
 const mouse      = new THREE.Vector2();
 let   mouseMoved = false;
+let   mouseDownX = 0, mouseDownY = 0;
 
-// NEW
-let mouseDownX = 0, mouseDownY = 0;
-renderer.domElement.addEventListener('mousedown', e => { mouseMoved = false; mouseDownX = e.clientX; mouseDownY = e.clientY; });
-renderer.domElement.addEventListener('mousemove', e => { const dx = e.clientX - mouseDownX, dy = e.clientY - mouseDownY; if (Math.sqrt(dx*dx+dy*dy) > 4) mouseMoved = true; });
-
-// FIX: guard against clicks that originated from UI elements above the canvas
+renderer.domElement.addEventListener('mousedown', e => {
+  mouseMoved = false;
+  mouseDownX = e.clientX;
+  mouseDownY = e.clientY;
+});
+renderer.domElement.addEventListener('mousemove', e => {
+  const dx = e.clientX - mouseDownX, dy = e.clientY - mouseDownY;
+  if (Math.sqrt(dx * dx + dy * dy) > 4) mouseMoved = true;
+});
 renderer.domElement.addEventListener('mouseup', (e) => {
   if (mouseMoved) return;
-  if (e.target !== renderer.domElement) return; // skip if a UI element was clicked
+  if (e.target !== renderer.domElement) return;
   mouse.x =  (e.clientX / window.innerWidth)  * 2 - 1;
   mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
   raycaster.setFromCamera(mouse, camera);
@@ -741,20 +700,17 @@ renderer.domElement.addEventListener('touchstart', e => {
 });
 renderer.domElement.addEventListener('touchmove', e => {
   e.preventDefault();
-  // NEW
   const _dx = e.touches[0].clientX - ttx, _dy = e.touches[0].clientY - tty;
-  if (Math.sqrt(_dx*_dx+_dy*_dy) > 4) tMoved = true;
-
+  if (Math.sqrt(_dx * _dx + _dy * _dy) > 4) tMoved = true;
   camRY += (e.touches[0].clientX - ttx) * 0.003;
   camRX += (e.touches[0].clientY - tty) * 0.003;
   camRX  = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, camRX));
   ttx = e.touches[0].clientX; tty = e.touches[0].clientY;
 }, { passive: false });
 
-// FIX: guard against touch taps that originated from UI elements above the canvas
 renderer.domElement.addEventListener('touchend', e => {
   if (tMoved) return;
-  if (e.target !== renderer.domElement) return; // skip if a UI element was tapped
+  if (e.target !== renderer.domElement) return;
   const touch = e.changedTouches[0];
   mouse.x =  (touch.clientX / window.innerWidth)  * 2 - 1;
   mouse.y = -(touch.clientY / window.innerHeight) * 2 + 1;
@@ -827,8 +783,8 @@ function animate(ts) {
 }
 
 // ─── INIT ──────────────────────────────────────────────────────────
-buildPanel();        // inject room buttons into DOM first
-bindPanelToggle();   // then bind toggle — DOM exists now
+buildPanel();
+bindPanelToggle();
 preloadInitial();
 loadRoom('foyer');
 animate(0);
