@@ -60,23 +60,23 @@ window.GalleryModule = (function () {
       #gl-label {
         font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
         letter-spacing: .22em; text-transform: uppercase;
-        color: rgba(200,190,154,.40); margin: 0 0 4px;
+        color: rgba(200,185,165,.45); margin: 0 0 4px;
       }
       #gl-caption {
         font-family: 'Cormorant Garamond', serif; font-style: italic;
-        font-size: 22px; font-weight: 300; color: rgba(200,190,154,.80);
+        font-size: 22px; font-weight: 300; color: rgba(200,185,165,.80);
         margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
         transition: opacity .2s;
       }
       #gl-caption.fading { opacity: 0; }
       #gl-close {
         flex-shrink: 0; width: 36px; height: 36px;
-        border: 1px solid rgba(200,190,154,.22); background: rgba(200,190,154,.06);
+        border: 1px solid rgba(122,62,30,.30); background: rgba(122,62,30,.08);
         border-radius: 8px; display: flex; align-items: center; justify-content: center;
-        cursor: pointer; color: rgba(200,190,154,.65); font-size: 16px;
+        cursor: pointer; color: rgba(200,185,165,.75); font-size: 16px;
         transition: background .2s; -webkit-tap-highlight-color: transparent; margin-left: 16px;
       }
-      #gl-close:hover { background: rgba(200,190,154,.14); }
+      #gl-close:hover { background: rgba(122,62,30,.20); }
 
       /* ── CARD STAGE ── */
       #gl-stage {
@@ -113,7 +113,7 @@ window.GalleryModule = (function () {
         transform: scale(1) translateY(0);
         opacity: 1;
         z-index: 2;
-        box-shadow: 0 16px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(200,190,154,.12);
+        box-shadow: 0 16px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(122,62,30,.12);
       }
       #gl-card-incoming {
         transform: translateX(110%) scale(0.92) rotate(4deg);
@@ -159,15 +159,15 @@ window.GalleryModule = (function () {
       .gl-arrow {
         position: absolute; top: 50%; transform: translateY(-50%);
         z-index: 10; width: 40px; height: 40px;
-        background: rgba(10,8,5,.55); border: 1px solid rgba(200,190,154,.22);
+        background: rgba(10,8,5,.55); border: 1px solid rgba(122,62,30,.30);
         border-radius: 10px; display: flex; align-items: center; justify-content: center;
         cursor: pointer; transition: background .2s;
         -webkit-tap-highlight-color: transparent;
       }
-      .gl-arrow:hover { background: rgba(200,190,154,.16); border-color: rgba(200,190,154,.55); }
+      .gl-arrow:hover { background: rgba(122,62,30,.25); border-color: rgba(122,62,30,.65); }
       #gl-arrow-prev { left: 16px; }
       #gl-arrow-next { right: 16px; }
-      .gl-arrow svg { width: 16px; height: 16px; stroke: rgba(200,190,154,.70); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .gl-arrow svg { width: 16px; height: 16px; stroke: rgba(200,185,165,.80); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
       /* Vignette */
       #gl-vignette {
@@ -178,41 +178,42 @@ window.GalleryModule = (function () {
       /* ── FOOTER (thumbnail strip — outside the card) ── */
       #gl-footer {
         flex-shrink: 0; position: relative; z-index: 10;
-        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        display: flex; flex-direction: column; align-items: center; gap: 6px;
         padding: 0;
       }
       #gl-counter {
         font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
-        letter-spacing: .20em; text-transform: uppercase; color: rgba(80,60,40,.40);
+        letter-spacing: .20em; text-transform: uppercase; color: rgba(80,60,40,.50);
       }
       #gl-dots { display: none; }
       .gl-dot {
         height: 4px; width: 4px; border-radius: 2px;
-        background: rgba(200,190,154,.22);
+        background: rgba(122,62,30,.22);
         transition: width .3s, background .3s; flex-shrink: 0;
       }
-      .gl-dot.active { width: 20px; background: rgba(200,190,154,.80); }
+      .gl-dot.active { width: 20px; background: #7a3e1e; }
       #gl-thumbs {
-        display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
-        padding: 4px 4px 0; max-width: 100%; align-items: center;
+        display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
+        padding: 2px 2px 2px; max-width: 100%; align-items: center;
       }
       #gl-thumbs::-webkit-scrollbar { display: none; }
       .gl-thumb {
-        flex-shrink: 0; width: 56px; height: 38px;
-        border-radius: 5px; overflow: hidden;
-        border: 2px solid transparent;
-        cursor: pointer; opacity: .55;
+        flex-shrink: 0; width: 58px; height: 40px;
+        border-radius: 6px; overflow: hidden;
+        border: 2px solid rgba(120,90,60,.20);
+        cursor: pointer; opacity: .65;
         transition: opacity .22s, border-color .22s, transform .22s;
-        background: #0a0805;
+        background: #2a1e14;
+        box-shadow: 0 2px 8px rgba(0,0,0,.15);
       }
       .gl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-      .gl-thumb.active { opacity: 1; border-color: #7a3e1e; transform: scaleY(1.06); }
-      .gl-thumb:not(.active):hover { opacity: .8; }
+      .gl-thumb.active { opacity: 1; border-color: #7a3e1e; transform: scale(1.08); box-shadow: 0 4px 12px rgba(122,62,30,.30); }
+      .gl-thumb:not(.active):hover { opacity: .85; border-color: rgba(122,62,30,.40); }
 
       @media (max-width: 520px) {
         .gl-card { width: 86vw; height: 62vw; }
         #gl-arrow-prev { left: 6px; } #gl-arrow-next { right: 6px; }
-        .gl-thumb { width: 40px; height: 27px; }
+        .gl-thumb { width: 44px; height: 30px; }
       }
     `;
     document.head.appendChild(style);

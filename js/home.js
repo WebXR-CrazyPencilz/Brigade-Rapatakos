@@ -98,7 +98,7 @@ window.HomeModule = (function () {
         transition: width .3s, background .3s;
         flex-shrink: 0;
       }
-      .hc-dot.active { width: 18px; background: rgba(200,190,154,.80); }
+      .hc-dot.active { width: 18px; background: rgba(245,240,232,.80); }
 
       /* ── Lightbox ── */
       #lightbox {
@@ -117,14 +117,14 @@ window.HomeModule = (function () {
       }
       #lb-empty {
         display: none; font-family: 'Cormorant Garamond', serif;
-        font-style: italic; color: rgba(200,190,154,.35); font-size: 16px;
+        font-style: italic; color: rgba(200,185,165,.35); font-size: 16px;
       }
       #lb-close {
         position: absolute; top: 16px; right: 16px;
         width: 36px; height: 36px; border-radius: 8px;
-        border: 1px solid rgba(200,190,154,.25); background: rgba(200,190,154,.06);
+        border: 1px solid rgba(122,62,30,.30); background: rgba(122,62,30,.08);
         display: flex; align-items: center; justify-content: center;
-        cursor: pointer; color: rgba(200,190,154,.7); font-size: 18px;
+        cursor: pointer; color: rgba(200,185,165,.80); font-size: 18px;
         z-index: 2; -webkit-tap-highlight-color: transparent;
       }
 
@@ -153,14 +153,9 @@ window.HomeModule = (function () {
         display: flex; align-items: center; gap: 12px;
         padding: 10px 14px;
         background: rgba(10,25,36,.95);
-        border-bottom: 1px solid rgba(200,190,154,.18);
+        border-bottom: 1px solid rgba(122,62,30,.20);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         position: relative; z-index: 2;
-      }
-      #map-topbar::after {
-        content: ''; position: absolute; bottom: -1px; left: 50%;
-        transform: translateX(-50%); width: 80px; height: 1px;
-        background: linear-gradient(to right, transparent, rgba(200,190,154,.55), transparent);
       }
       #map-back {
         display: flex; align-items: center; justify-content: center;
@@ -169,16 +164,16 @@ window.HomeModule = (function () {
       }
       #map-back-btn {
         width: 32px; height: 32px; border-radius: 8px;
-        border: 1px solid rgba(200,190,154,.35);
-        background: rgba(200,190,154,.08);
+        border: 1px solid rgba(122,62,30,.35);
+        background: rgba(122,62,30,.08);
         display: flex; align-items: center; justify-content: center;
         transition: background 0.2s, border-color 0.2s;
       }
       #map-back:hover #map-back-btn, #map-back:active #map-back-btn {
-        background: rgba(200,190,154,.18); border-color: rgba(200,190,154,.65);
+        background: rgba(122,62,30,.20); border-color: rgba(122,62,30,.65);
       }
       #map-back-btn svg {
-        width: 13px; height: 13px; stroke: rgba(200,190,154,.80);
+        width: 13px; height: 13px; stroke: rgba(200,185,165,.80);
         fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
       }
       #map-title {
@@ -206,8 +201,8 @@ window.HomeModule = (function () {
       #map-spinner.visible { opacity: 1; }
       #map-spinner-ring {
         width: 32px; height: 32px;
-        border: 2px solid rgba(200,190,154,.20);
-        border-top-color: rgba(200,190,154,.85);
+        border: 2px solid rgba(122,62,30,.20);
+        border-top-color: rgba(122,62,30,.85);
         border-radius: 50%;
         animation: spinMap 0.72s linear infinite;
       }

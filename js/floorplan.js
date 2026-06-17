@@ -196,17 +196,11 @@ window.FloorplanModule = (function () {
       #fp-topbar {
         flex-shrink: 0; display: flex; align-items: center;
         padding: 8px 12px;
-        border-bottom: 1px solid rgba(200,190,154,.18);
+        border-bottom: 1px solid rgba(122,62,30,.20);
         background: rgba(10,8,5,.92);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         gap: 10px; position: relative; z-index: 2;
       }
-      #fp-topbar::after {
-        content: ''; position: absolute; bottom: -1px; left: 50%;
-        transform: translateX(-50%); width: 80px; height: 1px;
-        background: linear-gradient(to right, transparent, rgba(200,190,154,.55), transparent);
-      }
-
       #fp-back {
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; opacity: 0; pointer-events: none;
@@ -215,17 +209,17 @@ window.FloorplanModule = (function () {
       #fp-back.visible { opacity: 1; pointer-events: all; }
       #fp-back-arrow {
         width: 32px; height: 32px; border-radius: 8px;
-        border: 1px solid rgba(200,190,154,.35);
-        background: rgba(200,190,154,.08);
+        border: 1px solid rgba(122,62,30,.35);
+        background: rgba(122,62,30,.08);
         display: flex; align-items: center; justify-content: center;
         transition: background 0.2s, border-color 0.2s;
         -webkit-tap-highlight-color: transparent;
       }
       #fp-back:active #fp-back-arrow, #fp-back:hover #fp-back-arrow {
-        background: rgba(200,190,154,.18); border-color: rgba(200,190,154,.65);
+        background: rgba(122,62,30,.18); border-color: rgba(122,62,30,.65);
       }
       #fp-back-arrow svg {
-        width:13px; height:13px; stroke:rgba(200,190,154,.80);
+        width:13px; height:13px; stroke:rgba(200,185,165,.80);
         fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;
       }
 
@@ -241,8 +235,8 @@ window.FloorplanModule = (function () {
       }
 
       #fp-parity-toggle, #fp-view-toggle {
-        display: flex; background: rgba(30,28,24,0.92);
-        border: 1px solid rgba(200,190,154,.22); border-radius: 999px;
+        display: flex; background: rgba(20,16,12,0.92);
+        border: 1px solid rgba(122,62,30,.30); border-radius: 999px;
         padding: 3px; gap: 2px;
         opacity: 0; pointer-events: none; transition: opacity 0.28s;
       }
@@ -251,29 +245,29 @@ window.FloorplanModule = (function () {
       .fp-parity-btn, .fp-toggle-btn {
         padding: 6px 16px; font-family: 'Syne', sans-serif;
         font-size: 9px; font-weight: 700; letter-spacing: .13em; text-transform: uppercase;
-        color: rgba(200,190,154,.50); cursor: pointer; background: transparent;
+        color: rgba(200,185,165,.50); cursor: pointer; background: transparent;
         border: none; outline: none; border-radius: 999px;
         transition: background 0.22s, color 0.22s;
         white-space: nowrap; min-height: 32px; display: flex; align-items: center;
         -webkit-tap-highlight-color: transparent;
       }
       .fp-parity-btn.active, .fp-toggle-btn.active {
-        background: linear-gradient(135deg, #c8b96a 0%, #a8943a 100%);
-        color: #1a1608; box-shadow: 0 2px 8px rgba(180,160,60,.35);
+        background: #7a3e1e;
+        color: #f5f0e8; box-shadow: 0 2px 8px rgba(122,62,30,.35);
       }
       .fp-parity-btn:not(.active):hover, .fp-toggle-btn:not(.active):hover {
-        color: rgba(200,190,154,.80); background: rgba(200,190,154,.08);
+        color: rgba(200,185,165,.80); background: rgba(122,62,30,.12);
       }
 
       #fp-close {
         flex-shrink: 0; width: 32px; height: 32px; border-radius: 8px;
-        border: 1px solid rgba(200,190,154,.25); background: rgba(200,190,154,.06);
+        border: 1px solid rgba(122,62,30,.25); background: rgba(122,62,30,.06);
         display: flex; align-items: center; justify-content: center; cursor: pointer;
         transition: background 0.2s, border-color 0.2s;
         -webkit-tap-highlight-color: transparent; margin-left: auto;
       }
-      #fp-close:hover { background: rgba(200,190,154,.16); border-color: rgba(200,190,154,.55); }
-      #fp-close svg { width:12px; height:12px; stroke:rgba(200,190,154,.70); fill:none; stroke-width:2; stroke-linecap:round; }
+      #fp-close:hover { background: rgba(122,62,30,.16); border-color: rgba(122,62,30,.55); }
+      #fp-close svg { width:12px; height:12px; stroke:rgba(200,185,165,.70); fill:none; stroke-width:2; stroke-linecap:round; }
 
       .fp-panel {
         position: absolute; inset: 0; opacity: 0; pointer-events: none;
@@ -292,18 +286,18 @@ window.FloorplanModule = (function () {
       #fp-sitemap-img {
         display: block; max-width: 100%;
         max-height: calc(100dvh - var(--fp-topbar-h) - 62px - 48px - env(safe-area-inset-bottom, 0px));
-        object-fit: contain; border: 1px solid rgba(212,175,55,.12);
+        object-fit: contain; border: 1px solid rgba(122,62,30,.12);
       }
 
       /* SVG polygon tower tiles */
       .fp-sitemap-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; }
       .fp-tower-poly {
-        fill: rgba(212,175,55,.15); stroke: rgba(212,175,55,.80); stroke-width: .15;
+        fill: rgba(122,62,30,.15); stroke: rgba(122,62,30,.80); stroke-width: .15;
         stroke-linejoin: round; cursor: pointer;
         transition: fill 0.22s, stroke 0.22s;
       }
       .fp-tower-poly:hover, .fp-tower-poly.tapped {
-        fill: rgba(212,175,55,.22); stroke: rgba(212,175,55,.90);
+        fill: rgba(122,62,30,.28); stroke: rgba(122,62,30,.95);
       }
       .fp-tower-label {
         font-family: 'Cormorant Garamond', serif; font-size: 3px; font-weight: 500;
@@ -312,14 +306,14 @@ window.FloorplanModule = (function () {
       }
       .fp-tower-sub {
         font-family: 'Syne', sans-serif; font-size: 1.8px; font-weight: 700;
-        letter-spacing: 0.08em; fill: rgba(212,175,55,.60);
+        letter-spacing: 0.08em; fill: rgba(200,185,165,.60);
         pointer-events: none; text-anchor: middle; dominant-baseline: middle;
       }
 
       #fp-sitemap-hint {
         position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
         font-family: 'Cormorant Garamond', serif; font-size: 11px; font-style: italic;
-        color: rgba(200,190,154,.38); pointer-events: none; white-space: nowrap;
+        color: rgba(200,185,165,.38); pointer-events: none; white-space: nowrap;
       }
 
       /* ── CLUSTER ── */
@@ -331,29 +325,29 @@ window.FloorplanModule = (function () {
       #fp-cluster-img {
         display: block; max-width: 100%;
         max-height: calc(100dvh - var(--fp-topbar-h) - 62px - 48px - env(safe-area-inset-bottom, 0px));
-        object-fit: contain; border: 1px solid rgba(200,190,154,.12);
+        object-fit: contain; border: 1px solid rgba(122,62,30,.12);
         transition: opacity 0.28s; pointer-events: none;
       }
       #fp-cluster-img.fading { opacity: 0; }
 
       #fp-zone-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; overflow: visible; }
       .fp-zone {
-        fill: rgba(200,190,154,.12); stroke: rgba(200,190,154,.55); stroke-width: .2;
+        fill: rgba(122,62,30,.08); stroke: rgba(122,62,30,.45); stroke-width: .2;
         cursor: pointer; pointer-events: all;
         transition: fill 0.20s, stroke 0.20s; stroke-linejoin: round;
       }
-      .fp-zone:hover, .fp-zone.tapped { fill: rgba(212,175,55,.30); stroke: rgba(212,175,55,1); }
-      .fp-zone.selected { fill: rgba(212,175,55,.22); stroke: #d4af37; stroke-width: 1; }
+      .fp-zone:hover, .fp-zone.tapped { fill: rgba(122,62,30,.22); stroke: rgba(122,62,30,.90); }
+      .fp-zone.selected { fill: rgba(122,62,30,.18); stroke: #7a3e1e; stroke-width: 1; }
       #fp-zone-tip {
         position: absolute; padding: 6px 12px;
-        background: rgba(10,8,5,.88); border: 1px solid rgba(212,175,55,.40);
+        background: rgba(10,8,5,.88); border: 1px solid rgba(122,62,30,.40);
         border-radius: 4px; backdrop-filter: blur(8px);
         pointer-events: none; opacity: 0; transition: opacity 0.18s;
         z-index: 10; white-space: nowrap; max-width: calc(100vw - 24px);
       }
       #fp-zone-tip.visible { opacity: 1; }
       #fp-zone-tip-name { font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 500; color: rgba(245,242,235,.90); display: block; }
-      #fp-zone-tip-type { font-family: 'Syne', sans-serif; font-size: 8.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(200,190,154,.60); display: block; margin-top: 2px; }
+      #fp-zone-tip-type { font-family: 'Syne', sans-serif; font-size: 8.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(200,185,165,.60); display: block; margin-top: 2px; }
 
       /* ── UNIT PANEL ── */
       #fp-panel-unit { display: flex; flex-direction: column; transform: translateX(32px); background: #0a0805; }
@@ -364,9 +358,9 @@ window.FloorplanModule = (function () {
       }
       #fp-plan-img {
         max-width: 100%; max-height: 100%; object-fit: contain;
-        border: 1px solid rgba(200,190,154,.15); border-radius: 3px;
+        border: 1px solid rgba(122,62,30,.15); border-radius: 3px;
         box-shadow: 0 12px 60px rgba(0,0,0,.7);
-        opacity: 1; transition: opacity 0.28s; background: rgba(200,190,154,.03);
+        opacity: 1; transition: opacity 0.28s; background: rgba(122,62,30,.03);
         transform-origin: center center; user-select: none; -webkit-user-select: none;
       }
       #fp-plan-img.fading { opacity: 0; }
@@ -374,7 +368,7 @@ window.FloorplanModule = (function () {
         position: absolute; bottom: 60px; left: 50%; transform: translateX(-50%);
         font-family: 'Syne', sans-serif; font-size: 8.5px; font-weight: 600;
         letter-spacing: .12em; text-transform: uppercase;
-        color: rgba(200,190,154,.35); pointer-events: none;
+        color: rgba(200,185,165,.35); pointer-events: none;
         opacity: 0; transition: opacity 0.4s; white-space: nowrap;
       }
       #fp-zoom-hint.visible { opacity: 1; }
@@ -387,8 +381,8 @@ window.FloorplanModule = (function () {
       }
       #fp-unit-info.visible { opacity: 1; transform: translateY(0); }
       #fp-unit-info-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; font-style: italic; color: rgba(245,242,235,.75); line-height: 1.1; }
-      #fp-unit-info-type { font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: rgba(200,190,154,.55); }
-      #fp-unit-info-area { font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 400; letter-spacing: .10em; color: rgba(200,190,154,.38); }
+      #fp-unit-info-type { font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: rgba(200,185,165,.55); }
+      #fp-unit-info-area { font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 400; letter-spacing: .10em; color: rgba(200,185,165,.38); }
 
       /* ── SPINNER ── */
       #fp-spinner {
@@ -398,8 +392,8 @@ window.FloorplanModule = (function () {
       }
       #fp-spinner.visible { opacity: 1; }
       #fp-spinner-ring {
-        width: 34px; height: 34px; border: 2px solid rgba(200,190,154,.20);
-        border-top-color: rgba(200,190,154,.85); border-radius: 50%;
+        width: 34px; height: 34px; border: 2px solid rgba(122,62,30,.20);
+        border-top-color: rgba(122,62,30,.85); border-radius: 50%;
         animation: fpSpin 0.72s linear infinite;
       }
       @keyframes fpSpin { to { transform: rotate(360deg); } }
