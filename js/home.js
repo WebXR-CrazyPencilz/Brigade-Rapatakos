@@ -250,7 +250,7 @@ window.HomeModule = (function () {
         border-top: 1px solid rgba(180,160,120,.25);
         backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
         box-shadow: 0 -2px 20px rgba(0,0,0,.07);
-        box-sizing: border-box; padding: 0 16px; gap: 0;
+        box-sizing: border-box; padding: 0; gap: 0;
         transform: translateY(100%);
         animation: panelRiseIn .6s cubic-bezier(0.22,1,0.36,1) .3s forwards;
       }
@@ -259,7 +259,7 @@ window.HomeModule = (function () {
       /* Nav group — center */
       #panel-nav-group {
         display: flex; flex-direction: row; align-items: stretch;
-        flex: 1; justify-content: center; height: 100%;
+        width: 100%; justify-content: center; height: 100%;
       }
 
       .panel-slot {
@@ -308,28 +308,6 @@ window.HomeModule = (function () {
       .panel-slot.active + .panel-slot::before,
       .panel-slot + .panel-slot.active::before { display: none; }
 
-      /* Chat Here button */
-      #panel-chat-btn {
-        display: flex; align-items: center; gap: 7px;
-        padding: 9px 16px; cursor: pointer;
-        border: 1px solid rgba(120,80,40,.28); border-radius: 6px;
-        background: transparent; flex-shrink: 0;
-        transition: background .22s, border-color .22s;
-        -webkit-tap-highlight-color: transparent;
-        margin-left: 8px;
-      }
-      #panel-chat-btn:hover { background: rgba(122,62,30,.08); border-color: rgba(120,80,40,.55); }
-      #panel-chat-btn-label {
-        font-family: 'Syne', sans-serif; font-size: 10.5px; font-weight: 700;
-        letter-spacing: .11em; text-transform: uppercase;
-        color: rgba(80,55,30,.65); white-space: nowrap; transition: color .22s;
-      }
-      #panel-chat-btn:hover #panel-chat-btn-label { color: rgba(80,55,30,.95); }
-      #panel-chat-arrow {
-        font-size: 13px; color: rgba(80,55,30,.45);
-        transition: transform .22s, color .22s; line-height: 1;
-      }
-      #panel-chat-btn:hover #panel-chat-arrow { transform: translateX(3px); color: rgba(80,55,30,.80); }
 
       /* ── Unit Viewer Overlay ── */
       #unit-viewer-overlay {
@@ -419,10 +397,7 @@ window.HomeModule = (function () {
             <span class="panel-slot-label">Location</span>
           </div>
         </div>
-        <div id="panel-chat-btn">
-          <span id="panel-chat-btn-label">Chat Here</span>
-          <span id="panel-chat-arrow">→</span>
-        </div>
+
       </div>
 
       <div id="unit-viewer-overlay">
@@ -817,33 +792,28 @@ window.HomeModule = (function () {
       });
     });
 
-    // ─── CLICK-OUTSIDE TO COLLAPSE ───────────────────────────────
-    // FIX #1 + #3: Added #side-panel and #toggle to the exclusion list so
-    // clicking the 360° viewer's room panel toggle does not trigger closeAllModules()
     document.addEventListener('click', (e) => {
-      const bar       = document.getElementById('bottom-panel');
-      const row       = document.getElementById('unit-row');
-      const overlay   = document.getElementById('unit-viewer-overlay');
-      const fpOvl     = document.getElementById('fp-overlay');
-      const lb        = document.getElementById('lightbox');
-      const mapOvl    = document.getElementById('map-overlay');
-      const chatBtn   = document.getElementById('panel-chat-btn');
-      // FIX: also exclude the 360 side-panel and its toggle button
+      const bar        = document.getElementById('bottom-panel');
+      const row        = document.getElementById('unit-row');
+      const overlay    = document.getElementById('unit-viewer-overlay');
+      const fpOvl      = document.getElementById('fp-overlay');
+      const lb         = document.getElementById('lightbox');
+      const mapOvl     = document.getElementById('map-overlay');
       const sidePanel  = document.getElementById('side-panel');
       const sideToggle = document.getElementById('toggle');
 
-      if (lb    && lb.classList.contains('open'))                                    return;
-      if (mapOvl && mapOvl.classList.contains('open') && mapOvl.contains(e.target)) return;
+      if (lb     && lb.classList.contains('open'))                                     return;
+      if (mapOvl && mapOvl.classList.contains('open') && mapOvl.contains(e.target))   return;
+      if (overlay && overlay.classList.contains('open') && overlay.contains(e.target)) return;
 
       const clickedOutside =
         bar && row &&
         !bar.contains(e.target) &&
         !row.contains(e.target) &&
-        !(chatBtn    && chatBtn.contains(e.target)) &&
-        !(overlay    && overlay.contains(e.target)) &&
-        !(fpOvl      && fpOvl.contains(e.target))  &&
-        !(sidePanel  && sidePanel.contains(e.target))  && // FIX #3: exclude 360 side-panel
-        !(sideToggle && sideToggle.contains(e.target));   // FIX #3: exclude 360 toggle btn
+        !(overlay    && overlay.contains(e.target))    &&
+        !(fpOvl      && fpOvl.contains(e.target))      &&
+        !(sidePanel  && sidePanel.contains(e.target))  &&
+        !(sideToggle && sideToggle.contains(e.target));
 
       if (clickedOutside) {
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
