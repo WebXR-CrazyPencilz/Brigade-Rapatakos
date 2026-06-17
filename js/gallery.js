@@ -32,19 +32,21 @@ window.GalleryModule = (function () {
       /* ── Overlay ── */
       #gallery-overlay {
         position: fixed; top: 0; left: 0; right: 0; bottom: 62px;
-        z-index: 200; background: #080604;
+        z-index: 200; background: #e8e4dd;
         display: flex; flex-direction: column;
         opacity: 0; pointer-events: none;
         transition: opacity .38s cubic-bezier(0.22,1,0.36,1);
         overflow: hidden;
+        padding: 24px; box-sizing: border-box; gap: 16px;
       }
       #gallery-overlay.open { opacity: 1; pointer-events: all; }
 
-      /* grain */
-      #gallery-overlay::before {
-        content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none;
-        background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
-        background-size: 180px; opacity: .5;
+      /* Inner main card */
+      #gl-main-card {
+        flex: 1; border-radius: 12px; overflow: hidden;
+        box-shadow: 0 8px 40px rgba(0,0,0,.18);
+        background: #080604;
+        position: relative; display: flex; flex-direction: column;
       }
 
       /* ── HEADER ── */
@@ -173,18 +175,17 @@ window.GalleryModule = (function () {
         background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 50%, rgba(4,3,2,.55) 100%);
       }
 
-      /* ── FOOTER ── */
+      /* ── FOOTER (thumbnail strip — outside the card) ── */
       #gl-footer {
         flex-shrink: 0; position: relative; z-index: 10;
-        display: flex; flex-direction: column; align-items: center; gap: 10px;
-        padding: 12px 20px 16px;
-        background: linear-gradient(to top, rgba(8,6,4,.95) 60%, transparent);
+        display: flex; flex-direction: column; align-items: center; gap: 8px;
+        padding: 0;
       }
       #gl-counter {
         font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
-        letter-spacing: .20em; text-transform: uppercase; color: rgba(200,190,154,.28);
+        letter-spacing: .20em; text-transform: uppercase; color: rgba(80,60,40,.40);
       }
-      #gl-dots { display: flex; gap: 6px; align-items: center; }
+      #gl-dots { display: none; }
       .gl-dot {
         height: 4px; width: 4px; border-radius: 2px;
         background: rgba(200,190,154,.22);
@@ -192,25 +193,26 @@ window.GalleryModule = (function () {
       }
       .gl-dot.active { width: 20px; background: rgba(200,190,154,.80); }
       #gl-thumbs {
-        display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
-        padding: 2px 2px 0; max-width: 100%;
+        display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+        padding: 4px 4px 0; max-width: 100%; align-items: center;
       }
       #gl-thumbs::-webkit-scrollbar { display: none; }
       .gl-thumb {
-        flex-shrink: 0; width: 44px; height: 30px;
-        border-radius: 3px; overflow: hidden;
-        border: 1.5px solid rgba(200,190,154,.12);
-        cursor: pointer; opacity: .4;
+        flex-shrink: 0; width: 56px; height: 38px;
+        border-radius: 5px; overflow: hidden;
+        border: 2px solid transparent;
+        cursor: pointer; opacity: .55;
         transition: opacity .22s, border-color .22s, transform .22s;
+        background: #0a0805;
       }
       .gl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-      .gl-thumb.active { opacity: 1; border-color: rgba(200,190,154,.75); transform: scaleY(1.08); }
-      .gl-thumb:not(.active):hover { opacity: .7; }
+      .gl-thumb.active { opacity: 1; border-color: #7a3e1e; transform: scaleY(1.06); }
+      .gl-thumb:not(.active):hover { opacity: .8; }
 
       @media (max-width: 520px) {
         .gl-card { width: 86vw; height: 62vw; }
         #gl-arrow-prev { left: 6px; } #gl-arrow-next { right: 6px; }
-        .gl-thumb { width: 36px; height: 24px; }
+        .gl-thumb { width: 40px; height: 27px; }
       }
     `;
     document.head.appendChild(style);
@@ -226,35 +228,37 @@ window.GalleryModule = (function () {
     document.body.insertAdjacentHTML('beforeend', `
       <div id="gallery-overlay">
 
-        <div id="gl-header">
-          <div id="gl-title-wrap">
-            <p id="gl-label">Gallery</p>
-            <p id="gl-caption">${IMAGES[0].caption}</p>
-          </div>
-          <div id="gl-close">✕</div>
-        </div>
-
-        <div id="gl-stage">
-          <!-- behind card (next in stack) -->
-          <div class="gl-card" id="gl-card-behind">
-            <img src="${IMAGES[1 % IMAGES.length].src}" alt=""/>
-          </div>
-          <!-- current card -->
-          <div class="gl-card" id="gl-card-current">
-            <img src="${IMAGES[0].src}" alt="${IMAGES[0].caption}"/>
-          </div>
-          <!-- incoming card (off-screen) -->
-          <div class="gl-card" id="gl-card-incoming">
-            <img src="" alt=""/>
+        <div id="gl-main-card">
+          <div id="gl-header">
+            <div id="gl-title-wrap">
+              <p id="gl-label">Gallery</p>
+              <p id="gl-caption">${IMAGES[0].caption}</p>
+            </div>
+            <div id="gl-close">✕</div>
           </div>
 
-          <div id="gl-vignette"></div>
+          <div id="gl-stage">
+            <!-- behind card (next in stack) -->
+            <div class="gl-card" id="gl-card-behind">
+              <img src="${IMAGES[1 % IMAGES.length].src}" alt=""/>
+            </div>
+            <!-- current card -->
+            <div class="gl-card" id="gl-card-current">
+              <img src="${IMAGES[0].src}" alt="${IMAGES[0].caption}"/>
+            </div>
+            <!-- incoming card (off-screen) -->
+            <div class="gl-card" id="gl-card-incoming">
+              <img src="" alt=""/>
+            </div>
 
-          <div class="gl-arrow" id="gl-arrow-prev">
-            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-          </div>
-          <div class="gl-arrow" id="gl-arrow-next">
-            <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+            <div id="gl-vignette"></div>
+
+            <div class="gl-arrow" id="gl-arrow-prev">
+              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div class="gl-arrow" id="gl-arrow-next">
+              <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+            </div>
           </div>
         </div>
 

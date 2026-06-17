@@ -163,15 +163,25 @@ window.FloorplanModule = (function () {
         position: fixed;
         top: 0; left: 0; right: 0;
         bottom: calc(62px + env(safe-area-inset-bottom, 0px));
-        z-index: 200; background: #0a0805;
+        z-index: 200; background: #e8e4dd;
         display: flex; flex-direction: column;
         opacity: 0; pointer-events: none;
         transform: translateY(6px);
         transition: opacity 0.38s ease, transform 0.38s cubic-bezier(0.22,1,0.36,1);
         font-family: 'Syne', sans-serif; overflow: hidden;
+        padding: 24px; box-sizing: border-box;
       }
       #fp-overlay.open   { opacity: 1; pointer-events: all; transform: translateY(0); }
       #fp-overlay.hidden { display: none; }
+
+      /* Inner card */
+      #fp-card {
+        flex: 1; border-radius: 12px; overflow: hidden;
+        box-shadow: 0 8px 40px rgba(0,0,0,.18);
+        background: #0a0805;
+        display: flex; flex-direction: column;
+        position: relative;
+      }
 
       :root { --fp-topbar-h: 56px; }
 
@@ -281,7 +291,7 @@ window.FloorplanModule = (function () {
       #fp-sitemap-wrap { position: relative; display: inline-block; max-width: 100%; max-height: 100%; }
       #fp-sitemap-img {
         display: block; max-width: 100%;
-        max-height: calc(100dvh - var(--fp-topbar-h) - 62px - env(safe-area-inset-bottom, 0px));
+        max-height: calc(100dvh - var(--fp-topbar-h) - 62px - 48px - env(safe-area-inset-bottom, 0px));
         object-fit: contain; border: 1px solid rgba(212,175,55,.12);
       }
 
@@ -320,7 +330,7 @@ window.FloorplanModule = (function () {
       #fp-cluster-wrap { position: relative; display: inline-block; max-width: 100%; max-height: 100%; }
       #fp-cluster-img {
         display: block; max-width: 100%;
-        max-height: calc(100dvh - var(--fp-topbar-h) - 62px - env(safe-area-inset-bottom, 0px));
+        max-height: calc(100dvh - var(--fp-topbar-h) - 62px - 48px - env(safe-area-inset-bottom, 0px));
         object-fit: contain; border: 1px solid rgba(200,190,154,.12);
         transition: opacity 0.28s; pointer-events: none;
       }
@@ -398,61 +408,63 @@ window.FloorplanModule = (function () {
 
     document.body.insertAdjacentHTML('beforeend', `
       <div id="fp-overlay">
-        <div id="fp-topbar">
-          <div id="fp-back">
-            <div id="fp-back-arrow">
-              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-            </div>
-          </div>
-          <div id="fp-title">Site Plan</div>
-          <div id="fp-toggles-row">
-            <div id="fp-parity-toggle">
-              <button class="fp-parity-btn active" data-parity="odd">Odd</button>
-              <button class="fp-parity-btn"        data-parity="even">Even</button>
-            </div>
-            <div id="fp-view-toggle">
-              <button class="fp-toggle-btn active" data-view="top">Plan</button>
-              <button class="fp-toggle-btn"        data-view="iso">Iso</button>
-            </div>
-          </div>
-          <div id="fp-close">
-            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-          </div>
-        </div>
-
-        <div id="fp-content">
-          <div id="fp-spinner"><div id="fp-spinner-ring"></div></div>
-
-          <div id="fp-panel-sitemap" class="fp-panel">
-            <div id="fp-sitemap-wrap">
-              <img id="fp-sitemap-img" src="" alt="Site Plan" />
-              <div id="fp-sitemap-hint">Select a tower to explore floor plans</div>
-            </div>
-          </div>
-
-          <div id="fp-panel-cluster" class="fp-panel">
-            <div id="fp-cluster-wrap">
-              <img id="fp-cluster-img" src="" alt="Cluster Plan" />
-              <svg id="fp-zone-svg" viewBox="0 0 100 100"></svg>
-              <div id="fp-zone-tip">
-                <span id="fp-zone-tip-name"></span>
-                <span id="fp-zone-tip-type"></span>
+        <div id="fp-card">
+          <div id="fp-topbar">
+            <div id="fp-back">
+              <div id="fp-back-arrow">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
               </div>
             </div>
-          </div>
-
-          <div id="fp-panel-unit" class="fp-panel">
-            <div id="fp-plan-area">
-              <img id="fp-plan-img" src="" alt="Unit Floor Plan" />
-              <div id="fp-unit-info">
-                <div id="fp-unit-info-name"></div>
-                <div id="fp-unit-info-type"></div>
-                <div id="fp-unit-info-area"></div>
+            <div id="fp-title">Site Plan</div>
+            <div id="fp-toggles-row">
+              <div id="fp-parity-toggle">
+                <button class="fp-parity-btn active" data-parity="odd">Odd</button>
+                <button class="fp-parity-btn"        data-parity="even">Even</button>
               </div>
-              <div id="fp-zoom-hint">Pinch to zoom</div>
+              <div id="fp-view-toggle">
+                <button class="fp-toggle-btn active" data-view="top">Floor Plan</button>
+                <button class="fp-toggle-btn"        data-view="iso">360° View</button>
+              </div>
+            </div>
+            <div id="fp-close">
+              <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
             </div>
           </div>
 
+          <div id="fp-content">
+            <div id="fp-spinner"><div id="fp-spinner-ring"></div></div>
+
+            <div id="fp-panel-sitemap" class="fp-panel">
+              <div id="fp-sitemap-wrap">
+                <img id="fp-sitemap-img" src="" alt="Site Plan" />
+                <div id="fp-sitemap-hint">Select a tower to explore floor plans</div>
+              </div>
+            </div>
+
+            <div id="fp-panel-cluster" class="fp-panel">
+              <div id="fp-cluster-wrap">
+                <img id="fp-cluster-img" src="" alt="Cluster Plan" />
+                <svg id="fp-zone-svg" viewBox="0 0 100 100"></svg>
+                <div id="fp-zone-tip">
+                  <span id="fp-zone-tip-name"></span>
+                  <span id="fp-zone-tip-type"></span>
+                </div>
+              </div>
+            </div>
+
+            <div id="fp-panel-unit" class="fp-panel">
+              <div id="fp-plan-area">
+                <img id="fp-plan-img" src="" alt="Unit Floor Plan" />
+                <div id="fp-unit-info">
+                  <div id="fp-unit-info-name"></div>
+                  <div id="fp-unit-info-type"></div>
+                  <div id="fp-unit-info-area"></div>
+                </div>
+                <div id="fp-zoom-hint">Pinch to zoom</div>
+              </div>
+            </div>
+
+          </div>
         </div>
       </div>
     `);

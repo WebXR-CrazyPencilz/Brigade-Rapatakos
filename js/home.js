@@ -48,17 +48,29 @@ window.HomeModule = (function () {
       /* ── Carousel (crossfade) ── */
       #carousel {
         position: fixed; inset: 0; bottom: 62px;
-        background: #0a0805;
+        background: #e8e4dd;
         display: flex; align-items: center; justify-content: center;
         overflow: hidden;
         cursor: pointer;
+        padding: 24px;
+        box-sizing: border-box;
       }
 
-      /* Single image — fills the carousel area with contain */
+      /* Inner card wrapping the image */
+      #carousel-card {
+        position: relative;
+        width: 100%; height: 100%;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 40px rgba(0,0,0,.18);
+        background: #0a0805;
+      }
+
+      /* Single image — fills the card area */
       #carousel-img {
         position: absolute; inset: 0;
         width: 100%; height: 100%;
-        object-fit: contain;
+        object-fit: cover;
         display: block;
         pointer-events: none;
         user-select: none; -webkit-user-drag: none;
@@ -119,19 +131,28 @@ window.HomeModule = (function () {
       /* ── Location Map Overlay ── */
       #map-overlay {
         position: fixed; inset: 0; bottom: 62px; z-index: 300;
-        background: #0a0805;
-        display: flex; flex-direction: column;
+        background: #e8e4dd;
+        display: flex; flex-direction: column; padding: 24px; box-sizing: border-box;
         opacity: 0; pointer-events: none;
         transform: translateY(8px);
         transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1);
       }
       #map-overlay.open { opacity: 1; pointer-events: all; transform: translateY(0); }
 
+      /* Inner card */
+      #map-overlay-card {
+        flex: 1; border-radius: 12px; overflow: hidden;
+        box-shadow: 0 8px 40px rgba(0,0,0,.18);
+        background: #0d1a24;
+        display: flex; flex-direction: column;
+        position: relative;
+      }
+
       #map-topbar {
         flex-shrink: 0;
         display: flex; align-items: center; gap: 12px;
         padding: 10px 14px;
-        background: rgba(10,8,5,.92);
+        background: rgba(10,25,36,.95);
         border-bottom: 1px solid rgba(200,190,154,.18);
         backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
         position: relative; z-index: 2;
@@ -168,15 +189,12 @@ window.HomeModule = (function () {
       #map-body {
         flex: 1;
         display: flex; align-items: center; justify-content: center;
-        overflow: hidden; padding: 16px; box-sizing: border-box;
-        position: relative;
+        overflow: hidden; padding: 0;
+        position: relative; background: #0d1a24;
       }
       #map-img {
-        max-width: 100%; max-height: 100%;
-        object-fit: contain;
-        border: 1px solid rgba(200,190,154,.12);
-        border-radius: 4px;
-        box-shadow: 0 12px 60px rgba(0,0,0,.6);
+        width: 100%; height: 100%;
+        object-fit: cover;
         display: block;
         user-select: none; -webkit-user-drag: none;
       }
@@ -197,56 +215,114 @@ window.HomeModule = (function () {
 
       /* ── Unit Row ── */
       #unit-row {
-        position: fixed; bottom: 62px; left: 0; right: 0; width: 100%; z-index: 101;
-        display: flex; flex-direction: row; align-items: stretch;
-        background: rgba(245,242,235,0.97);
-        border-top: 1px solid rgba(200,190,154,.50); border-bottom: 1px solid rgba(200,190,154,.50);
-        backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-        box-shadow: 0 -2px 20px rgba(200,190,154,.15);
-        opacity: 0; pointer-events: none; transform: translateY(10px);
+        position: fixed; bottom: 62px; left: 50%; transform: translateX(-50%) translateY(10px);
+        width: auto; z-index: 101;
+        display: flex; flex-direction: row; align-items: center;
+        gap: 0;
+        opacity: 0; pointer-events: none;
         transition: opacity .28s ease, transform .28s cubic-bezier(0.22,1,0.36,1);
         box-sizing: border-box;
+        border: 1px solid rgba(120,80,40,.30);
+        border-radius: 6px;
+        background: rgba(245,242,235,0.97);
+        backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 -2px 20px rgba(0,0,0,.10);
+        padding: 4px;
       }
-      #unit-row.visible { opacity:1; pointer-events:all; transform:translateY(0); }
-      .unit-btn { display:flex; flex-direction:row; align-items:center; justify-content:center; gap:10px; padding:10px 12px; cursor:pointer; border-right:1px solid rgba(200,190,154,.25); background:transparent; flex:1; min-width:0; transition:background .22s; position:relative; }
-      .unit-btn:last-child { border-right:none; }
-      .unit-btn::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:transparent; transition:background .25s; }
-      .unit-btn:hover { background:rgba(200,190,154,.10); }
-      .unit-btn:hover::after { background:linear-gradient(to right,#e8dfc0,#c8be9a,#e8dfc0); }
-      .unit-btn.active { background:rgba(200,190,154,.18); }
-      .unit-btn.active::after { background:linear-gradient(to right,#e8dfc0,#c8be9a,#e8dfc0); }
-      .unit-btn-icon { width:26px; height:26px; border-radius:5px; background:rgba(200,190,154,.15); border:1px solid rgba(200,190,154,.45); display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-size:9px; font-weight:700; color:rgba(100,88,60,.85); flex-shrink:0; transition:background .22s, border-color .22s; }
-      .unit-btn:hover .unit-btn-icon, .unit-btn.active .unit-btn-icon { background:rgba(200,190,154,.28); border-color:rgba(200,190,154,.80); }
-      .unit-btn-label { font-family:'Syne',sans-serif; font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:rgba(100,88,60,.75); line-height:1; white-space:nowrap; transition:color .22s; }
-      .unit-btn:hover .unit-btn-label, .unit-btn.active .unit-btn-label { color:#5a4e2e; }
+      #unit-row.visible { opacity:1; pointer-events:all; transform: translateX(-50%) translateY(0); }
+      .unit-btn {
+        display: flex; align-items: center; justify-content: center;
+        padding: 7px 20px; cursor: pointer;
+        background: transparent; border-radius: 4px;
+        min-width: 0; transition: background .22s, color .22s;
+        position: relative; -webkit-tap-highlight-color: transparent;
+      }
+      .unit-btn:hover { background: rgba(120,70,30,.08); }
+      .unit-btn.active { background: #7a3e1e; }
+      .unit-btn-label {
+        font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+        letter-spacing: .10em; text-transform: uppercase;
+        color: rgba(80,55,30,.70); line-height: 1; white-space: nowrap;
+        transition: color .22s;
+      }
+      .unit-btn.active .unit-btn-label { color: #f5f0e8; }
+      .unit-btn:hover:not(.active) .unit-btn-label { color: rgba(80,55,30,.90); }
 
       /* ── Bottom Panel ── */
       #bottom-panel {
         position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 62px; z-index: 100;
-        display: flex; flex-direction: row; align-items: stretch;
-        background: rgba(245,242,235,0.97); border-top: 2px solid rgba(200,190,154,.75);
+        display: flex; flex-direction: row; align-items: center;
+        background: #f0ece3;
+        border-top: 1px solid rgba(180,160,120,.30);
         backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-        box-shadow: 0 -4px 28px rgba(200,190,154,.18); box-sizing: border-box;
+        box-shadow: 0 -2px 16px rgba(0,0,0,.08); box-sizing: border-box;
+        padding: 0 12px; gap: 0;
         transform: translateY(100%); animation: panelRiseIn .6s cubic-bezier(0.22,1,0.36,1) .3s forwards;
       }
       @keyframes panelRiseIn { from{transform:translateY(100%);}to{transform:translateY(0);} }
-      .panel-slot { position:relative; display:flex; flex-direction:row; align-items:center; justify-content:center; gap:10px; flex:1; cursor:pointer; border-right:1px solid rgba(200,190,154,.25); transition:background .25s; overflow:hidden; }
-      .panel-slot:last-child { border-right:none; }
-      .panel-slot::after { content:''; position:absolute; top:0; left:0; right:0; height:2px; background:transparent; transition:background .25s; }
-      .panel-slot:hover { background:rgba(200,190,154,.12); }
-      .panel-slot:hover::after { background:linear-gradient(to right,#e8dfc0,#c8be9a,#e8dfc0); }
-      .panel-slot.active { background:rgba(200,190,154,.16); }
-      .panel-slot.active::after { background:linear-gradient(to right,#e8dfc0,#c8be9a,#e8dfc0); }
-      .panel-slot-icon { width:30px; height:30px; display:flex; align-items:center; justify-content:center; flex-shrink:0; border-radius:7px; background:rgba(200,190,154,.15); border:1px solid rgba(200,190,154,.45); transition:background .25s, border-color .25s; }
-      .panel-slot:hover .panel-slot-icon, .panel-slot.active .panel-slot-icon { background:rgba(200,190,154,.28); border-color:rgba(200,190,154,.80); }
-      .panel-slot-icon svg { width:15px; height:15px; stroke:rgba(160,148,110,.80); fill:none; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; transition:stroke .25s; }
-      .panel-slot:hover .panel-slot-icon svg, .panel-slot.active .panel-slot-icon svg { stroke:#8a7a50; }
-      .panel-slot-label { font-family:'Syne',sans-serif; font-size:11px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:rgba(100,88,60,.75); line-height:1; white-space:nowrap; transition:color .25s; }
-      .panel-slot:hover .panel-slot-label, .panel-slot.active .panel-slot-label { color:#5a4e2e; }
+
+      /* Nav slots grouped in the center */
+      #panel-nav-group {
+        display: flex; flex-direction: row; align-items: center;
+        flex: 1; justify-content: center; gap: 4px;
+        padding: 6px 0;
+      }
+      .panel-slot {
+        position: relative; display: flex; align-items: center; justify-content: center;
+        padding: 8px 20px; cursor: pointer;
+        border-radius: 6px; background: transparent;
+        transition: background .22s; overflow: hidden;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .panel-slot:hover { background: rgba(120,70,30,.08); }
+      .panel-slot.active { background: #7a3e1e; }
+      .panel-slot-label {
+        font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+        letter-spacing: .10em; text-transform: uppercase;
+        color: rgba(80,55,30,.65); line-height: 1; white-space: nowrap;
+        transition: color .22s;
+      }
+      .panel-slot.active .panel-slot-label { color: #f5f0e8; }
+      .panel-slot:hover:not(.active) .panel-slot-label { color: rgba(80,55,30,.90); }
+
+      /* Chat Here button — right side */
+      #panel-chat-btn {
+        display: flex; align-items: center; gap: 8px;
+        padding: 10px 18px; cursor: pointer;
+        border: 1px solid rgba(120,80,40,.30); border-radius: 6px;
+        background: transparent; flex-shrink: 0;
+        transition: background .22s, border-color .22s;
+        -webkit-tap-highlight-color: transparent;
+        margin-left: auto;
+      }
+      #panel-chat-btn:hover { background: rgba(120,70,30,.08); border-color: rgba(120,80,40,.55); }
+      #panel-chat-btn-label {
+        font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 600;
+        letter-spacing: .10em; text-transform: uppercase;
+        color: rgba(80,55,30,.70); white-space: nowrap;
+        transition: color .22s;
+      }
+      #panel-chat-btn:hover #panel-chat-btn-label { color: rgba(80,55,30,.95); }
+      #panel-chat-arrow {
+        font-size: 13px; color: rgba(80,55,30,.55);
+        transition: transform .22s, color .22s; line-height: 1;
+      }
+      #panel-chat-btn:hover #panel-chat-arrow { transform: translateX(3px); color: rgba(80,55,30,.85); }
 
       /* ── Unit Viewer Overlay ── */
-      #unit-viewer-overlay { position:fixed; top:0; left:0; right:0; bottom:62px; z-index:99; transform:translateY(100%); transition:transform .5s cubic-bezier(0.22,1,0.36,1); }
-      #unit-viewer-overlay.open { transform:translateY(0); }
+      #unit-viewer-overlay {
+        position: fixed; top: 0; left: 0; right: 0; bottom: 62px; z-index: 99;
+        transform: translateY(100%); transition: transform .5s cubic-bezier(0.22,1,0.36,1);
+        background: #e8e4dd;
+        padding: 24px; box-sizing: border-box;
+        display: flex; flex-direction: column;
+      }
+      #unit-viewer-overlay.open { transform: translateY(0); }
+      #unit-viewer-card {
+        flex: 1; border-radius: 12px; overflow: hidden;
+        box-shadow: 0 8px 40px rgba(0,0,0,.18);
+        position: relative; background: #0a0805;
+      }
       #unit-iframe { width:100%; height:100%; border:none; display:block; opacity:1; transition:opacity .35s; }
       #unit-iframe.fading { opacity:0; }
       #unit-loader { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(10,8,5,.55); opacity:0; pointer-events:none; transition:opacity .25s; z-index:2; }
@@ -273,9 +349,11 @@ window.HomeModule = (function () {
       </div>
 
       <div id="carousel">
-        <img id="carousel-img" src="" alt="" />
-        <div id="hc-vignette"></div>
-        <div id="hc-dots">${dotsHTML}</div>
+        <div id="carousel-card">
+          <img id="carousel-img" src="" alt="" />
+          <div id="hc-vignette"></div>
+          <div id="hc-dots">${dotsHTML}</div>
+        </div>
       </div>
 
       <div id="lightbox">
@@ -285,37 +363,47 @@ window.HomeModule = (function () {
       </div>
 
       <div id="map-overlay">
-        <div id="map-topbar">
-          <div id="map-back">
-            <div id="map-back-btn">
-              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        <div id="map-overlay-card">
+          <div id="map-topbar">
+            <div id="map-back">
+              <div id="map-back-btn">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
             </div>
+            <div id="map-title">Location Map</div>
           </div>
-          <div id="map-title">Location Map</div>
-        </div>
-        <div id="map-body">
-          <div id="map-spinner"><div id="map-spinner-ring"></div></div>
-          <img id="map-img" src="" alt="Location Map" />
+          <div id="map-body">
+            <div id="map-spinner"><div id="map-spinner-ring"></div></div>
+            <img id="map-img" src="" alt="Location Map" />
+          </div>
         </div>
       </div>
 
       <div id="unit-row">
-        <div class="unit-btn" data-unit="1"><div class="unit-btn-icon">U1</div><span class="unit-btn-label">Unit 1</span></div>
-        <div class="unit-btn" data-unit="2"><div class="unit-btn-icon">U2</div><span class="unit-btn-label">Unit 2</span></div>
-        <div class="unit-btn" data-unit="3"><div class="unit-btn-icon">U3</div><span class="unit-btn-label">Unit 3</span></div>
-        <div class="unit-btn" data-unit="4"><div class="unit-btn-icon">U4</div><span class="unit-btn-label">Unit 4</span></div>
+        <div class="unit-btn" data-unit="1"><span class="unit-btn-label">Unit 1</span></div>
+        <div class="unit-btn" data-unit="2"><span class="unit-btn-label">Unit 2</span></div>
+        <div class="unit-btn" data-unit="3"><span class="unit-btn-label">Unit 3</span></div>
+        <div class="unit-btn" data-unit="4"><span class="unit-btn-label">Unit 4</span></div>
       </div>
 
       <div id="bottom-panel">
-        <div class="panel-slot" data-slot="floorplan"><div class="panel-slot-icon">${icons.floorplan}</div><span class="panel-slot-label">Floor Plan</span></div>
-        <div class="panel-slot" data-slot="360view"><div class="panel-slot-icon">${icons.view360}</div><span class="panel-slot-label">360 View</span></div>
-        <div class="panel-slot" data-slot="gallery"><div class="panel-slot-icon">${icons.gallery}</div><span class="panel-slot-label">Gallery</span></div>
-        <div class="panel-slot" data-slot="map"><div class="panel-slot-icon">${icons.map}</div><span class="panel-slot-label">Location Map</span></div>
+        <div id="panel-nav-group">
+          <div class="panel-slot" data-slot="floorplan"><span class="panel-slot-label">Floor Plan</span></div>
+          <div class="panel-slot" data-slot="360view"><span class="panel-slot-label">360 View</span></div>
+          <div class="panel-slot" data-slot="gallery"><span class="panel-slot-label">Gallery</span></div>
+          <div class="panel-slot" data-slot="map"><span class="panel-slot-label">Location</span></div>
+        </div>
+        <div id="panel-chat-btn">
+          <span id="panel-chat-btn-label">Chat Here</span>
+          <span id="panel-chat-arrow">→</span>
+        </div>
       </div>
 
       <div id="unit-viewer-overlay">
-        <div id="unit-loader"><div id="unit-loader-ring"></div></div>
-        <iframe id="unit-iframe" src="" allow="fullscreen"></iframe>
+        <div id="unit-viewer-card">
+          <div id="unit-loader"><div id="unit-loader-ring"></div></div>
+          <iframe id="unit-iframe" src="" allow="fullscreen"></iframe>
+        </div>
       </div>
     `);
 

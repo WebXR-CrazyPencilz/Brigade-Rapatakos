@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BRIGADE-RAPATAKOS — Interactive Experience</title>
+  <title>BRIGADE STELLARIS — Interactive Experience</title>
   <link rel="icon" href="data:,">
-  <meta name="description" content="Brigade Rapatakos — Explore your future home in an immersive 3D experience." />
-  <meta property="og:title" content="Brigade Rapatakos" />
+  <meta name="description" content="Brigade Stellaris — Explore your future home in an immersive experience." />
+  <meta property="og:title" content="Brigade Stellaris" />
   <meta property="og:description" content="Interactive 3D property experience." />
   <meta property="og:image" content="preview.jpg" />
   <meta name="theme-color" content="#0d0d0d" />
@@ -23,7 +23,7 @@
       position: fixed;
       inset: 0;
       z-index: 9999;
-      background: #0a0805;
+      background: #eae7e0;
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -36,15 +36,15 @@
       pointer-events: none;
     }
 
-    /* Grain overlay */
+    /* Subtle city illustration overlay (mimics PDF background) */
     #zoho-gate::before {
       content: '';
       position: absolute;
       inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
       background-size: 200px;
       pointer-events: none;
-      opacity: 0.4;
+      opacity: 0.5;
     }
 
     /* Card */
@@ -52,69 +52,72 @@
       position: relative;
       z-index: 1;
       width: 100%;
-      max-width: 440px;
+      max-width: 420px;
       margin: 40px 20px;
       padding: 44px 40px 40px;
-      background: rgba(255,255,255,0.025);
-      border: 1px solid rgba(200,190,154,0.18);
-      border-radius: 4px;
-      box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 8px 48px rgba(0,0,0,.10), 0 2px 12px rgba(0,0,0,.06);
       box-sizing: border-box;
     }
 
-    /* Logo / Header */
+    /* Header */
     .gate-logo {
       font-family: 'Syne', sans-serif;
-      font-size: 9px;
+      font-size: 15px;
       font-weight: 700;
-      letter-spacing: 0.32em;
+      letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: rgba(200,190,154,0.5);
-      margin-bottom: 10px;
+      color: #1e2d3d;
+      text-align: center;
+      margin-bottom: 12px;
     }
     .gate-title {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 30px;
-      font-weight: 300;
-      color: rgba(240,236,228,0.95);
-      line-height: 1.2;
-      margin-bottom: 6px;
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: #7a3e1e;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 4px;
     }
     .gate-subtitle {
       font-family: 'Syne', sans-serif;
-      font-size: 10px;
-      color: rgba(200,190,154,0.4);
-      letter-spacing: 0.08em;
-      margin-bottom: 32px;
+      font-size: 9px;
+      color: rgba(80,60,40,.45);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 28px;
     }
     .gate-rule {
-      width: 40px;
-      height: 1px;
-      background: linear-gradient(to right, transparent, rgba(200,190,154,0.45), transparent);
-      margin-bottom: 28px;
+      width: 40px; height: 1px;
+      background: rgba(120,80,40,.20);
+      margin: 0 auto 24px;
     }
 
     /* ── Zoho form field overrides ── */
     #crmWebToEntityForm {
       background: transparent !important;
-      color: rgba(240,236,228,0.9) !important;
+      color: #2a2018 !important;
       max-width: 100% !important;
       padding: 0 !important;
     }
     .zcwf_title { display: none !important; }
 
-    .zcwf_lblLeft .zcwf_row { margin: 0 0 18px 0 !important; }
+    .zcwf_lblLeft .zcwf_row { margin: 0 0 16px 0 !important; }
 
     .zcwf_lblLeft .zcwf_col_lab {
       width: 100% !important;
       float: none !important;
-      margin: 0 0 6px 0 !important;
+      margin: 0 0 5px 0 !important;
       font-family: 'Syne', sans-serif !important;
-      font-size: 9.5px !important;
+      font-size: 9px !important;
       font-weight: 700 !important;
-      letter-spacing: 0.18em !important;
+      letter-spacing: 0.16em !important;
       text-transform: uppercase !important;
-      color: rgba(200,190,154,0.45) !important;
+      color: rgba(50,38,25,.60) !important;
     }
     .zcwf_lblLeft .zcwf_col_fld {
       width: 100% !important;
@@ -125,10 +128,10 @@
     .zcwf_lblLeft .zcwf_col_fld input[type=text],
     .zcwf_lblLeft .zcwf_col_fld textarea {
       width: 100% !important;
-      background: rgba(200,190,154,0.05) !important;
-      border: 1px solid rgba(200,190,154,0.18) !important;
-      border-radius: 3px !important;
-      color: rgba(240,236,228,0.9) !important;
+      background: #f7f5f2 !important;
+      border: 1px solid rgba(160,130,90,.25) !important;
+      border-radius: 4px !important;
+      color: #2a2018 !important;
       font-family: 'Syne', sans-serif !important;
       font-size: 13px !important;
       padding: 12px 14px !important;
@@ -139,30 +142,29 @@
     }
     .zcwf_lblLeft .zcwf_col_fld input[type=text]:focus,
     .zcwf_lblLeft .zcwf_col_fld textarea:focus {
-      border-color: rgba(200,190,154,0.55) !important;
-      background: rgba(200,190,154,0.08) !important;
+      border-color: rgba(122,62,30,.50) !important;
+      background: #ffffff !important;
     }
     .zcwf_lblLeft .zcwf_col_fld input[type=text]::placeholder {
-      color: rgba(200,190,154,0.22) !important;
+      color: rgba(100,80,55,.35) !important;
     }
 
     /* Submit button */
     .formsubmit.zcwf_button {
       width: 100% !important;
-      padding: 14px !important;
-      background: linear-gradient(135deg, #c9a96e 0%, #a07840 100%) !important;
-      color: #0a0805 !important;
+      padding: 15px !important;
+      background: #7a3e1e !important;
+      color: #f5f0e8 !important;
       font-family: 'Syne', sans-serif !important;
       font-size: 10.5px !important;
       font-weight: 700 !important;
       letter-spacing: 0.18em !important;
       text-transform: uppercase !important;
       border: none !important;
-      border-radius: 3px !important;
+      border-radius: 4px !important;
       cursor: pointer !important;
       margin-top: 6px !important;
       transition: opacity 0.2s, transform 0.2s !important;
-      box-shadow: 0 4px 20px rgba(201,169,110,0.25) !important;
     }
     .formsubmit.zcwf_button:hover {
       opacity: 0.88 !important;
@@ -172,29 +174,30 @@
 
     /* Skip link */
     #gate-skip {
-      margin-top: 22px;
+      margin-top: 18px;
       font-family: 'Syne', sans-serif;
       font-size: 9px;
       letter-spacing: 0.14em;
-      color: rgba(200,190,154,0.25);
+      color: rgba(100,80,55,.40);
       text-align: center;
       cursor: pointer;
       transition: color 0.2s;
       text-decoration: underline;
       text-underline-offset: 3px;
     }
-    #gate-skip:hover { color: rgba(200,190,154,0.5); }
+    #gate-skip:hover { color: rgba(100,80,55,.65); }
 
     /* Success message */
     .wf_customMessageBox {
       font-family: 'Syne', sans-serif !important;
       font-size: 12px !important;
+      color: #2a2018 !important;
     }
 
     /* Mobile */
     @media (max-width: 480px) {
       #zoho-gate-card { padding: 36px 24px 32px; margin: 24px 16px; }
-      .gate-title { font-size: 26px; }
+      .gate-logo { font-size: 13px; }
     }
   </style>
 </head>
@@ -202,7 +205,7 @@
 
 <!-- LOADER -->
 <div id="loader">
-  <div class="loader-title">BRIGADE-RAPATAKOS</div>
+  <div class="loader-title">BRIGADE STELLARIS</div>
   <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
   <div class="loader-sub">Loading Environment</div>
 </div>
@@ -221,7 +224,7 @@
 <div id="zoho-gate">
   <div id="zoho-gate-card">
 
-    <div class="gate-logo">Brigade Rapatakos</div>
+    <div class="gate-logo">Brigade Stellaris</div>
     <div class="gate-title">Register Your Interest</div>
     <div class="gate-subtitle">Enter your details to begin the experience</div>
     <div class="gate-rule"></div>
