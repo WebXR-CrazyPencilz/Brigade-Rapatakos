@@ -43,7 +43,7 @@ window.FloorplanModule = (function () {
         { unitId:'A-even-03', label:'3BHK (L) Type D',          type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),          iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),         points:'26,63 42.5,63 42.5,91 26,91' },
         { unitId:'A-even-04', label:'3BHK (S) Type A',          type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),          iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),         points:'44,65 62,65 62,90 44,90' },
         { unitId:'A-even-05', label:'4BHK Type C',               type:'4 BHK', area:'', top:IK('PLAN/unit03_4bhk_(c)_even_tower_01.jpg'),                  points:'59,07 78,07 78,41 59,41' },
-        { unitId:'A-even-02',  label:'4BHK Type E',              type:'4 BHK', area:'', top:IK('PLAN/unit04_4bhk_(e)_odd_tower_04.jpg'),                  points:'63.5,46 84,46 84,92 63.5,92' },
+        { unitId:'A-even-06', label:'4BHK Type E',               type:'4 BHK', area:'', top:IK('PLAN/unit04_4bhk_(e)_odd_tower_04.jpg'),                  points:'63.5,46 84,46 84,92 63.5,92' },
       ],
     },
 
@@ -757,33 +757,64 @@ window.FloorplanModule = (function () {
       'tower-D': './assets/typical_even_tower_04.glb',
     };
 
-    // ── 2. Blender mesh name → unitId ────────────────────────────
-    // Names confirmed from browser console warnings (actual .glb mesh names).
-    // ⚠️  Verify each unitId by clicking the mesh in Blender and
-    //     checking which unit it covers on the cluster image.
-    const MESH_TO_UNIT_ID = {
-      // ── Tower A — even ──────────────────────────────────────────
-      '3BHK(L)-C': 'A-even-01',   // 3BHK(L) Type C — Podium
-      '3BHK(L)-D': 'A-even-03',   // 3BHK(L) Type D
-      '4BHK-C':    'A-even-05',   // 4BHK Type C
-      '4BHK-E':    'A-even-06',   // 4BHK Type E
-      // TODO: add remaining Tower A mesh names once seen in console
+    // ── 2. Per-tower mesh name → unitId ──────────────────────────
+    // Each tower has its own map because mesh names repeat across towers
+    // (e.g. '3BHK(L)-C' exists in Tower A AND Tower B .glb files).
+    // Confirmed from: cluster images + Blender outliner screenshots.
+    const TOWER_MESH_MAPS = {
 
-      // ── Tower B — even ──────────────────────────────────────────
-      // TODO: add mesh names from tower_b.glb console warnings
+      // ── TOWER A even ─────────────────────────────────────────────
+      // Image: UNIT-1=3BHK(L)-C, UNIT-2=3BHK(L)-B, UNIT-3=4BHK-C,
+      //        UNIT-4=4BHK-E, UNIT-5=3BHK(S)-A, UNIT-6=3BHK(L)-D
+      'tower-A': {
+        '3BHK(L)-C': 'A-even-01',
+        '3BHK(L)-B': 'A-even-02',
+        '3BHK(L)-D': 'A-even-03',
+        '3BHK(S)-A': 'A-even-04',
+        '4BHK-C':    'A-even-05',
+        '4BHK-E':    'A-even-06',
+      },
 
-      // ── Tower C — even ──────────────────────────────────────────
-      '3BHK(S)-B':  'C-even-02',  // 3BHK(S) Type B
-      '3BHK(S)-B1': 'C-even-03',  // 3BHK(S) Type B (second unit)
-      '3BHK(L)-F':  'C-even-04',  // 3BHK(L) Type F
-      '3BHK(L)-G':  'C-even-05',  // 3BHK(L) Type G
-      '3BHK(L)-E':  'C-even-06',  // 3BHK(L) Type E
-      '4BHK-G':     'C-even-01',  // 4BHK Type G
-      '4BHK-F':     'C-even-07',  // 4BHK Type F
+      // ── TOWER B even ─────────────────────────────────────────────
+      // Image: UNIT-1=3BHK(L)-C, UNIT-2=3BHK(L)-B, UNIT-3=4BHK-C,
+      //        UNIT-4=4BHK-D, UNIT-5=3BHK(S)-A, UNIT-6=3BHK(L)-D
+      'tower-B': {
+        '3BHK(L)-C': 'B-even-01',
+        '3BHK(L)-B': 'B-even-02',
+        '3BHK(L)-D': 'B-even-03',
+        '3BHK(S)-A': 'B-even-04',
+        '4BHK-D':    'B-even-05',
+        '4BHK-C':    'B-odd-01',
+      },
 
-      // ── Tower D — even ──────────────────────────────────────────
-      // TODO: add mesh names from tower_d.glb console warnings
+      // ── TOWER C even ─────────────────────────────────────────────
+      // Image: UNIT-1=4BHK-G, UNIT-2=3BHK(S)-B, UNIT-3=3BHK(S)-B,
+      //        UNIT-4=3BHK(L)-F, UNIT-5=3BHK(L)-E, UNIT-6=3BHK(L)-G,
+      //        UNIT-7=4BHK-F
+      'tower-C': {
+        '4BHK-G':     'C-even-01',
+        '3BHK(S)-B':  'C-even-02',
+        '3BHK(S)-B1': 'C-even-03',
+        '3BHK(L)-F':  'C-even-04',
+        '3BHK(L)-E':  'C-even-06',
+        '3BHK(L)-G':  'C-even-05',
+        '4BHK-F':     'C-even-07',
+      },
+
+      // ── TOWER D even ─────────────────────────────────────────────
+      // Image: UNIT-1=4BHK-A, UNIT-2=3BHK(L)-B, UNIT-3=3BHK(L)-A,
+      //        UNIT-4=4BHK-E, UNIT-5=3BHK(S)-A, UNIT-6=4BHK-B
+      'tower-D': {
+        '4BHK-A':    'D-even-01',
+        '3BHK(L)-B': 'D-even-02',
+        '3BHK(L)-A': 'D-even-03',
+        '4BHK-B':    'D-even-04',
+        '3BHK(S)-A': 'D-even-05',
+        '4BHK-E':    'D-even-06',
+      },
     };
+
+    const MESH_TO_UNIT_ID = TOWER_MESH_MAPS[towerId] || {};
 
     // ── Guard: Three.js must be loaded ───────────────────────────
     if (typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') {
