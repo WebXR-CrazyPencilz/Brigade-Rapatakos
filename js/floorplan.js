@@ -758,20 +758,31 @@ window.FloorplanModule = (function () {
     };
 
     // ── 2. Blender mesh name → unitId ────────────────────────────
-    // Names from your Blender outliner screenshot.
-    // Confirm each by selecting the mesh in Blender and checking
-    // which unit footprint it sits over on the cluster image.
+    // Names confirmed from browser console warnings (actual .glb mesh names).
+    // ⚠️  Verify each unitId by clicking the mesh in Blender and
+    //     checking which unit it covers on the cluster image.
     const MESH_TO_UNIT_ID = {
-      // Tower A — even
-      '3BHK(L)-A': 'A-even-01',
-      '3BHK(L)-B': 'A-even-02',
-      '3BHK(S)-A': 'A-even-04',
-      '4BHK-A':    'A-even-05',
-      '4BHK-B':    'A-even-03',
-      '4BHK-E':    'A-even-06',
-      // Tower B — add when tower_b.glb is ready
-      // Tower C — add when tower_c.glb is ready
-      // Tower D — add when tower_d.glb is ready
+      // ── Tower A — even ──────────────────────────────────────────
+      '3BHK(L)-C': 'A-even-01',   // 3BHK(L) Type C — Podium
+      '3BHK(L)-D': 'A-even-03',   // 3BHK(L) Type D
+      '4BHK-C':    'A-even-05',   // 4BHK Type C
+      '4BHK-E':    'A-even-06',   // 4BHK Type E
+      // TODO: add remaining Tower A mesh names once seen in console
+
+      // ── Tower B — even ──────────────────────────────────────────
+      // TODO: add mesh names from tower_b.glb console warnings
+
+      // ── Tower C — even ──────────────────────────────────────────
+      '3BHK(S)-B':  'C-even-02',  // 3BHK(S) Type B
+      '3BHK(S)-B1': 'C-even-03',  // 3BHK(S) Type B (second unit)
+      '3BHK(L)-F':  'C-even-04',  // 3BHK(L) Type F
+      '3BHK(L)-G':  'C-even-05',  // 3BHK(L) Type G
+      '3BHK(L)-E':  'C-even-06',  // 3BHK(L) Type E
+      '4BHK-G':     'C-even-01',  // 4BHK Type G
+      '4BHK-F':     'C-even-07',  // 4BHK Type F
+
+      // ── Tower D — even ──────────────────────────────────────────
+      // TODO: add mesh names from tower_d.glb console warnings
     };
 
     // ── Guard: Three.js must be loaded ───────────────────────────
