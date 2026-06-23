@@ -43,7 +43,7 @@ window.FloorplanModule = (function () {
         { unitId:'A-even-03', label:'3BHK (L) Type D',          type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),          iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),         points:'26,63 42.5,63 42.5,91 26,91' },
         { unitId:'A-even-04', label:'3BHK (S) Type A',          type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),          iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),         points:'44,65 62,65 62,90 44,90' },
         { unitId:'A-even-05', label:'4BHK Type C',               type:'4 BHK', area:'', top:IK('PLAN/unit03_4bhk_(c)_even_tower_01.jpg'),                  points:'59,07 78,07 78,41 59,41' },
-        { unitId:'A-even-06', label:'4BHK Type E',               type:'4 BHK', area:'', top:IK('PLAN/unit04_4bhk_(e)_odd_tower_04.jpg'),                  points:'63.5,46 84,46 84,92 63.5,92' },
+        { unitId:'A-even-02',  label:'4BHK Type E',              type:'4 BHK', area:'', top:IK('PLAN/unit04_4bhk_(e)_odd_tower_04.jpg'),                  points:'63.5,46 84,46 84,92 63.5,92' },
       ],
     },
 
@@ -505,7 +505,6 @@ window.FloorplanModule = (function () {
   }
 
   function resetToSitemap() {
-    disposeGltfCanvas();
     if (_sitemapRO) { _sitemapRO.disconnect(); _sitemapRO = null; }
     level = 0; activeTower = null; activeUnit = null;
     viewMode = 'top'; floorParity = 'odd';
@@ -658,7 +657,7 @@ window.FloorplanModule = (function () {
         if (done) return; done = true;
         if (activeTower !== reqTower || floorParity !== reqParity) return;
         img.classList.remove('fading');
-        buildGltfZones(reqTower, reqParity);
+        buildZones(reqTower, reqParity);
       }
       img.addEventListener('load',  finish, { once: true });
       img.addEventListener('error', () => img.classList.remove('fading'), { once: true });
@@ -702,7 +701,7 @@ window.FloorplanModule = (function () {
         if (done) return; done = true;
         if (activeTower !== reqTower || floorParity !== reqParity) return;
         img.classList.remove('fading');
-        buildGltfZones(reqTower, reqParity);
+        buildZones(reqTower, reqParity);
       }
       img.addEventListener('load',  finish, { once: true });
       img.addEventListener('error', () => img.classList.remove('fading'), { once: true });
@@ -714,264 +713,6 @@ window.FloorplanModule = (function () {
     showPanel('fp-panel-cluster', 'forward');
     updateTopbar();
     updateTitle();
-  }
-
-  // ─── GLTF MESH ZONE PICKER ───────────────────────────────────
-  // Replaces SVG polygons with a transparent Three.js canvas overlay.
-  // Each Plane_N mesh in the .glb becomes a clickable unit button.
-  //
-  // ⚠️  BEFORE USE — fill in two things:
-  //   1. GLTF_URLS  → your .glb file path per tower (hosted on ImageKit/GitHub)
-  //   2. MESH_TO_UNIT_ID → Blender mesh name → unitId from your TOWERS data
-  //      Open Blender outliner, match each Plane_N to the unit it covers.
-
-  let _gltfRenderer = null;
-  let _gltfAnimId   = null;
-
-  function disposeGltfCanvas() {
-    if (_gltfAnimId)   { cancelAnimationFrame(_gltfAnimId); _gltfAnimId = null; }
-    if (_gltfRenderer) { _gltfRenderer.dispose(); _gltfRenderer = null; }
-    const old = document.getElementById('fp-gltf-canvas');
-    if (old) old.remove();
-  }
-
-  function buildGltfZones(towerId, parity) {
-    disposeGltfCanvas();
-
-    // ── ODD parity: no .glb yet — fall back to SVG polygons ─────
-    // Remove this block once you have odd .glb files ready
-    if (parity === 'odd') {
-      buildZones(towerId, parity);
-      return;
-    }
-
-    const wrap = document.getElementById('fp-cluster-wrap');
-    const img  = document.getElementById('fp-cluster-img');
-    if (!wrap || !img || !img.offsetWidth) return;
-
-    // ── 1. Even .glb files only (testing) ───────────────────────
-    const GLTF_URLS = {
-      'tower-A': './assets/typical_even_tower_01.glb',
-      'tower-B': './assets/typical_even_tower_02.glb',
-      'tower-C': './assets/typical_even_tower_03.glb',
-      'tower-D': './assets/typical_even_tower_04.glb',
-    };
-
-    // ── 2. Per-tower mesh name → unitId ──────────────────────────
-    // Each tower has its own map because mesh names repeat across towers
-    // (e.g. '3BHK(L)-C' exists in Tower A AND Tower B .glb files).
-    // Confirmed from: cluster images + Blender outliner screenshots.
-    const TOWER_MESH_MAPS = {
-
-      // ── TOWER A even ─────────────────────────────────────────────
-      // Image: UNIT-1=3BHK(L)-C, UNIT-2=3BHK(L)-B, UNIT-3=4BHK-C,
-      //        UNIT-4=4BHK-E, UNIT-5=3BHK(S)-A, UNIT-6=3BHK(L)-D
-      'tower-A': {
-        '3BHK(L)-C': 'A-even-01',
-        '3BHK(L)-B': 'A-even-02',
-        '3BHK(L)-D': 'A-even-03',
-        '3BHK(S)-A': 'A-even-04',
-        '4BHK-C':    'A-even-05',
-        '4BHK-E':    'A-even-06',
-      },
-
-      // ── TOWER B even ─────────────────────────────────────────────
-      // Image: UNIT-1=3BHK(L)-C, UNIT-2=3BHK(L)-B, UNIT-3=4BHK-C,
-      //        UNIT-4=4BHK-D, UNIT-5=3BHK(S)-A, UNIT-6=3BHK(L)-D
-      'tower-B': {
-        '3BHK(L)-C': 'B-even-01',
-        '3BHK(L)-B': 'B-even-02',
-        '3BHK(L)-D': 'B-even-03',
-        '3BHK(S)-A': 'B-even-04',
-        '4BHK-D':    'B-even-05',
-        '4BHK-C':    'B-odd-01',
-      },
-
-      // ── TOWER C even ─────────────────────────────────────────────
-      // Image: UNIT-1=4BHK-G, UNIT-2=3BHK(S)-B, UNIT-3=3BHK(S)-B,
-      //        UNIT-4=3BHK(L)-F, UNIT-5=3BHK(L)-E, UNIT-6=3BHK(L)-G,
-      //        UNIT-7=4BHK-F
-      'tower-C': {
-        '4BHK-G':     'C-even-01',
-        '3BHK(S)-B':  'C-even-02',
-        '3BHK(S)-B1': 'C-even-03',
-        '3BHK(L)-F':  'C-even-04',
-        '3BHK(L)-E':  'C-even-06',
-        '3BHK(L)-G':  'C-even-05',
-        '4BHK-F':     'C-even-07',
-      },
-
-      // ── TOWER D even ─────────────────────────────────────────────
-      // Image: UNIT-1=4BHK-A, UNIT-2=3BHK(L)-B, UNIT-3=3BHK(L)-A,
-      //        UNIT-4=4BHK-E, UNIT-5=3BHK(S)-A, UNIT-6=4BHK-B
-      'tower-D': {
-        '4BHK-A':    'D-even-01',
-        '3BHK(L)-B': 'D-even-02',
-        '3BHK(L)-A': 'D-even-03',
-        '4BHK-B':    'D-even-04',
-        '3BHK(S)-A': 'D-even-05',
-        '4BHK-E':    'D-even-06',
-      },
-    };
-
-    const MESH_TO_UNIT_ID = TOWER_MESH_MAPS[towerId] || {};
-
-    // ── Guard: Three.js must be loaded ───────────────────────────
-    if (typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') {
-      console.warn('FloorplanModule: Three.js or GLTFLoader missing — falling back to SVG');
-      buildZones(towerId, parity);
-      return;
-    }
-
-    const url = GLTF_URLS[towerId];
-    if (!url) {
-      console.warn('FloorplanModule: no GLTF URL for', towerId, '— falling back to SVG');
-      buildZones(towerId, parity);
-      return;
-    }
-
-    const W = img.offsetWidth;
-    const H = img.offsetHeight;
-
-    // ── 3. Transparent canvas exactly over the cluster image ─────
-    const canvas = document.createElement('canvas');
-    canvas.id     = 'fp-gltf-canvas';
-    canvas.width  = W;
-    canvas.height = H;
-    Object.assign(canvas.style, {
-      position:      'absolute',
-      top:           img.offsetTop  + 'px',
-      left:          img.offsetLeft + 'px',
-      width:         W + 'px',
-      height:        H + 'px',
-      pointerEvents: 'all',
-      zIndex:        '5',
-    });
-    wrap.appendChild(canvas);
-
-    // ── 4. Three.js WebGL renderer — alpha=true = transparent bg ─
-    const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
-    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-    renderer.setSize(W, H);
-    renderer.setClearColor(0x000000, 0);   // fully transparent clear
-    _gltfRenderer = renderer;
-
-    // ── 5. Orthographic camera — no perspective distortion ───────
-    const camera = new THREE.OrthographicCamera(-W/2, W/2, H/2, -H/2, 0.1, 1000);
-    camera.position.set(0, 0, 100);
-    camera.lookAt(0, 0, 0);
-
-    const scene     = new THREE.Scene();
-    const raycaster = new THREE.Raycaster();
-    const mouse     = new THREE.Vector2();
-    const meshMap   = {};
-    let   hovered   = null;
-
-    // ── 6. unitId → unitData lookup ──────────────────────────────
-    const unitById = {};
-    getUnits(towerId, parity).forEach(u => { unitById[u.unitId] = u; });
-
-    // ── 7. Load GLTF ─────────────────────────────────────────────
-    const loader = new THREE.GLTFLoader();
-    loader.load(url, (gltf) => {
-
-      // Auto-fit all meshes to fill the canvas
-      const box    = new THREE.Box3().setFromObject(gltf.scene);
-      const size   = new THREE.Vector3(); box.getSize(size);
-      const center = new THREE.Vector3(); box.getCenter(center);
-
-      // Use X/Y for the floor-plan plane (Z is depth in Blender Y-up export)
-      const scaleX = W / (size.x || 1);
-      const scaleY = H / (size.y || 1);
-      const scale  = Math.min(scaleX, scaleY) * 0.92;
-
-      gltf.scene.scale.setScalar(scale);
-      gltf.scene.position.set(
-        -center.x * scale,
-        -center.y * scale,
-        0
-      );
-
-      gltf.scene.traverse(child => {
-        if (!child.isMesh) return;
-
-        const unitId   = MESH_TO_UNIT_ID[child.name];
-        const unitData = unitId ? (unitById[unitId] || null) : null;
-
-        // ── Fully transparent at rest, rust glow on hover ────────
-        child.material = new THREE.MeshBasicMaterial({
-          color:       0x7a3e1e,
-          transparent: true,
-          opacity:     0,           // invisible at rest — image shows through
-          side:        THREE.DoubleSide,
-          depthWrite:  false,
-        });
-
-        if (!unitData) {
-          console.warn('FloorplanModule: mesh "' + child.name + '" has no unitId mapping');
-        }
-
-        meshMap[child.uuid] = { mesh: child, unitData };
-      });
-
-      scene.add(gltf.scene);
-      console.log('FloorplanModule: GLTF loaded for', towerId, parity, '— meshes:', Object.keys(meshMap).length);
-
-    }, undefined, (err) => {
-      console.error('FloorplanModule: GLTF load error for', url, err);
-      disposeGltfCanvas();
-      buildZones(towerId, parity);   // SVG fallback on load error
-    });
-
-    // ── 8. Raycast ───────────────────────────────────────────────
-    function pick(clientX, clientY) {
-      const rect = canvas.getBoundingClientRect();
-      mouse.x =  ((clientX - rect.left) / rect.width)  * 2 - 1;
-      mouse.y = -((clientY - rect.top)  / rect.height) * 2 + 1;
-      raycaster.setFromCamera(mouse, camera);
-      const hits = raycaster.intersectObjects(Object.values(meshMap).map(v => v.mesh), false);
-      return hits.length ? meshMap[hits[0].object.uuid] : null;
-    }
-
-    function setHover(hit) {
-      if (hovered) { hovered.mesh.material.opacity = 0; hovered = null; }
-      if (hit)     { hit.mesh.material.opacity = 0.35; hovered = hit; }
-      canvas.style.cursor = hit ? 'pointer' : '';
-    }
-
-    // ── 9. Mouse ─────────────────────────────────────────────────
-    canvas.addEventListener('mousemove',  e => setHover(pick(e.clientX, e.clientY)));
-    canvas.addEventListener('mouseleave', () => setHover(null));
-    canvas.addEventListener('click', e => {
-      if (e.detail === 0) return;
-      const hit = pick(e.clientX, e.clientY);
-      if (hit && hit.unitData) drillToUnit(hit.unitData);
-    });
-
-    // ── 10. Touch ────────────────────────────────────────────────
-    let touchMoved = false, touchHit = null;
-    canvas.addEventListener('touchstart', e => {
-      touchMoved = false;
-      touchHit   = pick(e.touches[0].clientX, e.touches[0].clientY);
-      if (touchHit) touchHit.mesh.material.opacity = 0.35;
-    }, { passive: true });
-    canvas.addEventListener('touchmove', () => {
-      touchMoved = true;
-      if (touchHit) { touchHit.mesh.material.opacity = 0; touchHit = null; }
-    }, { passive: true });
-    canvas.addEventListener('touchend', e => {
-      if (!touchMoved && touchHit && touchHit.unitData) {
-        e.preventDefault();
-        drillToUnit(touchHit.unitData);
-      }
-      if (touchHit) { touchHit.mesh.material.opacity = 0; touchHit = null; }
-    });
-
-    // ── 11. Render loop ──────────────────────────────────────────
-    (function loop() {
-      _gltfAnimId = requestAnimationFrame(loop);
-      renderer.render(scene, camera);
-    })();
   }
 
   // ─── BUILD ZONES ─────────────────────────────────────────────
