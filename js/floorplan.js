@@ -738,12 +738,18 @@ window.FloorplanModule = (function () {
   function buildGltfZones(towerId, parity) {
     disposeGltfCanvas();
 
+    // ── ODD parity: no .glb yet — fall back to SVG polygons ─────
+    // Remove this block once you have odd .glb files ready
+    if (parity === 'odd') {
+      buildZones(towerId, parity);
+      return;
+    }
+
     const wrap = document.getElementById('fp-cluster-wrap');
     const img  = document.getElementById('fp-cluster-img');
     if (!wrap || !img || !img.offsetWidth) return;
 
-    // ── 1. Map each tower to its .glb file ──────────────────────
-    // Even parity only for now (testing) — odd files to be added later
+    // ── 1. Even .glb files only (testing) ───────────────────────
     const GLTF_URLS = {
       'tower-A': './assets/typical_even_tower_01.glb',
       'tower-B': './assets/typical_even_tower_02.glb',
@@ -751,34 +757,41 @@ window.FloorplanModule = (function () {
       'tower-D': './assets/typical_even_tower_04.glb',
     };
 
-    // ── 2. Map Blender mesh names → unitId strings ───────────────
-    // Mesh names taken directly from Blender outliner (your screenshot).
-    // Tower A even: A-even-01…05 match the 6 unit shapes in the .glb.
-    // ⚠️  Confirm the unitId per mesh by selecting each shape in Blender
-    //     and checking which unit footprint it covers on the floorplan.
+    // ── 2. Blender mesh name → unitId ────────────────────────────
+    // Names from your Blender outliner screenshot.
+    // Confirm each by selecting the mesh in Blender and checking
+    // which unit footprint it sits over on the cluster image.
     const MESH_TO_UNIT_ID = {
-      // Tower A — even floor
-      '3BHK(L)-A': 'A-even-01',   // 3BHK(L) Type C — Podium
-      '3BHK(L)-B': 'A-even-02',   // 3BHK(L) Type B
-      '3BHK(S)-A': 'A-even-04',   // 3BHK(S) Type A
-      '4BHK-A':    'A-even-05',   // 4BHK Type C
-      '4BHK-B':    'A-even-03',   // 3BHK(L) Type D
-      '4BHK-E':    'A-even-06',   // 4BHK Type E
-
-      // Tower B — even floor (add mesh names from tower_b.glb outliner)
-      // 'MeshNameHere': 'B-even-01',
-
-      // Tower C — even floor
-      // 'MeshNameHere': 'C-even-01',
-
-      // Tower D — even floor
-      // 'MeshNameHere': 'D-even-01',
+      // Tower A — even
+      '3BHK(L)-A': 'A-even-01',
+      '3BHK(L)-B': 'A-even-02',
+      '3BHK(S)-A': 'A-even-04',
+      '4BHK-A':    'A-even-05',
+      '4BHK-B':    'A-even-03',
+      '4BHK-E':    'A-even-06',
+      // Tower B — add when tower_b.glb is ready
+      // Tower C — add when tower_c.glb is ready
+      // Tower D — add when tower_d.glb is ready
     };
+
+    // ── Guard: Three.js must be loaded ───────────────────────────
+    if (typeof THREE === 'undefined' || typeof THREE.GLTFLoader === 'undefined') {
+      console.warn('FloorplanModule: Three.js or GLTFLoader missing — falling back to SVG');
+      buildZones(towerId, parity);
+      return;
+    }
+
+    const url = GLTF_URLS[towerId];
+    if (!url) {
+      console.warn('FloorplanModule: no GLTF URL for', towerId, '— falling back to SVG');
+      buildZones(towerId, parity);
+      return;
+    }
 
     const W = img.offsetWidth;
     const H = img.offsetHeight;
 
-    // ── 3. Create transparent canvas on top of the cluster image ─
+    // ── 3. Transparent canvas exactly over the cluster image ─────
     const canvas = document.createElement('canvas');
     canvas.id     = 'fp-gltf-canvas';
     canvas.width  = W;
@@ -794,14 +807,14 @@ window.FloorplanModule = (function () {
     });
     wrap.appendChild(canvas);
 
-    // ── 4. Three.js renderer (alpha transparent background) ──────
+    // ── 4. Three.js WebGL renderer — alpha=true = transparent bg ─
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     renderer.setSize(W, H);
-    renderer.setClearColor(0x000000, 0);
+    renderer.setClearColor(0x000000, 0);   // fully transparent clear
     _gltfRenderer = renderer;
 
-    // ── 5. Orthographic camera — flat 2D look, no perspective ────
+    // ── 5. Orthographic camera — no perspective distortion ───────
     const camera = new THREE.OrthographicCamera(-W/2, W/2, H/2, -H/2, 0.1, 1000);
     camera.position.set(0, 0, 100);
     camera.lookAt(0, 0, 0);
@@ -809,115 +822,114 @@ window.FloorplanModule = (function () {
     const scene     = new THREE.Scene();
     const raycaster = new THREE.Raycaster();
     const mouse     = new THREE.Vector2();
-    const meshMap   = {};   // uuid → { mesh, unitData }
+    const meshMap   = {};
     let   hovered   = null;
 
-    // ── 6. Build unitId lookup from current tower+parity units ───
+    // ── 6. unitId → unitData lookup ──────────────────────────────
     const unitById = {};
     getUnits(towerId, parity).forEach(u => { unitById[u.unitId] = u; });
 
-    // ── 7. Load the GLTF ─────────────────────────────────────────
-    const url = GLTF_URLS[towerId];
-    if (!url) {
-      console.warn('FloorplanModule: no GLTF URL for', towerId, '— falling back to SVG zones');
-      disposeGltfCanvas();
-      buildZones(towerId, parity);
-      return;
-    }
-
-    if (typeof THREE.GLTFLoader === 'undefined') {
-      console.warn('FloorplanModule: THREE.GLTFLoader not loaded — falling back to SVG zones');
-      disposeGltfCanvas();
-      buildZones(towerId, parity);
-      return;
-    }
-
+    // ── 7. Load GLTF ─────────────────────────────────────────────
     const loader = new THREE.GLTFLoader();
     loader.load(url, (gltf) => {
-      // Auto-fit the loaded scene to fill the canvas
+
+      // Auto-fit all meshes to fill the canvas
       const box    = new THREE.Box3().setFromObject(gltf.scene);
       const size   = new THREE.Vector3(); box.getSize(size);
       const center = new THREE.Vector3(); box.getCenter(center);
-      const scale  = Math.min(W / size.x, H / size.y) * 0.92; // 8% padding
+
+      // Use X/Y for the floor-plan plane (Z is depth in Blender Y-up export)
+      const scaleX = W / (size.x || 1);
+      const scaleY = H / (size.y || 1);
+      const scale  = Math.min(scaleX, scaleY) * 0.92;
 
       gltf.scene.scale.setScalar(scale);
-      gltf.scene.position.set(-center.x * scale, -center.y * scale, 0);
+      gltf.scene.position.set(
+        -center.x * scale,
+        -center.y * scale,
+        0
+      );
 
-      // Assign transparent material to each mesh
       gltf.scene.traverse(child => {
         if (!child.isMesh) return;
+
         const unitId   = MESH_TO_UNIT_ID[child.name];
-        const unitData = unitId ? unitById[unitId] : null;
+        const unitData = unitId ? (unitById[unitId] || null) : null;
+
+        // ── Fully transparent at rest, rust glow on hover ────────
         child.material = new THREE.MeshBasicMaterial({
-          color:       0x7a3e1e,   // rust — matches the theme
+          color:       0x7a3e1e,
           transparent: true,
-          opacity:     0.15,        // barely visible at rest
+          opacity:     0,           // invisible at rest — image shows through
           side:        THREE.DoubleSide,
           depthWrite:  false,
         });
+
+        if (!unitData) {
+          console.warn('FloorplanModule: mesh "' + child.name + '" has no unitId mapping');
+        }
+
         meshMap[child.uuid] = { mesh: child, unitData };
       });
 
       scene.add(gltf.scene);
-    },
-    undefined,
-    (err) => {
-      console.error('FloorplanModule: GLTF load error', err);
+      console.log('FloorplanModule: GLTF loaded for', towerId, parity, '— meshes:', Object.keys(meshMap).length);
+
+    }, undefined, (err) => {
+      console.error('FloorplanModule: GLTF load error for', url, err);
       disposeGltfCanvas();
-      buildZones(towerId, parity);   // graceful fallback to SVG
+      buildZones(towerId, parity);   // SVG fallback on load error
     });
 
-    // ── 8. Raycast helper ────────────────────────────────────────
+    // ── 8. Raycast ───────────────────────────────────────────────
     function pick(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
       mouse.x =  ((clientX - rect.left) / rect.width)  * 2 - 1;
       mouse.y = -((clientY - rect.top)  / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
-      const meshes = Object.values(meshMap).map(v => v.mesh);
-      const hits   = raycaster.intersectObjects(meshes, false);
+      const hits = raycaster.intersectObjects(Object.values(meshMap).map(v => v.mesh), false);
       return hits.length ? meshMap[hits[0].object.uuid] : null;
     }
 
     function setHover(hit) {
-      if (hovered) { hovered.mesh.material.opacity = 0.15; hovered = null; }
-      if (hit)     { hit.mesh.material.opacity = 0.45; hovered = hit; }
+      if (hovered) { hovered.mesh.material.opacity = 0; hovered = null; }
+      if (hit)     { hit.mesh.material.opacity = 0.35; hovered = hit; }
       canvas.style.cursor = hit ? 'pointer' : '';
     }
 
-    // ── 9. Mouse events ──────────────────────────────────────────
+    // ── 9. Mouse ─────────────────────────────────────────────────
     canvas.addEventListener('mousemove',  e => setHover(pick(e.clientX, e.clientY)));
     canvas.addEventListener('mouseleave', () => setHover(null));
     canvas.addEventListener('click', e => {
-      if (e.detail === 0) return;   // skip synthetic touch-fired clicks
+      if (e.detail === 0) return;
       const hit = pick(e.clientX, e.clientY);
       if (hit && hit.unitData) drillToUnit(hit.unitData);
     });
 
-    // ── 10. Touch events ─────────────────────────────────────────
+    // ── 10. Touch ────────────────────────────────────────────────
     let touchMoved = false, touchHit = null;
     canvas.addEventListener('touchstart', e => {
       touchMoved = false;
       touchHit   = pick(e.touches[0].clientX, e.touches[0].clientY);
-      if (touchHit) touchHit.mesh.material.opacity = 0.45;
+      if (touchHit) touchHit.mesh.material.opacity = 0.35;
     }, { passive: true });
     canvas.addEventListener('touchmove', () => {
       touchMoved = true;
-      if (touchHit) { touchHit.mesh.material.opacity = 0.15; touchHit = null; }
+      if (touchHit) { touchHit.mesh.material.opacity = 0; touchHit = null; }
     }, { passive: true });
     canvas.addEventListener('touchend', e => {
       if (!touchMoved && touchHit && touchHit.unitData) {
         e.preventDefault();
         drillToUnit(touchHit.unitData);
       }
-      if (touchHit) { touchHit.mesh.material.opacity = 0.15; touchHit = null; }
+      if (touchHit) { touchHit.mesh.material.opacity = 0; touchHit = null; }
     });
 
     // ── 11. Render loop ──────────────────────────────────────────
-    function loop() {
+    (function loop() {
       _gltfAnimId = requestAnimationFrame(loop);
       renderer.render(scene, camera);
-    }
-    loop();
+    })();
   }
 
   // ─── BUILD ZONES ─────────────────────────────────────────────
