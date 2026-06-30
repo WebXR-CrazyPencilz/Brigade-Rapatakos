@@ -2,30 +2,457 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>Brigade Stellaris</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>BRIGADE STELLARIS — Interactive Experience</title>
+  <link rel="icon" href="data:,">
+  <meta name="description" content="Brigade Stellaris — Explore your future home in an immersive experience." />
+  <meta property="og:title" content="Brigade Stellaris" />
+  <meta property="og:description" content="Interactive 3D property experience." />
+  <meta property="og:image" content="preview.jpg" />
+  <meta name="theme-color" content="#0d0d0d" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Syne:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
 
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    /* ═══════════════════════════════════════
+       ZOHO GATE SCREEN  (fullscreen, z:9999)
+       Shows BEFORE the 3D scene loads
+    ═══════════════════════════════════════ */
+    #zoho-gate {
+      position: fixed;
+      inset: 0;
+      z-index: 9999;
+      background: #eae7e0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      overflow-y: auto;
+      transition: opacity 0.65s ease;
+    }
+    #zoho-gate.fade-out {
+      opacity: 0;
+      pointer-events: none;
+    }
 
-    html, body {
-      width: 100%; height: 100%;
-      background: #0a0805;
+    /* Subtle city illustration overlay (mimics PDF background) */
+    #zoho-gate::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      background-size: 200px;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    /* Card */
+    #zoho-gate-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 420px;
+      margin: 40px 20px;
+      padding: 44px 40px 40px;
+      background: #ffffff;
+      border-radius: 8px;
+      box-shadow: 0 8px 48px rgba(0,0,0,.10), 0 2px 12px rgba(0,0,0,.06);
+      box-sizing: border-box;
+    }
+
+    /* Header */
+    .gate-logo {
       font-family: 'Syne', sans-serif;
-      overflow: hidden;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: #1e2d3d;
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .gate-title {
+      font-family: 'Syne', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: #7a3e1e;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+    .gate-subtitle {
+      font-family: 'Syne', sans-serif;
+      font-size: 9px;
+      color: rgba(80,60,40,.45);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .gate-rule {
+      width: 40px; height: 1px;
+      background: rgba(120,80,40,.20);
+      margin: 0 auto 24px;
+    }
+
+    /* ── Zoho form field overrides ── */
+    #crmWebToEntityForm {
+      background: transparent !important;
+      color: #2a2018 !important;
+      max-width: 100% !important;
+      padding: 0 !important;
+    }
+    .zcwf_title { display: none !important; }
+
+    .zcwf_lblLeft .zcwf_row { margin: 0 0 16px 0 !important; }
+
+    .zcwf_lblLeft .zcwf_col_lab {
+      width: 100% !important;
+      float: none !important;
+      margin: 0 0 5px 0 !important;
+      font-family: 'Syne', sans-serif !important;
+      font-size: 9px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.16em !important;
+      text-transform: uppercase !important;
+      color: rgba(50,38,25,.60) !important;
+    }
+    .zcwf_lblLeft .zcwf_col_fld {
+      width: 100% !important;
+      float: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .zcwf_lblLeft .zcwf_col_fld input[type=text],
+    .zcwf_lblLeft .zcwf_col_fld textarea {
+      width: 100% !important;
+      background: #f7f5f2 !important;
+      border: 1px solid rgba(160,130,90,.25) !important;
+      border-radius: 4px !important;
+      color: #2a2018 !important;
+      font-family: 'Syne', sans-serif !important;
+      font-size: 13px !important;
+      padding: 12px 14px !important;
+      outline: none !important;
+      transition: border-color 0.2s, background 0.2s !important;
+      float: none !important;
+      box-sizing: border-box !important;
+    }
+    .zcwf_lblLeft .zcwf_col_fld input[type=text]:focus,
+    .zcwf_lblLeft .zcwf_col_fld textarea:focus {
+      border-color: rgba(122,62,30,.50) !important;
+      background: #ffffff !important;
+    }
+    .zcwf_lblLeft .zcwf_col_fld input[type=text]::placeholder {
+      color: rgba(100,80,55,.35) !important;
+    }
+
+    /* Submit button */
+    .formsubmit.zcwf_button {
+      width: 100% !important;
+      padding: 15px !important;
+      background: #7a3e1e !important;
+      color: #f5f0e8 !important;
+      font-family: 'Syne', sans-serif !important;
+      font-size: 10.5px !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.18em !important;
+      text-transform: uppercase !important;
+      border: none !important;
+      border-radius: 4px !important;
+      cursor: pointer !important;
+      margin-top: 6px !important;
+      transition: opacity 0.2s, transform 0.2s !important;
+    }
+    .formsubmit.zcwf_button:hover {
+      opacity: 0.88 !important;
+      transform: translateY(-1px) !important;
+    }
+    .zcwf_button[name="reset"] { display: none !important; }
+
+    /* Skip link */
+    #gate-skip {
+      margin-top: 18px;
+      font-family: 'Syne', sans-serif;
+      font-size: 9px;
+      letter-spacing: 0.14em;
+      color: rgba(100,80,55,.40);
+      text-align: center;
+      cursor: pointer;
+      transition: color 0.2s;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+    #gate-skip:hover { color: rgba(100,80,55,.65); }
+
+    /* Success message */
+    .wf_customMessageBox {
+      font-family: 'Syne', sans-serif !important;
+      font-size: 12px !important;
+      color: #2a2018 !important;
+    }
+
+    /* Mobile */
+    @media (max-width: 480px) {
+      #zoho-gate-card { padding: 36px 24px 32px; margin: 24px 16px; }
+      .gate-logo { font-size: 13px; }
     }
   </style>
 </head>
 <body>
 
-  <!-- home.js injects all DOM (carousel, bottom panel, overlays, etc.) -->
-  <script src="home.js"></script>
+<!-- LOADER -->
+<div id="loader">
+  <div class="loader-title">BRIGADE STELLARIS</div>
+  <div class="loader-bar-wrap"><div class="loader-bar"></div></div>
+  <div class="loader-sub">Loading Environment</div>
+</div>
 
-  <script>
-    HomeModule.init();
-  </script>
+<!-- TRANSITION OVERLAY -->
+<div id="transition-overlay"></div>
+
+<!-- HOME VIEW (carousel injected by home.js) -->
+<div id="home-view"></div>
+
+<!-- ═══════════════════════════════════════════════════════
+     ZOHO GATE — Fullscreen form shown BEFORE 3D loads
+     Same pattern as the old Firebase login screen.
+     After submit (or skip) → startApp() fires.
+════════════════════════════════════════════════════════ -->
+<div id="zoho-gate">
+  <div id="zoho-gate-card">
+
+    <div class="gate-logo">Brigade Stellaris</div>
+    <div class="gate-title">Register Your Interest</div>
+    <div class="gate-subtitle">Enter your details to begin the experience</div>
+    <div class="gate-rule"></div>
+
+    <!-- ZOHO WEBFORM -->
+    <div id='crmWebToEntityForm' class='zcwf_lblLeft crmWebToEntityForm' style='background:transparent;'>
+      <div class='wf_customMessageBox' id='wf_splash' style='display:none'>
+        <div class='wf_customCircle'><div class='wf_customCheckMark'></div></div>
+        <span id='wf_splash_info'></span>
+      </div>
+
+      <form id='webform1309230000000456421' name='WebToLeads1309230000000456421' accept-charset='UTF-8'>
+        <input type='text' style='display:none;' name='xnQsjsdp' value='e0c3ec302d9fa6847ce2459c42ea233e58dae8f6233205eb92e7841f52c63f82'/>
+        <input type='hidden' name='zc_gad' id='zc_gad' value=''/>
+        <input type='text' style='display:none;' name='xmIwtLD' value='a84f15d9b9013676ee0ea144590a809f799b588a6fb0215a7a8c5d7791e2ae4d3beba3d2f5d7a5c5a0d76293ec81e400'/>
+        <input type='text' style='display:none;' name='actionType' value='TGVhZHM='/>
+        <input type='text' style='display:none;' name='returnURL' value='null'/>
+
+        <!-- First Name -->
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab'><label for='First_Name'>First Name</label></div>
+          <div class='zcwf_col_fld'>
+            <input type='text' id='First_Name' name='First Name' maxlength='40' placeholder='First name'/>
+          </div>
+        </div>
+
+        <!-- Last Name -->
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab'><label for='Last_Name'>Last Name <span style='color:#c9a96e;'>*</span></label></div>
+          <div class='zcwf_col_fld'>
+            <input type='text' id='Last_Name' aria-required='true' name='Last Name' maxlength='80' placeholder='Last name'/>
+          </div>
+        </div>
+
+        <!-- Phone -->
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab'><label for='Phone'>Phone</label></div>
+          <div class='zcwf_col_fld'>
+            <input type='text' id='Phone' name='Phone' maxlength='30' placeholder='+91 00000 00000'/>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab'><label for='Email'>Email</label></div>
+          <div class='zcwf_col_fld'>
+            <input type='text' ftype='email' autocomplete='false' id='Email' name='Email' maxlength='100' placeholder='your@email.com'/>
+          </div>
+        </div>
+
+        <!-- City -->
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab'><label for='Address_-_City'>City</label></div>
+          <div class='zcwf_col_fld'>
+            <input type='text' id='Address_-_City' name='Address - City' maxlength='255' placeholder='Your city'/>
+          </div>
+        </div>
+
+        <input type='text' style='display:none;' name='aG9uZXlwb3Q' value=''/>
+
+        <!-- Submit -->
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab'></div>
+          <div class='zcwf_col_fld'>
+            <input type='submit' id='formsubmit' role='button' class='formsubmit zcwf_button' value='Begin Experience' aria-label='Submit'/>
+            <input type='reset' class='zcwf_button' name='reset' value='Reset'/>
+          </div>
+        </div>
+
+        <script>
+          function validateEmail1309230000000456421(){
+            var form=document.forms['WebToLeads1309230000000456421'];
+            var emailFld=form.querySelectorAll('[ftype=email]');
+            for(var i=0;i<emailFld.length;i++){
+              var v=emailFld[i].value;
+              if((v.replace(/^\s+|\s+$/g,'')).length!=0){
+                var a=v.indexOf('@'),d=v.lastIndexOf('.');
+                if(a<1||d<a+2||d+2>=v.length){
+                  alert('Please enter a valid email address.');
+                  emailFld[i].focus(); return false;
+                }
+              }
+            }
+            return true;
+          }
+
+          function checkMandatory1309230000000456421(){
+            var f=document.forms['WebToLeads1309230000000456421']['Last Name'];
+            if(f && ((f.value).replace(/^\s+|\s+$/g,'')).length==0){
+              alert('Last Name cannot be empty.'); f.focus(); return false;
+            }
+            if(!validateEmail1309230000000456421()) return false;
+            var btn=document.querySelector('.crmWebToEntityForm .formsubmit');
+            if(btn) btn.setAttribute('disabled',true);
+          }
+
+          document.getElementById('webform1309230000000456421').addEventListener('submit',function(e){
+            var ok=checkMandatory1309230000000456421();
+            e.preventDefault();
+            if(ok===undefined||ok){
+              var formData=new FormData(this);
+              fetch('https://crm.zoho.in/crm/WebToLeadForm',{
+                method:'POST', body:formData, cache:'no-cache'
+              }).then(function(r){
+                var ct=r.headers.get('Content-Type');
+                return ct&&ct.includes('application/json')?r.json():r.text();
+              }).then(function(data){
+                if(typeof data==='object'){
+                  if(data.actionsubmit==='Splash Message'){
+                    var info=document.getElementById('wf_splash_info');
+                    info.innerText=data.actionvalue||'Thank you! Launching experience…';
+                    document.getElementById('wf_splash').style.display='';
+                    document.getElementById('webform1309230000000456421').reset.click();
+                    // After 2s — dismiss gate and start 3D
+                    setTimeout(function(){ dismissGateAndStart(); }, 2000);
+                  } else if(data.actionsubmit==='redirect_url'){
+                    dismissGateAndStart();
+                  } else {
+                    dismissGateAndStart();
+                  }
+                } else {
+                  dismissGateAndStart();
+                }
+                var btn=document.querySelector('.crmWebToEntityForm .formsubmit');
+                if(btn) btn.removeAttribute('disabled');
+              }).catch(function(){
+                // Even on error — let them through
+                dismissGateAndStart();
+              });
+            }
+          });
+        </script>
+      </form>
+    </div>
+    <!-- END ZOHO FORM -->
+
+    <!-- Skip link for internal team testing -->
+    <div id="gate-skip" onclick="dismissGateAndStart()">Skip — Enter Experience</div>
+
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
+<!-- App modules -->
+<script src="js/home.js"></script>
+<script src="js/floorplan.js"></script>
+<script src="js/gallery.js"></script>
+
+<script>
+/* ─── GATE DISMISS → START 3D APP ─── */
+let _appStarted = false;
+
+function dismissGateAndStart() {
+  if (_appStarted) return;
+  _appStarted = true;
+
+  var gate = document.getElementById('zoho-gate');
+  if (gate) {
+    gate.classList.add('fade-out');
+    setTimeout(function() { gate.remove(); }, 700);
+  }
+
+  // Start the 3D modules — same as firebase-auth.js did
+  if (window.HomeModule      && typeof HomeModule.init      === 'function') HomeModule.init();
+  if (window.FloorplanModule && typeof FloorplanModule.init === 'function') FloorplanModule.init();
+  if (window.GalleryModule   && typeof GalleryModule.init   === 'function') GalleryModule.init();
+}
+
+/* ─── APP CONTROLLER ─── */
+window.App = {
+  currentView: 'home',
+  previousView: null,
+
+  init() {
+    // Do NOT auto-start — gate controls when 3D begins
+    // (HomeModule.init is called by dismissGateAndStart)
+  },
+
+  finishLoad() {
+    const loader = document.getElementById('loader');
+    if (!loader) return;
+    loader.classList.add('fade-out');
+    setTimeout(() => {
+      loader.style.display = 'none';
+      const hv = document.getElementById('home-view');
+      if (hv) hv.classList.add('active');
+    }, 900);
+  },
+
+  navigate(view, opts = {}) {
+    const overlay = document.getElementById('transition-overlay');
+    overlay.classList.add('flash');
+    overlay.addEventListener('animationend', () => {
+      this._doNavigate(view, opts);
+      overlay.classList.remove('flash');
+    }, { once: true });
+  },
+
+  _doNavigate(view, opts) {
+    const ur = document.getElementById('unit-row');
+    if (ur) ur.classList.remove('visible');
+
+    const btn360 = document.querySelector('.panel-slot[data-slot="360view"]');
+    if (btn360) btn360.classList.remove('unit-open', 'active');
+
+    document.getElementById('home-view').classList.remove('active');
+
+    this.previousView = this.currentView;
+    this.currentView  = view;
+
+    if (view === 'home') {
+      document.getElementById('home-view').classList.add('active');
+    }
+
+    document.querySelectorAll('.panel-slot').forEach(el => el.classList.remove('active'));
+    const activeSlot = document.querySelector(`.panel-slot[data-slot="${view}"]`);
+    if (activeSlot) activeSlot.classList.add('active');
+  },
+
+  goBack() {
+    this.navigate(this.previousView || 'home');
+  }
+};
+
+App.init();
+</script>
 
 </body>
 </html>
