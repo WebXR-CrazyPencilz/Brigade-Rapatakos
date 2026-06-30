@@ -1,19 +1,18 @@
-// gallery.js — Full-screen gallery with card flip/fan transitions
+// gallery.js — Full-screen gallery with floating thumbnails + curved transitions
 window.GalleryModule = (function () {
 
   const IMAGES = [
-  
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157232/05_w03okg.jpg',      label: '01' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/09_gytlb3.jpg',      label: '02' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158354/14_nwgerk.jpg',      label: '03' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/11_si2bfi.jpg',      label: '04' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/04_guuouq.jpg',      label: '05' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/06_nz4s5w.jpg',      label: '06' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/12_sv6p4o.jpg',      label: '07' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/08_y7htgv.jpg',      label: '08' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/10_mj07h8.jpg',      label: '09' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158364/13_mv0mfy.jpg',      label: '10' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158355/16_kx2kfd.jpg',      label: '10' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157232/05_w03okg.jpg', caption: '01' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/09_gytlb3.jpg', caption: '02' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158354/14_nwgerk.jpg', caption: '03' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/11_si2bfi.jpg', caption: '04' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/04_guuouq.jpg', caption: '05' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/06_nz4s5w.jpg', caption: '06' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/12_sv6p4o.jpg', caption: '07' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/08_y7htgv.jpg', caption: '08' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/10_mj07h8.jpg', caption: '09' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158364/13_mv0mfy.jpg', caption: '10' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158355/16_kx2kfd.jpg', caption: '11' },
   ];
 
   let current     = 0;
@@ -29,191 +28,162 @@ window.GalleryModule = (function () {
 
     const style = document.createElement('style');
     style.textContent = `
-      /* ── Overlay ── */
+      /* ── Overlay — full bleed, no padding, no card ── */
       #gallery-overlay {
         position: fixed; top: 0; left: 0; right: 0; bottom: 62px;
-        z-index: 200; background: #e8e4dd;
-        display: flex; flex-direction: column;
+        z-index: 200; background: #080604;
         opacity: 0; pointer-events: none;
         transition: opacity .38s cubic-bezier(0.22,1,0.36,1);
         overflow: hidden;
-        padding: 24px; box-sizing: border-box; gap: 16px;
       }
       #gallery-overlay.open { opacity: 1; pointer-events: all; }
 
-      /* Inner main card */
-      #gl-main-card {
-        flex: 1; border-radius: 12px; overflow: hidden;
-        box-shadow: 0 8px 40px rgba(0,0,0,.18);
-        background: #080604;
-        position: relative; display: flex; flex-direction: column;
-      }
-
-      /* ── HEADER ── */
+      /* ── HEADER — floats over the image ── */
       #gl-header {
-        flex-shrink: 0; position: relative; z-index: 10;
+        position: absolute; top: 0; left: 0; right: 0; z-index: 30;
         display: flex; align-items: center; justify-content: space-between;
-        padding: 18px 20px 14px;
-        background: linear-gradient(to bottom, rgba(8,6,4,.95) 60%, transparent);
+        padding: 18px 20px 40px;
+        background: linear-gradient(to bottom, rgba(8,6,4,.85) 0%, transparent 100%);
+        pointer-events: none;
       }
+      #gl-header > * { pointer-events: all; }
       #gl-title-wrap { min-width: 0; }
       #gl-label {
         font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
         letter-spacing: .22em; text-transform: uppercase;
-        color: rgba(200,185,165,.45); margin: 0 0 4px;
+        color: rgba(200,185,165,.55); margin: 0 0 4px;
       }
       #gl-caption {
         font-family: 'Cormorant Garamond', serif; font-style: italic;
-        font-size: 22px; font-weight: 300; color: rgba(200,185,165,.80);
+        font-size: 22px; font-weight: 300; color: rgba(245,240,232,.92);
         margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        transition: opacity .2s;
+        transition: opacity .25s;
       }
       #gl-caption.fading { opacity: 0; }
       #gl-close {
-        flex-shrink: 0; width: 36px; height: 36px;
-        border: 1px solid rgba(122,62,30,.30); background: rgba(122,62,30,.08);
-        border-radius: 8px; display: flex; align-items: center; justify-content: center;
-        cursor: pointer; color: rgba(200,185,165,.75); font-size: 16px;
-        transition: background .2s; -webkit-tap-highlight-color: transparent; margin-left: 16px;
+        flex-shrink: 0; width: 38px; height: 38px;
+        border: 1px solid rgba(200,185,165,.25); background: rgba(20,16,12,.55);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        border-radius: 10px; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; color: rgba(230,220,205,.85); font-size: 16px;
+        transition: background .2s, border-color .2s;
+        -webkit-tap-highlight-color: transparent; margin-left: 16px;
       }
-      #gl-close:hover { background: rgba(122,62,30,.20); }
+      #gl-close:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); }
 
-      /* ── CARD STAGE ── */
+      /* ── STAGE — full bleed image area, no border, no shadow card ── */
       #gl-stage {
-        flex: 1; position: relative; z-index: 2;
-        display: flex; align-items: center; justify-content: center;
-        perspective: 1000px; overflow: hidden;
+        position: absolute; inset: 0; z-index: 1;
+        overflow: hidden;
+        perspective: 1400px;
+        touch-action: pan-y;
       }
 
-      /* Stack of cards — prev behind, current on top, next to the right */
       .gl-card {
-        position: absolute;
-        width: min(calc(100vw - 70px), calc((100dvh - 120px) * 1.6));
-        height: min(calc(100dvh - 120px), calc((100vw - 70px) / 1.6));
-        border-radius: 4px; overflow: hidden;
-        border: 1px solid rgba(200,190,154,.10);
-        background: #0d0b07;
-        will-change: transform, opacity;
-        cursor: pointer;
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        will-change: transform, opacity, filter;
+        cursor: grab;
       }
+      .gl-card:active { cursor: grabbing; }
       .gl-card img {
         width: 100%; height: 100%; object-fit: cover;
         display: block; pointer-events: none;
         user-select: none; -webkit-user-drag: none;
       }
 
-      /* Default resting state */
+      /* Resting stack positions */
       #gl-card-behind {
-        transform: scale(0.88) translateY(18px);
-        opacity: 0.35;
+        transform: scale(1.06) translateY(0);
+        opacity: 0;
         z-index: 1;
-        box-shadow: 0 8px 40px rgba(0,0,0,.5);
+        filter: blur(6px);
       }
       #gl-card-current {
-        transform: scale(1) translateY(0);
+        transform: scale(1) translateY(0) rotate(0deg);
         opacity: 1;
         z-index: 2;
-        box-shadow: 0 16px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(122,62,30,.12);
+        filter: blur(0);
       }
       #gl-card-incoming {
-        transform: translateX(110%) scale(0.92) rotate(4deg);
+        transform: scale(1.08) translateY(0);
         opacity: 0;
         z-index: 3;
+        filter: blur(4px);
       }
 
-      /* ── Animate OUT (current flies left) ── */
-      #gl-card-current.exit-left {
-        transition: transform 480ms cubic-bezier(0.4,0,0.2,1), opacity 480ms ease;
-        transform: translateX(-115%) scale(0.9) rotate(-5deg);
-        opacity: 0;
-      }
-      #gl-card-current.exit-right {
-        transition: transform 480ms cubic-bezier(0.4,0,0.2,1), opacity 480ms ease;
-        transform: translateX(115%) scale(0.9) rotate(5deg);
-        opacity: 0;
-      }
-
-      /* ── Behind card rises ── */
-      #gl-card-behind.rise {
-        transition: transform 480ms cubic-bezier(0.22,1,0.36,1), opacity 480ms ease;
-        transform: scale(1) translateY(0);
-        opacity: 1;
-      }
-
-      /* ── Incoming slides in ── */
-      #gl-card-incoming.enter {
-        transition: transform 480ms cubic-bezier(0.22,1,0.36,1), opacity 360ms ease;
-        transform: translateX(0) scale(1) rotate(0deg);
-        opacity: 1;
-      }
-      #gl-card-incoming.enter-from-left {
-        transform: translateX(-110%) scale(0.92) rotate(-4deg);
-        opacity: 0;
-      }
-      #gl-card-incoming.enter-from-left.enter {
-        transform: translateX(0) scale(1) rotate(0deg);
-        opacity: 1;
+      /* Vignette for header/footer legibility — sits above images */
+      #gl-vignette {
+        position: absolute; inset: 0; z-index: 5; pointer-events: none;
+        background:
+          linear-gradient(to bottom, rgba(8,6,4,.55) 0%, transparent 18%, transparent 78%, rgba(8,6,4,.65) 100%);
       }
 
       /* ── Arrows ── */
       .gl-arrow {
         position: absolute; top: 50%; transform: translateY(-50%);
-        z-index: 10; width: 40px; height: 40px;
-        background: rgba(10,8,5,.55); border: 1px solid rgba(122,62,30,.30);
-        border-radius: 10px; display: flex; align-items: center; justify-content: center;
-        cursor: pointer; transition: background .2s;
+        z-index: 20; width: 44px; height: 44px;
+        background: rgba(15,12,9,.45); border: 1px solid rgba(200,185,165,.20);
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        border-radius: 12px; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: background .2s, border-color .2s, transform .2s;
         -webkit-tap-highlight-color: transparent;
       }
-      .gl-arrow:hover { background: rgba(122,62,30,.25); border-color: rgba(122,62,30,.65); }
-      #gl-arrow-prev { left: 16px; }
-      #gl-arrow-next { right: 16px; }
-      .gl-arrow svg { width: 16px; height: 16px; stroke: rgba(200,185,165,.80); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      .gl-arrow:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); transform: translateY(-50%) scale(1.06); }
+      #gl-arrow-prev { left: 18px; }
+      #gl-arrow-next { right: 18px; }
+      .gl-arrow svg { width: 17px; height: 17px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-      /* Vignette */
-      #gl-vignette {
-        position: absolute; inset: 0; z-index: 3; pointer-events: none;
-        background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 50%, rgba(4,3,2,.55) 100%);
-      }
-
-      /* ── FOOTER (thumbnail strip — outside the card) ── */
+      /* ── FOOTER — floating thumbnail strip OVER the image ── */
       #gl-footer {
-        flex-shrink: 0; position: relative; z-index: 10;
-        display: flex; flex-direction: column; align-items: center; gap: 6px;
-        padding: 0;
+        position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
+        display: flex; flex-direction: column; align-items: center; gap: 10px;
+        padding: 36px 20px 18px;
+        background: linear-gradient(to top, rgba(8,6,4,.88) 0%, transparent 100%);
+        pointer-events: none;
       }
+      #gl-footer > * { pointer-events: all; }
+
       #gl-counter {
         font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
-        letter-spacing: .20em; text-transform: uppercase; color: rgba(80,60,40,.50);
+        letter-spacing: .20em; text-transform: uppercase; color: rgba(230,220,205,.55);
       }
-      #gl-dots { display: none; }
-      .gl-dot {
-        height: 4px; width: 4px; border-radius: 2px;
-        background: rgba(122,62,30,.22);
-        transition: width .3s, background .3s; flex-shrink: 0;
+
+      #gl-thumbs-track {
+        display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+        padding: 4px; max-width: 100%;
+        background: rgba(20,16,12,.45);
+        border: 1px solid rgba(200,185,165,.14);
+        border-radius: 14px;
+        backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+        box-shadow: 0 10px 32px rgba(0,0,0,.35);
       }
-      .gl-dot.active { width: 20px; background: #7a3e1e; }
-      #gl-thumbs {
-        display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
-        padding: 2px 2px 2px; max-width: 100%; align-items: center;
-      }
-      #gl-thumbs::-webkit-scrollbar { display: none; }
+      #gl-thumbs-track::-webkit-scrollbar { display: none; }
+
       .gl-thumb {
-        flex-shrink: 0; width: 58px; height: 40px;
-        border-radius: 6px; overflow: hidden;
-        border: 2px solid rgba(120,90,60,.20);
-        cursor: pointer; opacity: .65;
-        transition: opacity .22s, border-color .22s, transform .22s;
+        flex-shrink: 0; width: 60px; height: 42px;
+        border-radius: 8px; overflow: hidden;
+        border: 2px solid transparent;
+        cursor: pointer; opacity: .60;
+        transition: opacity .28s cubic-bezier(0.22,1,0.36,1),
+                    border-color .28s cubic-bezier(0.22,1,0.36,1),
+                    transform .35s cubic-bezier(0.34,1.56,0.64,1);
         background: #2a1e14;
-        box-shadow: 0 2px 8px rgba(0,0,0,.15);
       }
       .gl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
-      .gl-thumb.active { opacity: 1; border-color: #7a3e1e; transform: scale(1.08); box-shadow: 0 4px 12px rgba(122,62,30,.30); }
-      .gl-thumb:not(.active):hover { opacity: .85; border-color: rgba(122,62,30,.40); }
+      .gl-thumb.active {
+        opacity: 1; border-color: #c9a23a; transform: translateY(-4px) scale(1.10);
+        box-shadow: 0 6px 16px rgba(201,162,58,.35);
+      }
+      .gl-thumb:not(.active):hover { opacity: .88; transform: translateY(-2px); }
 
       @media (max-width: 520px) {
-        .gl-card { width: 86vw; height: 62vw; }
-        #gl-arrow-prev { left: 6px; } #gl-arrow-next { right: 6px; }
-        .gl-thumb { width: 44px; height: 30px; }
+        #gl-header { padding: 14px 14px 32px; }
+        #gl-caption { font-size: 18px; }
+        .gl-arrow { width: 38px; height: 38px; }
+        #gl-arrow-prev { left: 8px; } #gl-arrow-next { right: 8px; }
+        .gl-thumb { width: 46px; height: 32px; }
+        #gl-footer { padding: 28px 12px 14px; }
       }
     `;
     document.head.appendChild(style);
@@ -223,50 +193,40 @@ window.GalleryModule = (function () {
         <img src="${img.src}" alt="${img.caption}" loading="lazy"/>
       </div>`).join('');
 
-    const dotsHTML = IMAGES.map((_, i) =>
-      `<div class="gl-dot${i === 0 ? ' active' : ''}"></div>`).join('');
-
     document.body.insertAdjacentHTML('beforeend', `
       <div id="gallery-overlay">
 
-        <div id="gl-main-card">
-          <div id="gl-header">
-            <div id="gl-title-wrap">
-              <p id="gl-label">Gallery</p>
-              <p id="gl-caption">${IMAGES[0].caption}</p>
-            </div>
-            <div id="gl-close">✕</div>
+        <div id="gl-stage">
+          <div class="gl-card" id="gl-card-behind">
+            <img src="${IMAGES[1 % IMAGES.length].src}" alt=""/>
           </div>
-
-          <div id="gl-stage">
-            <!-- behind card (next in stack) -->
-            <div class="gl-card" id="gl-card-behind">
-              <img src="${IMAGES[1 % IMAGES.length].src}" alt=""/>
-            </div>
-            <!-- current card -->
-            <div class="gl-card" id="gl-card-current">
-              <img src="${IMAGES[0].src}" alt="${IMAGES[0].caption}"/>
-            </div>
-            <!-- incoming card (off-screen) -->
-            <div class="gl-card" id="gl-card-incoming">
-              <img src="" alt=""/>
-            </div>
-
-            <div id="gl-vignette"></div>
-
-            <div class="gl-arrow" id="gl-arrow-prev">
-              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-            </div>
-            <div class="gl-arrow" id="gl-arrow-next">
-              <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
-            </div>
+          <div class="gl-card" id="gl-card-current">
+            <img src="${IMAGES[0].src}" alt="${IMAGES[0].caption}"/>
           </div>
+          <div class="gl-card" id="gl-card-incoming">
+            <img src="" alt=""/>
+          </div>
+          <div id="gl-vignette"></div>
+        </div>
+
+        <div id="gl-header">
+          <div id="gl-title-wrap">
+            <p id="gl-label">Gallery</p>
+            <p id="gl-caption">${IMAGES[0].caption}</p>
+          </div>
+          <div id="gl-close">✕</div>
+        </div>
+
+        <div class="gl-arrow" id="gl-arrow-prev">
+          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+        </div>
+        <div class="gl-arrow" id="gl-arrow-next">
+          <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
         </div>
 
         <div id="gl-footer">
           <div id="gl-counter">01 / ${String(IMAGES.length).padStart(2,'0')}</div>
-          <div id="gl-dots">${dotsHTML}</div>
-          <div id="gl-thumbs">${thumbsHTML}</div>
+          <div id="gl-thumbs-track">${thumbsHTML}</div>
         </div>
 
       </div>
@@ -275,84 +235,83 @@ window.GalleryModule = (function () {
     bindEvents();
   }
 
-  // ─── CARD TRANSITION ─────────────────────────────────────────────
-  // Direction: 'next' = current flies left, incoming slides from right
-  //            'prev' = current flies right, incoming slides from left
+  // ─── CURVED CROSS-DISSOLVE TRANSITION ─────────────────────────────
+  // Soft scale + blur + opacity curve — no straight fly-out, feels like
+  // depth-of-field racking between two photographs.
   function cardTo(targetIdx, direction) {
     if (isAnimating || targetIdx === current) return;
     isAnimating = true;
 
     const cardCur      = document.getElementById('gl-card-current');
-    const cardBehind   = document.getElementById('gl-card-behind');
+    const cardBehind    = document.getElementById('gl-card-behind');
     const cardIncoming = document.getElementById('gl-card-incoming');
-    const caption      = document.getElementById('gl-caption');
+    const caption       = document.getElementById('gl-caption');
 
-    const img = IMAGES[targetIdx];
+    const img       = IMAGES[targetIdx];
     const nextAfter = (targetIdx + 1) % IMAGES.length;
+    const DURATION  = 620;
+    const EASE      = 'cubic-bezier(0.65,0,0.35,1)';
 
-    // Stage incoming card off-screen
     cardIncoming.querySelector('img').src = img.src;
     cardIncoming.querySelector('img').alt = img.caption;
-    // Remove all state classes, set start position
-    cardIncoming.className = 'gl-card';
-    if (direction === 'next') {
-      cardIncoming.style.cssText = 'transform: translateX(110%) scale(0.92) rotate(4deg); opacity: 0; z-index: 3;';
-    } else {
-      cardIncoming.style.cssText = 'transform: translateX(-110%) scale(0.92) rotate(-4deg); opacity: 0; z-index: 3;';
-    }
+
+    // Incoming starts slightly zoomed + blurred, drifts in from depth
+    cardIncoming.style.transition = 'none';
+    cardIncoming.style.transform  = direction === 'next'
+      ? 'scale(1.10) translateX(3%)'
+      : 'scale(1.10) translateX(-3%)';
+    cardIncoming.style.opacity = '0';
+    cardIncoming.style.filter  = 'blur(10px)';
+    cardIncoming.style.zIndex  = '3';
 
     // Force reflow
     cardIncoming.getBoundingClientRect();
 
-    const DURATION = 480;
-
-    // Fly current card out
-    cardCur.style.transition = `transform ${DURATION}ms cubic-bezier(0.4,0,0.2,1), opacity ${DURATION}ms ease`;
+    // Current racks focus away and drifts opposite direction with curve
+    cardCur.style.transition = `transform ${DURATION}ms ${EASE}, opacity ${DURATION}ms ${EASE}, filter ${DURATION}ms ${EASE}`;
     cardCur.style.transform  = direction === 'next'
-      ? 'translateX(-115%) scale(0.9) rotate(-5deg)'
-      : 'translateX(115%) scale(0.9) rotate(5deg)';
+      ? 'scale(0.94) translateX(-4%)'
+      : 'scale(0.94) translateX(4%)';
     cardCur.style.opacity = '0';
+    cardCur.style.filter  = 'blur(10px)';
 
-    // Rise the behind card (acts as a depth hint)
-    cardBehind.style.transition = `transform ${DURATION}ms cubic-bezier(0.22,1,0.36,1), opacity ${DURATION}ms ease`;
-    cardBehind.style.transform  = 'scale(1) translateY(0)';
-    cardBehind.style.opacity    = '0.6';
+    // Behind card softly recedes further
+    cardBehind.style.transition = `transform ${DURATION}ms ${EASE}, opacity ${DURATION}ms ${EASE}`;
+    cardBehind.style.transform  = 'scale(1.1)';
+    cardBehind.style.opacity    = '0';
 
-    // Slide incoming card in
-    cardIncoming.style.transition = `transform ${DURATION}ms cubic-bezier(0.22,1,0.36,1), opacity ${DURATION * 0.75}ms ease`;
-    cardIncoming.style.transform  = 'translateX(0) scale(1) rotate(0deg)';
+    // Incoming eases into focus
+    cardIncoming.style.transition = `transform ${DURATION}ms ${EASE}, opacity ${DURATION}ms ${EASE}, filter ${DURATION}ms ${EASE}`;
+    cardIncoming.style.transform  = 'scale(1) translateX(0)';
     cardIncoming.style.opacity    = '1';
+    cardIncoming.style.filter     = 'blur(0)';
 
-    // Caption fade
     caption.classList.add('fading');
     setTimeout(() => {
       caption.textContent = img.caption;
       caption.classList.remove('fading');
-    }, DURATION * 0.4);
+    }, DURATION * 0.45);
 
-    // After animation: reset all cards to new positions
     setTimeout(() => {
-      // Current (was flying out) → now becomes the behind stack card
-      cardCur.style.transition  = 'none';
-      cardCur.style.transform   = 'scale(0.88) translateY(18px)';
-      cardCur.style.opacity     = '0.35';
-      cardCur.style.zIndex      = '1';
+      cardCur.style.transition = 'none';
+      cardCur.style.transform  = 'scale(1.06)';
+      cardCur.style.opacity    = '0';
+      cardCur.style.filter     = 'blur(6px)';
+      cardCur.style.zIndex     = '1';
       cardCur.querySelector('img').src = IMAGES[nextAfter].src;
 
-      // Behind → reset behind style
       cardBehind.style.transition = 'none';
-      cardBehind.style.transform  = 'scale(0.88) translateY(18px)';
-      cardBehind.style.opacity    = '0.35';
+      cardBehind.style.transform  = 'scale(1.06)';
+      cardBehind.style.opacity    = '0';
+      cardBehind.style.filter     = 'blur(6px)';
       cardBehind.style.zIndex     = '1';
 
-      // Incoming → becomes new current
       cardIncoming.style.transition = 'none';
-      cardIncoming.style.transform  = 'scale(1) translateY(0)';
+      cardIncoming.style.transform  = 'scale(1) translateX(0)';
       cardIncoming.style.opacity    = '1';
+      cardIncoming.style.filter     = 'blur(0)';
       cardIncoming.style.zIndex     = '2';
-      cardIncoming.style.boxShadow  = '0 16px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(200,190,154,.12)';
 
-      // Swap DOM references by renaming IDs
       cardCur.id      = 'gl-card-behind';
       cardIncoming.id = 'gl-card-current';
       cardBehind.id   = 'gl-card-incoming';
@@ -360,14 +319,13 @@ window.GalleryModule = (function () {
       current = targetIdx;
       updateUI();
       isAnimating = false;
-    }, DURATION + 40);
+    }, DURATION + 30);
   }
 
   function updateUI() {
     const n = IMAGES.length;
     document.getElementById('gl-counter').textContent =
       `${String(current + 1).padStart(2,'0')} / ${String(n).padStart(2,'0')}`;
-    document.querySelectorAll('.gl-dot').forEach((d, i) => d.classList.toggle('active', i === current));
     document.querySelectorAll('.gl-thumb').forEach((t, i) => t.classList.toggle('active', i === current));
     const active = document.querySelector('.gl-thumb.active');
     if (active) active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
@@ -386,7 +344,7 @@ window.GalleryModule = (function () {
       cardTo((current + 1) % IMAGES.length, 'next');
     });
 
-    document.getElementById('gl-thumbs').addEventListener('click', (e) => {
+    document.getElementById('gl-thumbs-track').addEventListener('click', (e) => {
       const thumb = e.target.closest('.gl-thumb');
       if (!thumb) return;
       e.stopPropagation();
@@ -439,22 +397,21 @@ window.GalleryModule = (function () {
 
     current = ((startIndex % IMAGES.length) + IMAGES.length) % IMAGES.length;
 
-    // Reset all cards to their resting state
     const cardCur    = document.getElementById('gl-card-current');
     const cardBehind = document.getElementById('gl-card-behind');
     const cardIn     = document.getElementById('gl-card-incoming');
 
     if (cardCur) {
-      cardCur.style.cssText = 'transform: scale(1) translateY(0); opacity: 1; z-index: 2; box-shadow: 0 16px 60px rgba(0,0,0,.7), 0 0 0 1px rgba(200,190,154,.12); transition: none;';
+      cardCur.style.cssText = 'transform: scale(1) translateX(0); opacity: 1; z-index: 2; filter: blur(0); transition: none;';
       cardCur.querySelector('img').src = IMAGES[current].src;
     }
     const nextIdx = (current + 1) % IMAGES.length;
     if (cardBehind) {
-      cardBehind.style.cssText = 'transform: scale(0.88) translateY(18px); opacity: 0.35; z-index: 1; transition: none;';
+      cardBehind.style.cssText = 'transform: scale(1.06); opacity: 0; z-index: 1; filter: blur(6px); transition: none;';
       cardBehind.querySelector('img').src = IMAGES[nextIdx].src;
     }
     if (cardIn) {
-      cardIn.style.cssText = 'transform: translateX(110%) scale(0.92) rotate(4deg); opacity: 0; z-index: 3; transition: none;';
+      cardIn.style.cssText = 'transform: scale(1.08); opacity: 0; z-index: 3; filter: blur(8px); transition: none;';
     }
 
     document.getElementById('gl-caption').textContent = IMAGES[current].caption;
