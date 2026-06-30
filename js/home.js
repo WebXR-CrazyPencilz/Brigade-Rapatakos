@@ -785,10 +785,8 @@ window.HomeModule = (function () {
         if (isActive) return;
         el.classList.add('active');
         if (slot === '360view') {
-          setTimeout(() => {
-            unitRowVisible = true;
-            document.getElementById('unit-row')?.classList.add('visible');
-          }, 420);
+          unitRowVisible = true;
+          document.getElementById('unit-row')?.classList.add('visible');
           return;
         }
         if (slot === 'floorplan') { if (window.FloorplanModule) FloorplanModule.open(); return; }

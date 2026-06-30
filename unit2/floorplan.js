@@ -1,17 +1,17 @@
 ;(function () {
   'use strict'
 
-  const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Dimension/3BHK(S)B.jpg?updatedAt=1779451188877'
+  const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Dimension/3BHK(L)-c.jpg?updatedAt=1779450444040'
   const VP_W = 1009
   const VP_H = 567
 
   const zones = [
-    { room: 'lobby',           label: 'LOBBY',             points: '352,333 504,333 504,505 352,505' },
-    { room: 'masterbedroom',   label: 'MASTER BEDROOM',    points: '200,140 350,140 350,505 200,505' },
-    { room: 'kidsbedroom',     label: 'KIDS BEDROOM',      points: '354,140 504,140 504,332 354,332' },
-    { room: 'guestbedroom',    label: 'GUEST BEDROOM',     points: '666,70 810,70 810,390 666,390'   },
-    { room: 'livinganddining', label: 'LIVING AND DINING', points: '505,70 665,70 665,332 505,332'   },
-    { room: 'kitchen',         label: 'KITCHEN',           points: '505,332 668,332 668,505 505,505' },
+    { room: 'living',        label: 'LIVING',        points: '372,218 600,218 600,365 372,365' },
+    { room: 'masterbedroom', label: 'MASTER BEDROOM',points: '325,368 556,368 556,515 325,515' },
+    { room: 'kidsbedroom',   label: 'KIDS BEDROOM',  points: '325,68 528,68 528,214 325,214'   },
+    { room: 'kitchen',       label: 'KITCHEN',       points: '602,218 715,218 715,417 602,417' },
+    { room: 'guestbedroom',  label: 'GUEST BEDROOM', points: '532,68 715,68 715,214 532,214'   },
+    { room: 'lobby',         label: 'LOBBY',         points: '560,420 715,420 715,515 560,515' },
   ]
 
   function injectLayer() {
@@ -32,7 +32,7 @@
       position: absolute;
       left: 50%; top: 50%;
       transform: translate(-50%, -50%);
-      width: 88%; max-height: 88%;
+      width: 96%; max-height: 92%;
       object-fit: contain; height: auto;
       display: block;
       user-select: none; -webkit-user-drag: none;

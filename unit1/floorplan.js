@@ -1,14 +1,10 @@
 ;(function () {
   'use strict'
 
-  // ─── CONFIG ─────────────────────────────────────────────────────
   const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Dimension/4BHKF.jpg?updatedAt=1779451208452'
-
-  // Natural pixel size of the floorplan image
   const VP_W = 1009
   const VP_H = 567
 
-  // ─── ZONES ──────────────────────────────────────────────────────
   const zones = [
     { room: 'living',        label: 'LIVING ROOM',   points: '478,206 702,206 702,506 478,506' },
     { room: 'masterbedroom', label: 'MASTER BEDROOM',points: '235,184 356,184 356,455 235,455' },
@@ -19,77 +15,46 @@
     { room: 'foyer',         label: 'LOBBY',         points: '705,67 820,67 820,248 705,248'   },
   ]
 
-  // ─── INJECT LAYER ───────────────────────────────────────────────
   function injectLayer() {
     if (document.getElementById('fp-layer')) return
 
-    // Full-bleed layer — transparent bg, no padding, no card
     const layer = document.createElement('div')
     layer.id = 'fp-layer'
     layer.style.cssText = `
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      display: none;
-      background: transparent;
-      overflow: hidden;
+      position: fixed; inset: 0; z-index: 10;
+      display: none; background: #f2ede8; overflow: hidden;
     `
 
-    // Image — fills full width, auto height to preserve aspect ratio
-    // We centre it vertically with absolute positioning
     const img = document.createElement('img')
     img.id  = 'fp-img'
     img.alt = 'Floor Plan'
     img.src = FP_IMAGE_URL
     img.style.cssText = `
       position: absolute;
-      left: 50%;
-      top: 50%;
+      left: 50%; top: 50%;
       transform: translate(-50%, -50%);
-      width: 92%;
-      max-height: 96%;
-      object-fit: contain;
-      height: auto;
+      width: 96%; max-height: 92%;
+      object-fit: contain; height: auto;
       display: block;
-      user-select: none;
-      -webkit-user-drag: none;
+      user-select: none; -webkit-user-drag: none;
     `
 
-    // SVG overlay — absolutely positioned to sit exactly over the image
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     svg.id = 'fp-svg'
-    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
     svg.setAttribute('viewBox', `0 0 ${VP_W} ${VP_H}`)
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
-    svg.style.cssText = `
-      position: absolute;
-      pointer-events: none;
-      overflow: visible;
-    `
+    svg.style.cssText = `position: absolute; pointer-events: none; overflow: visible;`
 
-    // Tooltip pill
     const tip = document.createElement('div')
     tip.id = 'fp-tip'
     tip.style.cssText = `
-      position: fixed;
-      bottom: 36px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: rgba(201,162,58,0.95);
-      color: #07060a;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-      font-weight: 700;
-      padding: 7px 20px;
-      border-radius: 20px;
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.2s;
-      font-family: inherit;
-      z-index: 20;
-      white-space: nowrap;
+      position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%);
+      background: rgba(201,162,58,0.95); color: #07060a;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4); font-weight: 700;
+      padding: 7px 20px; border-radius: 20px; font-size: 11px;
+      letter-spacing: 2px; text-transform: uppercase;
+      pointer-events: none; opacity: 0; transition: opacity 0.2s;
+      font-family: inherit; z-index: 20; white-space: nowrap;
     `
 
     layer.appendChild(img)
@@ -97,43 +62,27 @@
     layer.appendChild(tip)
     document.body.appendChild(layer)
 
-    // Sync SVG position/size to the actual rendered image rect
     function syncSVG() {
       const rect = img.getBoundingClientRect()
-      const layerRect = layer.getBoundingClientRect()
-      svg.style.left   = (rect.left - layerRect.left) + 'px'
-      svg.style.top    = (rect.top  - layerRect.top)  + 'px'
+      const lr   = layer.getBoundingClientRect()
+      svg.style.left   = (rect.left - lr.left) + 'px'
+      svg.style.top    = (rect.top  - lr.top)  + 'px'
       svg.style.width  = rect.width  + 'px'
       svg.style.height = rect.height + 'px'
     }
 
-    // Centre is handled by CSS transform — just sync the SVG to the image rect
-    function centerImage() {
-      syncSVG()
-    }
+    img.addEventListener('load', () => { syncSVG(); buildZones() })
+    if (img.complete && img.naturalWidth) { syncSVG(); buildZones() }
 
-    img.addEventListener('load', () => {
-      centerImage()
-      buildZones()
-    })
-    if (img.complete && img.naturalWidth) {
-      centerImage()
-      buildZones()
-    }
-
-    // Re-sync on every resize
-    const ro = new ResizeObserver(centerImage)
+    const ro = new ResizeObserver(syncSVG)
     ro.observe(layer)
-    window.addEventListener('resize', centerImage)
+    window.addEventListener('resize', syncSVG)
   }
 
-  // ─── BUILD POLYGON ZONES ────────────────────────────────────────
   let zonesBuilt = false
-
   function buildZones() {
     if (zonesBuilt) return
     zonesBuilt = true
-
     const svg = document.getElementById('fp-svg')
     if (!svg) return
 
@@ -147,92 +96,73 @@
       poly.setAttribute('vector-effect', 'non-scaling-stroke')
       poly.dataset.room  = zone.room
       poly.dataset.label = zone.label
-      poly.style.cssText = `
-        cursor: pointer;
-        pointer-events: all;
-        transition: fill 0.15s, filter 0.15s;
-      `
+      poly.style.cssText = `cursor: pointer; pointer-events: all; transition: fill 0.15s, filter 0.15s;`
       svg.appendChild(poly)
     })
 
-    // Hover
     svg.addEventListener('mouseover', e => {
-      const z = e.target.closest('.fpz')
-      if (!z) return
+      const z = e.target.closest('.fpz'); if (!z) return
       z.setAttribute('fill', 'rgba(201,162,58,0.12)')
       z.setAttribute('stroke', 'rgba(255,255,255,0.9)')
       z.setAttribute('stroke-width', '2.5')
       z.style.filter = 'drop-shadow(0 0 8px rgba(255,255,255,0.8))'
       showTip(z.dataset.label || z.dataset.room)
     })
-
     svg.addEventListener('mouseout', e => {
-      const z = e.target.closest('.fpz')
-      if (!z) return
+      const z = e.target.closest('.fpz'); if (!z) return
       z.setAttribute('fill', 'transparent')
       z.setAttribute('stroke', 'transparent')
       z.style.filter = ''
       hideTip()
     })
-
-    // Click → navigate to 360
     svg.addEventListener('click', e => {
-      const z = e.target.closest('.fpz')
-      if (!z) return
+      const z = e.target.closest('.fpz'); if (!z) return
       goTo360(z.dataset.room)
     })
-
-    // Touch support
     svg.addEventListener('touchend', e => {
-      const touch = e.changedTouches[0]
-      const el    = document.elementFromPoint(touch.clientX, touch.clientY)
-      const z     = el && el.closest('.fpz')
+      const t = e.changedTouches[0]
+      const z = document.elementFromPoint(t.clientX, t.clientY)?.closest('.fpz')
       if (!z) return
       e.preventDefault()
       goTo360(z.dataset.room)
     }, { passive: false })
   }
 
-  // ─── TOOLTIP ────────────────────────────────────────────────────
   function showTip(text) {
     const tip = document.getElementById('fp-tip')
-    if (!tip) return
-    tip.textContent   = text
-    tip.style.opacity = '1'
+    if (tip) { tip.textContent = text; tip.style.opacity = '1' }
   }
-
   function hideTip() {
     const tip = document.getElementById('fp-tip')
     if (tip) tip.style.opacity = '0'
   }
-
-  // ─── GO TO 360 ──────────────────────────────────────────────────
   function goTo360(roomKey) {
     if (window.AppView) window.AppView.switchTo('360')
     if (typeof loadRoom === 'function') loadRoom(roomKey)
   }
 
-  // ─── SHOW / HIDE ────────────────────────────────────────────────
   function show() {
     const layer = document.getElementById('fp-layer')
     if (layer) layer.style.display = 'block'
-    // Re-sync SVG after display change
     requestAnimationFrame(() => {
       const img = document.getElementById('fp-img')
-      if (img) img.dispatchEvent(new Event('load'))
+      const svg = document.getElementById('fp-svg')
+      const l   = document.getElementById('fp-layer')
+      if (!img || !svg || !l || !img.naturalWidth) return
+      const rect = img.getBoundingClientRect()
+      const lr   = l.getBoundingClientRect()
+      svg.style.left   = (rect.left - lr.left) + 'px'
+      svg.style.top    = (rect.top  - lr.top)  + 'px'
+      svg.style.width  = rect.width  + 'px'
+      svg.style.height = rect.height + 'px'
     })
   }
-
   function hide() {
     const layer = document.getElementById('fp-layer')
     if (layer) layer.style.display = 'none'
     hideTip()
   }
 
-  // ─── PUBLIC API ─────────────────────────────────────────────────
   window.FloorPlan = { show, hide }
-
-  // ─── INIT ───────────────────────────────────────────────────────
   injectLayer()
-
 })()
