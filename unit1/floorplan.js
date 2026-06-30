@@ -4,27 +4,26 @@
   // ─── CONFIG ─────────────────────────────────────────────────────
   const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Dimension/4BHKF.jpg?updatedAt=1779451208452'
 
-  // The viewBox matches the image's natural pixel size.
-  // All polygon coordinates are based on these dimensions.
+  // Natural pixel size of the floorplan image
   const VP_W = 1009
   const VP_H = 567
 
   // ─── ZONES ──────────────────────────────────────────────────────
   const zones = [
-    { room: 'living',       label: 'LIVING ROOM',       points: '478,206 702,206 702,506 478,506',  fill: 'rgba(0,220,0,0)',    stroke: 'rgba(0,220,0,0)' },
-    { room: 'masterbedroom', label: 'MASTER BEDROOM', points: '235,184 356,184 356,455 235,455',  fill: 'rgba(255,200,0,0)',  stroke: 'rgba(255,200,0,0)' },
-    { room: 'kidsbedroom',   label: 'KIDS BEDROOM',   points: '360,248 475,248 475,506 360,506',  fill: 'rgba(60,140,255,0)', stroke: 'rgba(60,140,255,0)' },
-    { room: 'guestbedroom', label: 'GUEST BEDROOM', points: '704,248 820,248 820,455 704,455',  fill: 'rgba(255,80,140,0)', stroke: 'rgba(255,80,140,0)'},
-    { room: 'kitchen',        label: 'KITCHEN',       points: '482,70 705,70 705,205 482,205',    fill: 'rgba(255,80,80,0)',  stroke: 'rgba(255,80,80,0)' },
-    { room: 'bedroom3',       label: 'BEDROOM 3', points: '236,70 478,70 478,188 236,188',    fill: 'rgba(180,60,255,0)',     stroke: 'rgba(180,60,255,0)' },
-    { room: 'foyer',         label: 'LOBBY',         points: '705,67 820,67 820,248 705,248',    fill: 'rgba(0,204,204,0)',  stroke: 'rgba(0,204,204,0)' }
+    { room: 'living',        label: 'LIVING ROOM',   points: '478,206 702,206 702,506 478,506' },
+    { room: 'masterbedroom', label: 'MASTER BEDROOM',points: '235,184 356,184 356,455 235,455' },
+    { room: 'kidsbedroom',   label: 'KIDS BEDROOM',  points: '360,248 475,248 475,506 360,506' },
+    { room: 'guestbedroom',  label: 'GUEST BEDROOM', points: '704,248 820,248 820,455 704,455' },
+    { room: 'kitchen',       label: 'KITCHEN',       points: '482,70 705,70 705,205 482,205'   },
+    { room: 'bedroom3',      label: 'BEDROOM 3',     points: '236,70 478,70 478,188 236,188'   },
+    { room: 'foyer',         label: 'LOBBY',         points: '705,67 820,67 820,248 705,248'   },
   ]
 
   // ─── INJECT LAYER ───────────────────────────────────────────────
-  function injectLayer () {
+  function injectLayer() {
     if (document.getElementById('fp-layer')) return
 
-    // ── Outer container (fullscreen dark backdrop)
+    // Full-bleed layer — transparent bg, no padding, no card
     const layer = document.createElement('div')
     layer.id = 'fp-layer'
     layer.style.cssText = `
@@ -32,46 +31,31 @@
       inset: 0;
       z-index: 10;
       display: none;
-      align-items: center;
-      justify-content: center;
-      background: #ffffff;
-    `
-
-    // ── Wrapper: image + SVG stacked on top of each other
-    //    The KEY idea from R&D: SVG is position:absolute inside
-    //    a position:relative wrapper, so it always matches the image.
-    const wrap = document.createElement('div')
-    wrap.style.cssText = `
-      position: relative;
-      display: inline-block;
-      line-height: 0;
-      border-radius: 8px;
+      background: transparent;
       overflow: hidden;
-      box-shadow: 0 0 0 1px rgba(201,162,58,0.6), 0 0 40px rgba(201,162,58,0.15), 0 20px 60px rgba(0,0,0,0.5);
-      outline: 1px solid rgba(201,162,58,0.2);
-      outline-offset: 14px;
     `
 
-    // ── The floorplan image
+    // Image — fills full width, auto height to preserve aspect ratio
+    // We centre it vertically with absolute positioning
     const img = document.createElement('img')
-    img.id = 'fp-img'
+    img.id  = 'fp-img'
     img.alt = 'Floor Plan'
     img.src = FP_IMAGE_URL
     img.style.cssText = `
-      display: block;
-      max-width: 92vw;
-      max-height: 88vh;
-      width: auto;
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 92%;
+      max-height: 96%;
+      object-fit: contain;
       height: auto;
-      border-radius: 6px;
+      display: block;
       user-select: none;
       -webkit-user-drag: none;
     `
 
-    // ── SVG overlay — sits exactly on top of the image
-    //    width:100% height:100% means it always matches image size.
-    //    viewBox uses the image's natural pixel dimensions,
-    //    so all polygon coordinates are always correct — no JS math needed!
+    // SVG overlay — absolutely positioned to sit exactly over the image
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     svg.id = 'fp-svg'
     svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
@@ -79,14 +63,11 @@
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
     svg.style.cssText = `
       position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
       pointer-events: none;
       overflow: visible;
     `
 
-    // ── Tooltip
+    // Tooltip pill
     const tip = document.createElement('div')
     tip.id = 'fp-tip'
     tip.style.cssText = `
@@ -94,39 +75,62 @@
       bottom: 36px;
       left: 50%;
       transform: translateX(-50%);
-      background: linear-gradient(135deg, #c9a23a 0%, #e8c9a 60%, #c9a23a 100%);
+      background: rgba(201,162,58,0.95);
       color: #07060a;
-      border: none;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4);
       font-weight: 700;
-      padding: 6px 18px;
+      padding: 7px 20px;
       border-radius: 20px;
-      font-size: 12px;
-      letter-spacing: 1.5px;
+      font-size: 11px;
+      letter-spacing: 2px;
       text-transform: uppercase;
       pointer-events: none;
       opacity: 0;
       transition: opacity 0.2s;
       font-family: inherit;
       z-index: 20;
+      white-space: nowrap;
     `
 
-    wrap.appendChild(img)
-    wrap.appendChild(svg)
-    layer.appendChild(wrap)
+    layer.appendChild(img)
+    layer.appendChild(svg)
     layer.appendChild(tip)
     document.body.appendChild(layer)
 
-    // Build zones once image is loaded
-    img.addEventListener('load', buildZones)
-    // If image was cached and already loaded
-    if (img.complete) buildZones()
+    // Sync SVG position/size to the actual rendered image rect
+    function syncSVG() {
+      const rect = img.getBoundingClientRect()
+      const layerRect = layer.getBoundingClientRect()
+      svg.style.left   = (rect.left - layerRect.left) + 'px'
+      svg.style.top    = (rect.top  - layerRect.top)  + 'px'
+      svg.style.width  = rect.width  + 'px'
+      svg.style.height = rect.height + 'px'
+    }
+
+    // Centre is handled by CSS transform — just sync the SVG to the image rect
+    function centerImage() {
+      syncSVG()
+    }
+
+    img.addEventListener('load', () => {
+      centerImage()
+      buildZones()
+    })
+    if (img.complete && img.naturalWidth) {
+      centerImage()
+      buildZones()
+    }
+
+    // Re-sync on every resize
+    const ro = new ResizeObserver(centerImage)
+    ro.observe(layer)
+    window.addEventListener('resize', centerImage)
   }
 
-  // ─── BUILD POLYGON ZONES ─────────────────────────────────────────
+  // ─── BUILD POLYGON ZONES ────────────────────────────────────────
   let zonesBuilt = false
 
-  function buildZones () {
+  function buildZones() {
     if (zonesBuilt) return
     zonesBuilt = true
 
@@ -134,12 +138,11 @@
     if (!svg) return
 
     zones.forEach(zone => {
-      // Polygon shape
       const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
       poly.setAttribute('class', 'fpz')
       poly.setAttribute('points', zone.points)
-      poly.setAttribute('fill', zone.fill)
-      poly.setAttribute('stroke', zone.stroke)
+      poly.setAttribute('fill', 'transparent')
+      poly.setAttribute('stroke', 'transparent')
       poly.setAttribute('stroke-width', '2')
       poly.setAttribute('vector-effect', 'non-scaling-stroke')
       poly.dataset.room  = zone.room
@@ -147,80 +150,89 @@
       poly.style.cssText = `
         cursor: pointer;
         pointer-events: all;
-        transition: filter 0.15s;
+        transition: fill 0.15s, filter 0.15s;
       `
       svg.appendChild(poly)
-
-      // Label text in the center of each zone
-      const pts = zone.points.trim().split(/\s+/).map(p => p.split(',').map(Number))
-      const cx  = pts.reduce((s, p) => s + p[0], 0) / pts.length
-      const cy  = pts.reduce((s, p) => s + p[1], 0) / pts.length
-
-     
     })
 
-    // ── Hover effect
+    // Hover
     svg.addEventListener('mouseover', e => {
       const z = e.target.closest('.fpz')
       if (!z) return
-      z.setAttribute('stroke', 'rgba(255,255,255,1)')
-      z.setAttribute('stroke-width', '3')
-      z.style.filter = 'drop-shadow(0 0 8px rgba(255,255,255,1)) drop-shadow(0 0 4px rgba(255,255,255,0.8))'
+      z.setAttribute('fill', 'rgba(201,162,58,0.12)')
+      z.setAttribute('stroke', 'rgba(255,255,255,0.9)')
+      z.setAttribute('stroke-width', '2.5')
+      z.style.filter = 'drop-shadow(0 0 8px rgba(255,255,255,0.8))'
       showTip(z.dataset.label || z.dataset.room)
     })
 
     svg.addEventListener('mouseout', e => {
       const z = e.target.closest('.fpz')
       if (!z) return
-      z.setAttribute('stroke', 'rgba(0,0,0,0)')
+      z.setAttribute('fill', 'transparent')
+      z.setAttribute('stroke', 'transparent')
       z.style.filter = ''
       hideTip()
     })
 
-    // ── Click → go to 360 viewer
+    // Click → navigate to 360
     svg.addEventListener('click', e => {
       const z = e.target.closest('.fpz')
       if (!z) return
       goTo360(z.dataset.room)
     })
+
+    // Touch support
+    svg.addEventListener('touchend', e => {
+      const touch = e.changedTouches[0]
+      const el    = document.elementFromPoint(touch.clientX, touch.clientY)
+      const z     = el && el.closest('.fpz')
+      if (!z) return
+      e.preventDefault()
+      goTo360(z.dataset.room)
+    }, { passive: false })
   }
 
   // ─── TOOLTIP ────────────────────────────────────────────────────
-  function showTip (text) {
+  function showTip(text) {
     const tip = document.getElementById('fp-tip')
     if (!tip) return
-    tip.textContent = text
+    tip.textContent   = text
     tip.style.opacity = '1'
   }
 
-  function hideTip () {
+  function hideTip() {
     const tip = document.getElementById('fp-tip')
     if (tip) tip.style.opacity = '0'
   }
 
-  // ─── GO TO 360 ───────────────────────────────────────────────────
-  function goTo360 (roomKey) {
+  // ─── GO TO 360 ──────────────────────────────────────────────────
+  function goTo360(roomKey) {
     if (window.AppView) window.AppView.switchTo('360')
     if (typeof loadRoom === 'function') loadRoom(roomKey)
   }
 
-  // ─── SHOW / HIDE ─────────────────────────────────────────────────
-  function show () {
+  // ─── SHOW / HIDE ────────────────────────────────────────────────
+  function show() {
     const layer = document.getElementById('fp-layer')
-    if (layer) layer.style.display = 'flex'
-    // No sizeSVG needed — CSS + viewBox handles everything!
+    if (layer) layer.style.display = 'block'
+    // Re-sync SVG after display change
+    requestAnimationFrame(() => {
+      const img = document.getElementById('fp-img')
+      if (img) img.dispatchEvent(new Event('load'))
+    })
   }
 
-  function hide () {
+  function hide() {
     const layer = document.getElementById('fp-layer')
     if (layer) layer.style.display = 'none'
     hideTip()
   }
 
-  // ─── PUBLIC API ──────────────────────────────────────────────────
+  // ─── PUBLIC API ─────────────────────────────────────────────────
   window.FloorPlan = { show, hide }
 
-  // ─── INIT ────────────────────────────────────────────────────────
+  // ─── INIT ───────────────────────────────────────────────────────
   injectLayer()
 
 })()

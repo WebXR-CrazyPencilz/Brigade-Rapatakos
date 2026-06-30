@@ -313,14 +313,14 @@ window.HomeModule = (function () {
       #unit-viewer-overlay {
         position: fixed; top: 0; left: 0; right: 0; bottom: 62px; z-index: 99;
         transform: translateY(100%); transition: transform .5s cubic-bezier(0.22,1,0.36,1);
-        background: #e8e4dd; padding: 24px; box-sizing: border-box;
+        background: transparent; padding: 0; box-sizing: border-box;
         display: flex; flex-direction: column;
       }
       #unit-viewer-overlay.open { transform: translateY(0); }
       #unit-viewer-card {
-        flex: 1; height: 100%; border-radius: 12px; overflow: hidden;
-        box-shadow: 0 8px 40px rgba(0,0,0,.18);
-        position: relative; background: #0a0805;
+        flex: 1; height: 100%; border-radius: 0; overflow: hidden;
+        box-shadow: none;
+        position: relative; background: transparent;
       }
       #unit-iframe { width:100%; height:100%; border:none; display:block; opacity:1; transition:opacity .35s; }
       #unit-iframe.fading { opacity:0; }
@@ -712,24 +712,37 @@ window.HomeModule = (function () {
     if (!overlay || !iframe) return;
     const url = unitURLs[unit];
     if (!url) return;
-    const isSameUnit = iframe.src.endsWith(url);
+
+    // Use data attribute to track what's loaded — iframe.src becomes
+    // an absolute URL so endsWith() is unreliable for same-unit checks
+    const currentTarget = iframe.dataset.targetUrl || '';
+    const isSameUnit    = currentTarget === url;
+
     if (overlay.classList.contains('open') && isSameUnit) return;
+
     if (!isSameUnit) {
+      // Record what we're loading so rapid re-clicks don't double-load
+      iframe.dataset.targetUrl = url;
+
+      // Fade iframe immediately — no setTimeout delay
       iframe.classList.add('fading');
       if (loader) loader.classList.add('visible');
-      // FIX: set onload BEFORE setting src to avoid missing the load event on cached content
-      setTimeout(() => {
-        iframe.onload = () => {
-          iframe.classList.remove('fading');
-          if (loader) loader.classList.remove('visible');
-          injectUnitTheme(iframe);
-          iframe.onload = null;
-        };
-        iframe.src = url;
-      }, 350);
+
+      // Set onload BEFORE src so cached pages don't miss the event
+      iframe.onload = () => {
+        iframe.classList.remove('fading');
+        if (loader) loader.classList.remove('visible');
+        injectUnitTheme(iframe);
+        iframe.onload = null;
+      };
+
+      // Assign src immediately — starts loading right away
+      iframe.src = url;
     } else {
       injectUnitTheme(iframe);
     }
+
+    // Open overlay immediately so slide-up plays while iframe loads
     overlay.classList.add('open');
   }
 

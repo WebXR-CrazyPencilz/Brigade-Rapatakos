@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Brigade Stellaris · 360° Unit 2</title>
+  <title>Brigade Stellaris · 360° Virtual Tour</title>
 
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 
@@ -400,7 +400,7 @@
   <!-- ── SIDE PANEL ── -->
   <div id="side-panel">
     <div id="panel-header">
-      <div class="ph-eyebrow">3BHK Virtual Tour</div>
+      <div class="ph-eyebrow">4BHK Virtual</div>
       <div class="ph-title">Select a Room</div>
     </div>
     <div class="panel-divider"></div>
@@ -430,7 +430,7 @@
     checkOrientation()
   </script>
 
-  <!-- ── APP VIEW CONTROLLER — logic untouched, styleToggleWhite added ── -->
+  <!-- ── APP VIEW CONTROLLER — all logic untouched, styleToggleWhite added ── -->
   <script>
     window.AppView = (function () {
       const viewer360Els = () => [
@@ -521,7 +521,7 @@
   <!-- ── FLOORPLAN ── -->
   <script src="floorplan.js"></script>
   <script>
-    window.FloorPlan.show()
+    if (window.FloorPlan) window.FloorPlan.show()
   </script>
 
 </body>
