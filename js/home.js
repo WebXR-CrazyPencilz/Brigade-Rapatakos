@@ -14,6 +14,7 @@ window.HomeModule = (function () {
   let lightboxIndex          = null;
   let unitViewerEnteredAt    = 0;
   let activeUnitNumber       = null;
+  let unitLoadTimeout        = null; // safety net so the unit-viewer spinner never spins forever
 
   // ─── UNIT URL MAP ────────────────────────────────────────────────
   const unitURLs = {
@@ -769,8 +770,24 @@ window.HomeModule = (function () {
       iframe.classList.add('fading');
       if (loader) loader.classList.add('visible');
 
+      // Clear any previous safety timeout from an earlier unit switch
+      clearTimeout(unitLoadTimeout);
+
+      // Safety net: if onload never fires (stalled request, connection
+      // contention, etc.), don't leave the spinner stuck forever —
+      // force it to clear after 12s and log why for debugging.
+      unitLoadTimeout = setTimeout(() => {
+        if (iframe.onload) {
+          console.warn('Unit viewer: iframe did not finish loading within 12s for', url);
+          iframe.classList.remove('fading');
+          if (loader) loader.classList.remove('visible');
+          iframe.onload = null;
+        }
+      }, 12000);
+
       // Set onload BEFORE src so cached pages don't miss the event
       iframe.onload = () => {
+        clearTimeout(unitLoadTimeout);
         iframe.classList.remove('fading');
         if (loader) loader.classList.remove('visible');
         injectUnitTheme(iframe);
