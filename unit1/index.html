@@ -1,6 +1,31 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <!-- Preconnect to every external origin this page depends on, as early as
+       possible. This makes the browser start DNS + TCP + TLS handshakes for
+       these hosts in parallel with everything else, rather than waiting
+       until the scripts/images actually request them. -->
+  <link rel="preconnect" href="https://ik.imagekit.io" crossorigin>
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+  <!-- No crossorigin attribute here — must match the actual script tag
+       below, which also has none. A mismatched crossorigin mode between
+       preconnect and the real request means the browser can't reuse the
+       pre-warmed connection and opens a fresh one anyway, wasting it. -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="dns-prefetch" href="https://ik.imagekit.io">
+  <link rel="dns-prefetch" href="https://res.cloudinary.com">
+  <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+
+  <!-- Preload the actual blocking script chain. These scripts sit near the
+       bottom of the page, so without this the browser doesn't even START
+       fetching them until it finishes parsing everything above. Preloading
+       in <head> starts the fetch immediately, so by the time the parser
+       reaches the real <script> tags, the files are often already cached
+       and ready — this is the fix for the 20+ second hang on first load. -->
+  <link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+  <link rel="preload" as="script" href="main.js">
+  <link rel="preload" as="script" href="floorplan.js">
+
   <!-- Google tag (gtag.js) — GA4, same property as the main Brigade Stellaris site.
        All events here are tagged unit_number: 1 so this unit's data can be
        distinguished from Unit 2, 3, etc. once they're deployed from this template. -->
