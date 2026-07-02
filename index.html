@@ -373,6 +373,28 @@
             gtag('event', 'lead_form_submit', { form_id: 'brigade_stellaris_gate' });
           }
 
+          // Capture GA4 Client ID so we can tag the Salesforce Lead with it —
+          // this is the shared key that lets us match GA4 activity to the Lead record later.
+          function withGaClientId(callback) {
+            if (typeof gtag === 'function') {
+              var called = false;
+              var safeCallback = function () {
+                if (called) return;
+                called = true;
+                callback();
+              };
+              gtag('get', 'G-C4SSC9NWG5', 'client_id', function (clientId) {
+                leadData.gaClientId = clientId || null;
+                safeCallback();
+              });
+              // Fallback in case the callback never fires (ad-blockers etc.)
+              setTimeout(safeCallback, 400);
+            } else {
+              callback();
+            }
+          }
+
+          withGaClientId(function () {
           fetch(OTP_API_BASE + '/otp/send', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -396,6 +418,7 @@
             .finally(function () {
               setBtnLoading(btn, false, 'Send WhatsApp Code');
             });
+          }); // end withGaClientId
         });
 
         otpForm.addEventListener('submit', function (e) {
@@ -415,7 +438,8 @@
               phone: leadData.phone,
               code: code,
               name: leadData.name,
-              email: leadData.email
+              email: leadData.email,
+              gaClientId: leadData.gaClientId || null
             })
           })
             .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
