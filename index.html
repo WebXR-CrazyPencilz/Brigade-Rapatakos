@@ -1,6 +1,15 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Google tag (gtag.js) — GA4 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-C4SSC9NWG5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-C4SSC9NWG5');
+  </script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>BRIGADE STELLARIS — Interactive Experience</title>
@@ -194,6 +203,18 @@
       color: #2a2018 !important;
     }
 
+    /* Error message */
+    .gate-error {
+      font-family: 'Syne', sans-serif;
+      font-size: 10.5px;
+      color: #a33b2e;
+      background: rgba(163,59,46,.08);
+      border: 1px solid rgba(163,59,46,.20);
+      border-radius: 4px;
+      padding: 9px 12px;
+      margin: 0 0 14px 0;
+    }
+
     /* Mobile */
     @media (max-width: 480px) {
       #zoho-gate-card { padding: 36px 24px 32px; margin: 24px 16px; }
@@ -229,41 +250,31 @@
     <div class="gate-subtitle">Enter your details to begin the experience</div>
     <div class="gate-rule"></div>
 
-    <!-- ZOHO WEBFORM -->
+    <!-- WHATSAPP OTP + SALESFORCE LEAD FORM -->
     <div id='crmWebToEntityForm' class='zcwf_lblLeft crmWebToEntityForm' style='background:transparent;'>
       <div class='wf_customMessageBox' id='wf_splash' style='display:none'>
         <div class='wf_customCircle'><div class='wf_customCheckMark'></div></div>
         <span id='wf_splash_info'></span>
       </div>
 
-      <form id='webform1309230000000456421' name='WebToLeads1309230000000456421' accept-charset='UTF-8'>
-        <input type='text' style='display:none;' name='xnQsjsdp' value='e0c3ec302d9fa6847ce2459c42ea233e58dae8f6233205eb92e7841f52c63f82'/>
-        <input type='hidden' name='zc_gad' id='zc_gad' value=''/>
-        <input type='text' style='display:none;' name='xmIwtLD' value='a84f15d9b9013676ee0ea144590a809f799b588a6fb0215a7a8c5d7791e2ae4d3beba3d2f5d7a5c5a0d76293ec81e400'/>
-        <input type='text' style='display:none;' name='actionType' value='TGVhZHM='/>
-        <input type='text' style='display:none;' name='returnURL' value='null'/>
+      <!-- STEP 1: DETAILS -->
+      <form id='leadForm' autocomplete='off'>
 
-        <!-- First Name -->
+        <div id='lead-error' class='gate-error' style='display:none;'></div>
+
+        <!-- Name -->
         <div class='zcwf_row'>
-          <div class='zcwf_col_lab'><label for='First_Name'>First Name</label></div>
+          <div class='zcwf_col_lab'><label for='Name'>Name <span style='color:#c9a96e;'>*</span></label></div>
           <div class='zcwf_col_fld'>
-            <input type='text' id='First_Name' name='First Name' maxlength='40' placeholder='First name'/>
+            <input type='text' id='Name' maxlength='80' placeholder='Your name'/>
           </div>
         </div>
 
-        <!-- Last Name -->
+        <!-- Phone (WhatsApp) -->
         <div class='zcwf_row'>
-          <div class='zcwf_col_lab'><label for='Last_Name'>Last Name <span style='color:#c9a96e;'>*</span></label></div>
+          <div class='zcwf_col_lab'><label for='Phone'>WhatsApp Number <span style='color:#c9a96e;'>*</span></label></div>
           <div class='zcwf_col_fld'>
-            <input type='text' id='Last_Name' aria-required='true' name='Last Name' maxlength='80' placeholder='Last name'/>
-          </div>
-        </div>
-
-        <!-- Phone -->
-        <div class='zcwf_row'>
-          <div class='zcwf_col_lab'><label for='Phone'>Phone</label></div>
-          <div class='zcwf_col_fld'>
-            <input type='text' id='Phone' name='Phone' maxlength='30' placeholder='+91 00000 00000'/>
+            <input type='text' id='Phone' maxlength='30' placeholder='+91 00000 00000'/>
           </div>
         </div>
 
@@ -271,95 +282,187 @@
         <div class='zcwf_row'>
           <div class='zcwf_col_lab'><label for='Email'>Email</label></div>
           <div class='zcwf_col_fld'>
-            <input type='text' ftype='email' autocomplete='false' id='Email' name='Email' maxlength='100' placeholder='your@email.com'/>
+            <input type='text' id='Email' maxlength='100' placeholder='your@email.com'/>
           </div>
         </div>
-
-        <!-- City -->
-        <div class='zcwf_row'>
-          <div class='zcwf_col_lab'><label for='Address_-_City'>City</label></div>
-          <div class='zcwf_col_fld'>
-            <input type='text' id='Address_-_City' name='Address - City' maxlength='255' placeholder='Your city'/>
-          </div>
-        </div>
-
-        <input type='text' style='display:none;' name='aG9uZXlwb3Q' value=''/>
 
         <!-- Submit -->
         <div class='zcwf_row'>
           <div class='zcwf_col_lab'></div>
           <div class='zcwf_col_fld'>
-            <input type='submit' id='formsubmit' role='button' class='formsubmit zcwf_button' value='Begin Experience' aria-label='Submit'/>
-            <input type='reset' class='zcwf_button' name='reset' value='Reset'/>
+            <input type='submit' id='sendOtpBtn' role='button' class='formsubmit zcwf_button' value='Send WhatsApp Code' aria-label='Send WhatsApp Code'/>
+          </div>
+        </div>
+      </form>
+
+      <!-- STEP 2: VERIFY OTP -->
+      <form id='otpForm' autocomplete='off' style='display:none;'>
+        <div class='gate-subtitle' style='margin-bottom:16px; text-align:left;'>
+          Enter the 6-digit code sent to <span id='otp-phone-display'></span> on WhatsApp
+        </div>
+
+        <div id='otp-error' class='gate-error' style='display:none;'></div>
+
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab'><label for='otp_code'>Verification Code</label></div>
+          <div class='zcwf_col_fld'>
+            <input type='text' id='otp_code' maxlength='6' inputmode='numeric' placeholder='6-digit code'/>
           </div>
         </div>
 
-        <script>
-          function validateEmail1309230000000456421(){
-            var form=document.forms['WebToLeads1309230000000456421'];
-            var emailFld=form.querySelectorAll('[ftype=email]');
-            for(var i=0;i<emailFld.length;i++){
-              var v=emailFld[i].value;
-              if((v.replace(/^\s+|\s+$/g,'')).length!=0){
-                var a=v.indexOf('@'),d=v.lastIndexOf('.');
-                if(a<1||d<a+2||d+2>=v.length){
-                  alert('Please enter a valid email address.');
-                  emailFld[i].focus(); return false;
-                }
-              }
-            }
-            return true;
-          }
+        <div class='zcwf_row'>
+          <div class='zcwf_col_lab'></div>
+          <div class='zcwf_col_fld'>
+            <input type='submit' id='verifyOtpBtn' role='button' class='formsubmit zcwf_button' value='Verify & Continue' aria-label='Verify and Continue'/>
+          </div>
+        </div>
 
-          function checkMandatory1309230000000456421(){
-            var f=document.forms['WebToLeads1309230000000456421']['Last Name'];
-            if(f && ((f.value).replace(/^\s+|\s+$/g,'')).length==0){
-              alert('Last Name cannot be empty.'); f.focus(); return false;
-            }
-            if(!validateEmail1309230000000456421()) return false;
-            var btn=document.querySelector('.crmWebToEntityForm .formsubmit');
-            if(btn) btn.setAttribute('disabled',true);
-          }
-
-          document.getElementById('webform1309230000000456421').addEventListener('submit',function(e){
-            var ok=checkMandatory1309230000000456421();
-            e.preventDefault();
-            if(ok===undefined||ok){
-              var formData=new FormData(this);
-              fetch('https://crm.zoho.in/crm/WebToLeadForm',{
-                method:'POST', body:formData, cache:'no-cache'
-              }).then(function(r){
-                var ct=r.headers.get('Content-Type');
-                return ct&&ct.includes('application/json')?r.json():r.text();
-              }).then(function(data){
-                if(typeof data==='object'){
-                  if(data.actionsubmit==='Splash Message'){
-                    var info=document.getElementById('wf_splash_info');
-                    info.innerText=data.actionvalue||'Thank you! Launching experience…';
-                    document.getElementById('wf_splash').style.display='';
-                    document.getElementById('webform1309230000000456421').reset.click();
-                    // After 2s — dismiss gate and start 3D
-                    setTimeout(function(){ dismissGateAndStart(); }, 2000);
-                  } else if(data.actionsubmit==='redirect_url'){
-                    dismissGateAndStart();
-                  } else {
-                    dismissGateAndStart();
-                  }
-                } else {
-                  dismissGateAndStart();
-                }
-                var btn=document.querySelector('.crmWebToEntityForm .formsubmit');
-                if(btn) btn.removeAttribute('disabled');
-              }).catch(function(){
-                // Even on error — let them through
-                dismissGateAndStart();
-              });
-            }
-          });
-        </script>
+        <div id='resend-otp' style='text-align:center;margin-top:12px;font-family:"Syne",sans-serif;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:rgba(100,80,55,.45);cursor:pointer;text-decoration:underline;text-underline-offset:3px;'>Resend Code</div>
       </form>
+
+      <script>
+        // ── Backend that performs WhatsApp OTP send/verify and Salesforce lead creation ──
+        // TODO: replace with your deployed NestJS backend URL once live.
+        var OTP_API_BASE = 'http://localhost:3000/api';
+
+        var leadForm  = document.getElementById('leadForm');
+        var otpForm   = document.getElementById('otpForm');
+        var leadError = document.getElementById('lead-error');
+        var otpError  = document.getElementById('otp-error');
+        var phoneDisplay = document.getElementById('otp-phone-display');
+        var resendBtn = document.getElementById('resend-otp');
+
+        var leadData = {};
+
+        function showErr(el, msg) { el.textContent = msg; el.style.display = ''; }
+        function hideErr(el) { el.style.display = 'none'; }
+
+        function isValidEmail(v) {
+          if (!v) return true; // email optional
+          var a = v.indexOf('@'), d = v.lastIndexOf('.');
+          return !(a < 1 || d < a + 2 || d + 2 >= v.length);
+        }
+
+        function setBtnLoading(btn, loading, label) {
+          btn.disabled = loading;
+          btn.value = loading ? 'Please wait…' : label;
+        }
+
+        leadForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+          hideErr(leadError);
+
+          var name  = document.getElementById('Name').value.trim();
+          var phone = document.getElementById('Phone').value.trim();
+          var email = document.getElementById('Email').value.trim();
+
+          if (!name)  { showErr(leadError, 'Name cannot be empty.'); return; }
+          if (!phone) { showErr(leadError, 'WhatsApp number is required to verify you.'); return; }
+          if (!isValidEmail(email)) { showErr(leadError, 'Please enter a valid email address.'); return; }
+
+          leadData = {
+            name: name,
+            phone: phone,
+            email: email
+          };
+
+          var btn = document.getElementById('sendOtpBtn');
+          setBtnLoading(btn, true, 'Send WhatsApp Code');
+
+          if (typeof gtag === 'function') {
+            gtag('event', 'lead_form_submit', { form_id: 'brigade_stellaris_gate' });
+          }
+
+          fetch(OTP_API_BASE + '/otp/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: phone })
+          })
+            .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+            .then(function (res) {
+              if (!res.ok || !res.data.success) {
+                throw new Error((res.data && res.data.message) || 'Could not send code. Check the number and try again.');
+              }
+              if (typeof gtag === 'function') {
+                gtag('event', 'otp_sent', { method: 'whatsapp' });
+              }
+              phoneDisplay.textContent = phone;
+              leadForm.style.display = 'none';
+              otpForm.style.display = '';
+            })
+            .catch(function (err) {
+              showErr(leadError, err.message || 'Something went wrong. Please try again.');
+            })
+            .finally(function () {
+              setBtnLoading(btn, false, 'Send WhatsApp Code');
+            });
+        });
+
+        otpForm.addEventListener('submit', function (e) {
+          e.preventDefault();
+          hideErr(otpError);
+
+          var code = document.getElementById('otp_code').value.trim();
+          if (!code) { showErr(otpError, 'Enter the code sent to your WhatsApp.'); return; }
+
+          var btn = document.getElementById('verifyOtpBtn');
+          setBtnLoading(btn, true, 'Verify & Continue');
+
+          fetch(OTP_API_BASE + '/otp/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              phone: leadData.phone,
+              code: code,
+              name: leadData.name,
+              email: leadData.email
+            })
+          })
+            .then(function (r) { return r.json().then(function (data) { return { ok: r.ok, data: data }; }); })
+            .then(function (res) {
+              if (!res.ok || !res.data.success) {
+                throw new Error((res.data && res.data.message) || 'Incorrect or expired code.');
+              }
+              // Backend has verified the code and created the Salesforce Lead.
+              if (typeof gtag === 'function') {
+                gtag('event', 'generate_lead', {
+                  method: 'whatsapp_otp',
+                  currency: 'INR'
+                });
+              }
+              var info = document.getElementById('wf_splash_info');
+              info.innerText = 'Thank you! Launching experience…';
+              document.getElementById('wf_splash').style.display = '';
+              otpForm.style.display = 'none';
+              setTimeout(function () { dismissGateAndStart(); }, 1500);
+            })
+            .catch(function (err) {
+              showErr(otpError, err.message || 'Verification failed. Please try again.');
+            })
+            .finally(function () {
+              setBtnLoading(btn, false, 'Verify & Continue');
+            });
+        });
+
+        resendBtn.addEventListener('click', function () {
+          if (!leadData.phone) return;
+          resendBtn.textContent = 'Sending…';
+          fetch(OTP_API_BASE + '/otp/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone: leadData.phone })
+          })
+            .then(function () {
+              resendBtn.textContent = 'Code resent ✓';
+              setTimeout(function () { resendBtn.textContent = 'Resend Code'; }, 3000);
+            })
+            .catch(function () {
+              resendBtn.textContent = 'Resend failed — tap to retry';
+            });
+        });
+      </script>
     </div>
-    <!-- END ZOHO FORM -->
+    <!-- END LEAD FORM -->
 
     <!-- Skip link for internal team testing -->
     <div id="gate-skip" onclick="dismissGateAndStart()">Skip — Enter Experience</div>
@@ -387,6 +490,10 @@ function dismissGateAndStart() {
   if (gate) {
     gate.classList.add('fade-out');
     setTimeout(function() { gate.remove(); }, 700);
+  }
+
+  if (typeof gtag === 'function') {
+    gtag('event', 'experience_start');
   }
 
   // Start the 3D modules — same as firebase-auth.js did
