@@ -4,21 +4,21 @@ function cloudThumb(url) {
 
 // ─── ROOMS ─────────────────────────────────────────────────────
 const rooms = {
-  lobby:                 { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452949/Lobby_jghq0s.jpg',                     label: 'LOBBY', startYaw: 1.6 },
-  lobbytobedroom:        { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452950/lobby_to_bedroom_roap7j.jpg',           label: 'LOBBY TO BEDROOM' },
-  lobbytoliving:         { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452948/lobby_to_living_q2fovk.jpg',          label: 'LOBBY TO LIVING ' },
-  livinganddining:       { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452940/living_and_dinning_ffksm6.jpg',         label: 'LIVING AND DINING' },
-  dining:                { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452952/dinning_j4i7ee.jpg',                   label: 'DINING' },
-  commontoilet:          { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452951/common_toilet_jcuw0j.jpg',                   label: 'COMMON TOILET' },
-  kitchen:               { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452942/kitchen_eqqkax.jpg',                   label: 'KITCHEN', startYaw: -5},
-  utility:               { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452959/utility_kxt7al.jpg',                   label: 'UTILITY' },
-  masterbedroomcorridor: { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452954/master_bedroom_corridor_asofvk.jpg',   label: 'MASTER BEDROOM CORRIDOR' },
-  masterbedroom:         { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452948/master_bedroom_l6vlvj.jpg',            label: 'MASTER BEDROOM' },
-  masterbedroomtoilet:   { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452955/master_bedroom_toilet_rjuw83.jpg',     label: 'MASTER BEDROOM TOILET' },
-  kidsbedroom:           { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452940/kids_bedroom_j6s0us.jpg',             label: 'KIDS BEDROOM' },
-  guestbedroomcorridor:  { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452934/guest_bedroom_corridor_itet77.jpg',  label: 'GUEST BEDROOM CORRIDOR' },
-  guestbedroom:          { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452942/guest_bedroom_wjb5du.jpg',            label: 'GUEST BEDROOM' },
-  guestbedroomtoilet:    { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1779452933/guest_bedroom_toilet_filqsa.jpg',     label: 'GUEST BEDROOM TOILET',  },
+  lobby:                 { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452949/Lobby_jghq0s.jpg',                     label: 'LOBBY', startYaw: 1.6 },
+  lobbytobedroom:        { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452950/lobby_to_bedroom_roap7j.jpg',           label: 'LOBBY TO BEDROOM' },
+  lobbytoliving:         { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452948/lobby_to_living_q2fovk.jpg',          label: 'LOBBY TO LIVING ' },
+  livinganddining:       { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452940/living_and_dinning_ffksm6.jpg',         label: 'LIVING AND DINING' },
+  dining:                { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452952/dinning_j4i7ee.jpg',                   label: 'DINING' },
+  commontoilet:          { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452951/common_toilet_jcuw0j.jpg',                   label: 'COMMON TOILET' },
+  kitchen:               { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452942/kitchen_eqqkax.jpg',                   label: 'KITCHEN', startYaw: -5},
+  utility:               { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452959/utility_kxt7al.jpg',                   label: 'UTILITY' },
+  masterbedroomcorridor: { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452954/master_bedroom_corridor_asofvk.jpg',   label: 'MASTER BEDROOM CORRIDOR' },
+  masterbedroom:         { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452948/master_bedroom_l6vlvj.jpg',            label: 'MASTER BEDROOM' },
+  masterbedroomtoilet:   { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452955/master_bedroom_toilet_rjuw83.jpg',     label: 'MASTER BEDROOM TOILET' },
+  kidsbedroom:           { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452940/kids_bedroom_j6s0us.jpg',             label: 'KIDS BEDROOM' },
+  guestbedroomcorridor:  { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452934/guest_bedroom_corridor_itet77.jpg',  label: 'GUEST BEDROOM CORRIDOR' },
+  guestbedroom:          { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452942/guest_bedroom_wjb5du.jpg',            label: 'GUEST BEDROOM' },
+  guestbedroomtoilet:    { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452933/guest_bedroom_toilet_filqsa.jpg',     label: 'GUEST BEDROOM TOILET',  },
 }
 
 const thumbnails = Object.fromEntries(
@@ -128,6 +128,7 @@ scene.add(new THREE.Mesh(sGeo, panoMaterial))
 
 // ─── STATE ─────────────────────────────────────────────────────
 let currentRoom   = 'lobby'
+let roomEnteredAt = 0; // timestamp when currentRoom became visible — used for dwell-time tracking
 let hotspotMeshes = []
 let labelSprites  = []
 let camRX = 0, camRY = 0
@@ -139,6 +140,7 @@ const textureCache = {}
 const loader = new THREE.TextureLoader()
 
 function loadTexture(key, onDone) {
+  if (!rooms[key]) { console.warn('loadTexture: unknown key', key); onDone && onDone(null); return }
   if (textureCache[key]) { onDone && onDone(textureCache[key]); return }
   loader.load(
     rooms[key].image,
@@ -270,14 +272,38 @@ function fadeIn() {
 }
 
 // ─── LOAD ROOM ─────────────────────────────────────────────────
+function reportRoomDwell(roomKey) {
+  if (!roomEnteredAt || !rooms[roomKey]) return;
+  const dwellMs = Date.now() - roomEnteredAt;
+  if (typeof gtag === 'function' && dwellMs > 200) {
+    gtag('event', 'room_engagement', {
+      unit_number: window.UNIT_NUMBER || null,
+      room: roomKey,
+      room_label: rooms[roomKey].label || null,
+      dwell_ms: dwellMs
+    });
+  }
+}
+
 function loadRoom(key) {
   console.log('➡️ Loading room:', key)
   if (!rooms[key]) { console.error('❌ Invalid room key:', key); return }
   if (isTransitioning) return
   isTransitioning = true
 
+  reportRoomDwell(currentRoom); // report dwell for the room we're leaving
+
+  if (typeof gtag === 'function') {
+    gtag('event', 'room_view', {
+      unit_number: window.UNIT_NUMBER || null,
+      room: key,
+      room_label: rooms[key].label || null
+    });
+  }
+
   fadeOut(() => {
     currentRoom = key
+    roomEnteredAt = Date.now(); // start the clock on the new room
     camRX = rooms[key].startPitch ?? 0
     camRY = rooms[key].startYaw  ?? 0
 

@@ -27,7 +27,6 @@
     const img = document.createElement('img')
     img.id  = 'fp-img'
     img.alt = 'Floor Plan'
-    img.src = FP_IMAGE_URL
     img.style.cssText = `
       position: absolute;
       left: 50%; top: 50%;
@@ -35,7 +34,32 @@
       width: 96%; max-height: 92%;
       object-fit: contain; height: auto;
       display: block;
+      opacity: 0; transition: opacity 0.25s ease;
       user-select: none; -webkit-user-drag: none;
+    `
+
+    // Loading spinner — shown while the floor plan image is fetching, so a
+    // slow/first-time connection to the image host shows visible feedback
+    // instead of a blank screen.
+    const spinner = document.createElement('div')
+    spinner.id = 'fp-spinner'
+    spinner.style.cssText = `
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: 34px; height: 34px;
+      border: 2.5px solid rgba(122,62,30,.20); border-top-color: rgba(122,62,30,.85);
+      border-radius: 50%; animation: fpSpin 0.75s linear infinite;
+    `
+    const spinKeyframes = document.createElement('style')
+    spinKeyframes.textContent = '@keyframes fpSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }'
+    document.head.appendChild(spinKeyframes)
+
+    const errorMsg = document.createElement('div')
+    errorMsg.id = 'fp-error'
+    errorMsg.textContent = 'Floor plan image failed to load. Retrying…'
+    errorMsg.style.cssText = `
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      display: none; font-family: inherit; font-size: 12px; letter-spacing: 1px;
+      text-transform: uppercase; color: rgba(122,62,30,.75); text-align: center;
     `
 
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -57,6 +81,8 @@
     `
 
     layer.appendChild(img)
+    layer.appendChild(spinner)
+    layer.appendChild(errorMsg)
     layer.appendChild(svg)
     layer.appendChild(tip)
     document.body.appendChild(layer)
@@ -70,8 +96,43 @@
       svg.style.height = rect.height + 'px'
     }
 
-    img.addEventListener('load', () => { syncSVG(); buildZones() })
-    if (img.complete && img.naturalWidth) { syncSVG(); buildZones() }
+    function showImage() {
+      spinner.style.display = 'none'
+      errorMsg.style.display = 'none'
+      img.style.opacity = '1'
+      syncSVG()
+      buildZones()
+    }
+
+    let retryCount = 0
+    const MAX_RETRIES = 3
+
+    function loadImage() {
+      spinner.style.display = ''
+      errorMsg.style.display = 'none'
+      img.style.opacity = '0'
+
+      img.onload = showImage
+
+      img.onerror = () => {
+        retryCount++
+        if (retryCount <= MAX_RETRIES) {
+          console.warn(`Floor plan image failed to load (attempt ${retryCount}/${MAX_RETRIES}), retrying…`)
+          setTimeout(() => {
+            img.src = FP_IMAGE_URL + (FP_IMAGE_URL.includes('?') ? '&' : '?') + 'retry=' + retryCount
+          }, 800 * retryCount)
+        } else {
+          spinner.style.display = 'none'
+          errorMsg.textContent = 'Floor plan image could not be loaded.'
+          errorMsg.style.display = ''
+          console.error('Floor plan image failed after', MAX_RETRIES, 'retries:', FP_IMAGE_URL)
+        }
+      }
+
+      img.src = FP_IMAGE_URL
+    }
+
+    loadImage()
 
     const ro = new ResizeObserver(syncSVG)
     ro.observe(layer)
@@ -136,6 +197,15 @@
     if (tip) tip.style.opacity = '0'
   }
   function goTo360(roomKey) {
+    // Track which room zone was clicked from the floor plan
+    if (typeof gtag === 'function') {
+      const zone = zones.find(z => z.room === roomKey);
+      gtag('event', 'floorplan_zone_click', {
+        unit_number: window.UNIT_NUMBER || null,
+        room: roomKey,
+        room_label: zone ? zone.label : null
+      });
+    }
     if (window.AppView) window.AppView.switchTo('360')
     if (typeof loadRoom === 'function') loadRoom(roomKey)
   }
