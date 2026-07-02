@@ -273,6 +273,7 @@ window.FloorplanModule = (function () {
   let viewMode       = 'top';
   let overlayOpen    = false;
   let _transitioning = false;
+  let unitEnteredAt  = 0; // timestamp when activeUnit became visible — used for dwell-time tracking
 
   // ─── HELPERS ─────────────────────────────────────────────────
   function isOdd(n) { return n % 2 !== 0; }
@@ -1483,10 +1484,37 @@ window.FloorplanModule = (function () {
   }
 
   // ─── DRILL TO UNIT ───────────────────────────────────────────
+  // ─── DRILL TO UNIT ───────────────────────────────────────────
+  // Reports how long the previously active unit was on screen, then resets
+  // the timer. Call this right before switching away from a unit (back/close).
+  function reportUnitDwell() {
+    if (!unitEnteredAt || !activeUnit) return;
+    const dwellMs = Date.now() - unitEnteredAt;
+    if (typeof gtag === 'function' && dwellMs > 200) { // ignore accidental sub-200ms flicks
+      gtag('event', 'unit_engagement', {
+        unit_id: activeUnit.unitId,
+        unit_label: activeUnit.label,
+        unit_type: activeUnit.type,
+        dwell_ms: dwellMs
+      });
+    }
+  }
+
   function drillToUnit(unitData) {
     if (_transitioning) return;
+    reportUnitDwell(); // in case a different unit was already open (rare, but be safe)
     activeUnit = unitData;
     viewMode   = 'top';
+
+    // Track which specific unit type gets explored
+    if (typeof gtag === 'function') {
+      gtag('event', 'unit_view', {
+        unit_id: unitData.unitId,
+        unit_label: unitData.label,
+        unit_type: unitData.type
+      });
+    }
+    unitEnteredAt = Date.now(); // start the dwell-time clock for this unit
     document.querySelectorAll('.fp-toggle-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.view === 'top');
     });
@@ -1619,6 +1647,8 @@ window.FloorplanModule = (function () {
   function goBack() {
     if (_transitioning) return;
     if (level === 2) {
+      reportUnitDwell();
+      unitEnteredAt = 0;
       activeUnit = null; viewMode = 'top';
       document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
       const unitInfo = document.getElementById('fp-unit-info');
@@ -1662,6 +1692,12 @@ window.FloorplanModule = (function () {
     overlayOpen = true;
     const fpOverlay = document.getElementById('fp-overlay');
     if (!fpOverlay) return;
+
+    // Track floorplan open in GA4 — real entry point since App.navigate()
+    // is never called for the Floor Plan button.
+    if (typeof gtag === 'function') {
+      gtag('event', 'floorplan_open', { floor_num: floorNum ?? null });
+    }
     fpOverlay.classList.remove('hidden');
     fpOverlay.style.pointerEvents = '';
     clearTimeout(_closeResetTimer);
@@ -1679,6 +1715,7 @@ window.FloorplanModule = (function () {
 
   function close() {
     if (!overlayOpen) return;
+    if (level === 2) { reportUnitDwell(); unitEnteredAt = 0; } // catch dwell if closed mid-unit-view
     overlayOpen = false;
     clearTimeout(_closeResetTimer);
     const overlay = document.getElementById('fp-overlay');

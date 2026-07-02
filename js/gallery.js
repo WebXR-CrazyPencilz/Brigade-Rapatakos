@@ -20,6 +20,7 @@ window.GalleryModule = (function () {
   let startX      = 0;
   let startY      = 0;
   let injected    = false;
+  let imageEnteredAt = 0; // timestamp when the current image became visible — used for dwell-time tracking
 
   // ─── INJECT ──────────────────────────────────────────────────────
   function inject() {
@@ -238,6 +239,20 @@ window.GalleryModule = (function () {
   // ─── CURVED CROSS-DISSOLVE TRANSITION ─────────────────────────────
   // Soft scale + blur + opacity curve — no straight fly-out, feels like
   // depth-of-field racking between two photographs.
+  // Reports how long the given image was visible, then resets the timer.
+  // Call this right before switching away from an image (next/prev/close).
+  function reportDwell(imageIndex) {
+    if (!imageEnteredAt) return;
+    const dwellMs = Date.now() - imageEnteredAt;
+    if (typeof gtag === 'function' && dwellMs > 200) { // ignore accidental sub-200ms flicks
+      gtag('event', 'image_engagement', {
+        image_index: imageIndex,
+        caption: IMAGES[imageIndex] ? IMAGES[imageIndex].caption : null,
+        dwell_ms: dwellMs
+      });
+    }
+  }
+
   function cardTo(targetIdx, direction) {
     if (isAnimating || targetIdx === current) return;
     isAnimating = true;
@@ -316,7 +331,9 @@ window.GalleryModule = (function () {
       cardIncoming.id = 'gl-card-current';
       cardBehind.id   = 'gl-card-incoming';
 
+      reportDwell(current); // 'current' is still the outgoing image here
       current = targetIdx;
+      imageEnteredAt = Date.now(); // start the clock on the new image
       updateUI();
       isAnimating = false;
     }, DURATION + 30);
@@ -397,6 +414,13 @@ window.GalleryModule = (function () {
 
     current = ((startIndex % IMAGES.length) + IMAGES.length) % IMAGES.length;
 
+    // Track gallery open in GA4 — this is the real entry point,
+    // since App.navigate() is never called for the Gallery button.
+    if (typeof gtag === 'function') {
+      gtag('event', 'gallery_open', { start_index: current });
+    }
+    imageEnteredAt = Date.now(); // start the dwell-time clock for the first image
+
     const cardCur    = document.getElementById('gl-card-current');
     const cardBehind = document.getElementById('gl-card-behind');
     const cardIn     = document.getElementById('gl-card-incoming');
@@ -422,6 +446,8 @@ window.GalleryModule = (function () {
   }
 
   function close() {
+    reportDwell(current); // capture dwell time for whichever image was showing when closed
+    imageEnteredAt = 0;
     const overlay = document.getElementById('gallery-overlay');
     if (overlay) overlay.classList.remove('open');
     document.querySelectorAll('.panel-slot').forEach(s => {

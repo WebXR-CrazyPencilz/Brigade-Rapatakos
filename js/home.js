@@ -8,6 +8,13 @@ window.HomeModule = (function () {
   let startX        = 0;
   let startY        = 0;
 
+  // Dwell-time tracking state
+  let carouselSlideEnteredAt = 0;
+  let lightboxEnteredAt      = 0;
+  let lightboxIndex          = null;
+  let unitViewerEnteredAt    = 0;
+  let activeUnitNumber       = null;
+
   // ─── UNIT URL MAP ────────────────────────────────────────────────
   const unitURLs = {
     1: 'unit1/index.html',
@@ -417,6 +424,18 @@ window.HomeModule = (function () {
   }
 
   // ─── CAROUSEL — CROSSFADE ────────────────────────────────────────
+  function reportCarouselDwell(idx) {
+    if (!carouselSlideEnteredAt) return;
+    const dwellMs = Date.now() - carouselSlideEnteredAt;
+    if (typeof gtag === 'function' && dwellMs > 200) {
+      gtag('event', 'carousel_engagement', {
+        slide_index: idx,
+        slide_label: (IMAGES[idx] && IMAGES[idx].label) || null,
+        dwell_ms: dwellMs
+      });
+    }
+  }
+
   function goTo(targetIdx) {
     if (isAnimating || IMAGES.length <= 1) return;
     isAnimating = true;
@@ -429,7 +448,9 @@ window.HomeModule = (function () {
       img.src = next.src;
       img.alt = next.label || '';
       img.classList.remove('fading');
+      reportCarouselDwell(current); // 'current' is still the outgoing slide here
       current = targetIdx;
+      carouselSlideEnteredAt = Date.now();
       updateDots();
       isAnimating = false;
     }, 450);
@@ -456,6 +477,7 @@ window.HomeModule = (function () {
 
   function initCarousel() {
     const carousel = document.getElementById('carousel');
+    carouselSlideEnteredAt = Date.now(); // start the clock on the first slide
 
     // Touch
     let tapMoved = false;
@@ -519,8 +541,22 @@ window.HomeModule = (function () {
     document.getElementById('lb-empty').style.display  = src ? 'none' : 'block';
     document.getElementById('lightbox').classList.add('open');
     lbReset(false);
+    lightboxIndex     = index;
+    lightboxEnteredAt = Date.now();
   }
   function closeLightbox() {
+    if (lightboxEnteredAt) {
+      const dwellMs = Date.now() - lightboxEnteredAt;
+      if (typeof gtag === 'function' && dwellMs > 200) {
+        gtag('event', 'lightbox_engagement', {
+          slide_index: lightboxIndex,
+          slide_label: (IMAGES[lightboxIndex] && IMAGES[lightboxIndex].label) || null,
+          dwell_ms: dwellMs
+        });
+      }
+    }
+    lightboxEnteredAt = 0;
+    lightboxIndex = null;
     document.getElementById('lightbox').classList.remove('open');
     lbReset(false);
   }
@@ -721,6 +757,11 @@ window.HomeModule = (function () {
     if (overlay.classList.contains('open') && isSameUnit) return;
 
     if (!isSameUnit) {
+      // Report dwell for whichever unit was previously open, if switching directly between units
+      if (activeUnitNumber !== null && activeUnitNumber !== unit) reportUnitViewerDwell();
+      activeUnitNumber    = unit;
+      unitViewerEnteredAt = Date.now();
+
       // Record what we're loading so rapid re-clicks don't double-load
       iframe.dataset.targetUrl = url;
 
@@ -746,7 +787,22 @@ window.HomeModule = (function () {
     overlay.classList.add('open');
   }
 
+  // Reports how long the currently open unit's 360 viewer was on screen, then resets.
+  function reportUnitViewerDwell() {
+    if (!unitViewerEnteredAt || activeUnitNumber === null) return;
+    const dwellMs = Date.now() - unitViewerEnteredAt;
+    if (typeof gtag === 'function' && dwellMs > 200) {
+      gtag('event', 'unit_360_engagement', {
+        unit_number: activeUnitNumber,
+        dwell_ms: dwellMs
+      });
+    }
+  }
+
   function closeUnitViewer() {
+    reportUnitViewerDwell();
+    unitViewerEnteredAt = 0;
+    activeUnitNumber = null;
     const overlay = document.getElementById('unit-viewer-overlay');
     if (overlay) overlay.classList.remove('open');
   }
@@ -784,6 +840,14 @@ window.HomeModule = (function () {
         closeAllModules();
         if (isActive) return;
         el.classList.add('active');
+
+        // Track section entry in GA4 — this is the real click path for
+        // Floor Plan / 360 View / Gallery / Location, unlike App.navigate()
+        // which these buttons never call.
+        if (typeof gtag === 'function') {
+          gtag('event', 'view_change', { view_name: slot });
+        }
+
         if (slot === '360view') {
           unitRowVisible = true;
           document.getElementById('unit-row')?.classList.add('visible');
@@ -800,7 +864,14 @@ window.HomeModule = (function () {
         e.stopPropagation();
         document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
         el.classList.add('active');
-        openUnitViewer(parseInt(el.dataset.unit));
+        const unitNum = parseInt(el.dataset.unit);
+
+        // Track which specific unit's 360 view was opened
+        if (typeof gtag === 'function') {
+          gtag('event', 'unit_360_view', { unit_number: unitNum });
+        }
+
+        openUnitViewer(unitNum);
       });
     });
 
