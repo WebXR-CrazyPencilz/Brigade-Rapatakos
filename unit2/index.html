@@ -1,6 +1,27 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <link rel="preconnect" href="https://ik.imagekit.io" crossorigin>
+  <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+  <link rel="dns-prefetch" href="https://ik.imagekit.io">
+  <link rel="dns-prefetch" href="https://res.cloudinary.com">
+  <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
+
+  <link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
+  <link rel="preload" as="script" href="main.js">
+  <link rel="preload" as="script" href="floorplan.js">
+
+  <!-- Google tag (gtag.js) — GA4. All events here are tagged unit_number: 2 -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-C4SSC9NWG5"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-C4SSC9NWG5');
+    window.UNIT_NUMBER = 2; // used by main.js / floorplan.js to tag events
+  </script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Brigade Stellaris · 360° Virtual Tour</title>
@@ -422,8 +443,8 @@
     function checkOrientation () {
       const warn = document.getElementById('rotate-warning')
       if (!warn) return
-      const isPortrait = window.innerHeight > window.innerWidth && window.innerWidth <= 768
-      warn.style.display = isPortrait ? 'flex' : 'none'
+      // Portrait is now fully supported — no longer forcing landscape rotation.
+      warn.style.display = 'none'
     }
     window.addEventListener('resize', checkOrientation)
     window.addEventListener('orientationchange', checkOrientation)
@@ -455,6 +476,13 @@
       function switchTo (view) {
         if (view === currentView) return
         currentView = view
+
+        if (typeof gtag === 'function') {
+          gtag('event', 'unit_mode_switch', {
+            unit_number: window.UNIT_NUMBER || null,
+            mode: view
+          });
+        }
 
         const pillFP  = document.getElementById('btn-fp')
         const pill360 = document.getElementById('btn-360')
