@@ -575,6 +575,15 @@ window.App = {
     document.querySelectorAll('.panel-slot').forEach(el => el.classList.remove('active'));
     const activeSlot = document.querySelector(`.panel-slot[data-slot="${view}"]`);
     if (activeSlot) activeSlot.classList.add('active');
+
+    // Track this view switch in GA4 — lets you see which sections people
+    // actually reach and how they move between them (home -> floorplan -> gallery etc.)
+    if (typeof gtag === 'function') {
+      gtag('event', 'view_change', {
+        view_name: view,
+        previous_view: this.previousView || 'none'
+      });
+    }
   },
 
   goBack() {
