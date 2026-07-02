@@ -137,6 +137,15 @@
     if (tip) tip.style.opacity = '0'
   }
   function goTo360(roomKey) {
+    // Track which room zone was clicked from the floor plan
+    if (typeof gtag === 'function') {
+      const zone = zones.find(z => z.room === roomKey);
+      gtag('event', 'floorplan_zone_click', {
+        unit_number: window.UNIT_NUMBER || null,
+        room: roomKey,
+        room_label: zone ? zone.label : null
+      });
+    }
     if (window.AppView) window.AppView.switchTo('360')
     if (typeof loadRoom === 'function') loadRoom(roomKey)
   }

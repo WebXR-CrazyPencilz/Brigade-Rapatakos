@@ -910,8 +910,8 @@ window.HomeModule = (function () {
     function check() {
       const prompt = document.getElementById('rotate-prompt');
       if (!prompt) return;
-      const isMobile = window.innerWidth <= 900 || 'ontouchstart' in window;
-      prompt.classList.toggle('show', isMobile && window.innerHeight > window.innerWidth);
+      // Portrait is now fully supported — no longer forcing landscape rotation.
+      prompt.classList.remove('show');
     }
     window.addEventListener('resize', check);
     window.addEventListener('orientationchange', check);
