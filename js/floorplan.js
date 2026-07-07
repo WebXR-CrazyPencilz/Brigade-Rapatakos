@@ -23,6 +23,12 @@
 // On every resize, syncToImage() recomputes W/H/aspect, resizes the renderer
 // and canvas, updates the camera frustum, and repositions+rescales all meshes
 // so positions are always locked to the image — never floating.
+//
+// ─── BROWSER BACK BUTTON (mobile) ──────────────────────────────────────────
+// Every drill-down (open → cluster → unit) pushes a history entry.
+// popstate steps back through the viewer (unit → cluster → sitemap → close)
+// instead of leaving the page. On-screen back / swipe-back call
+// history.back() so both paths stay in sync.
 // ───────────────────────────────────────────────────────────────────────────
 
 window.FloorplanModule = (function () {
@@ -51,20 +57,20 @@ window.FloorplanModule = (function () {
       odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_01.jpg')  },
       even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_01.jpg') },
       oddUnits: [
-        { unitId:'A-odd-01', label:'4BHK Type C',              type:'4 BHK', area:'', top:IK('topview/unit03_4bhk_(c)_tower_01.jpg'),       iso:IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),       points:'59,07.5 78,07.5 78,45 59,45' },
-        { unitId:'A-odd-02', label:'3BHK (L) Type D',          type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),      iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),      points:'26,63 41.75,63 41.75,91.4 26,91.4' },
-        { unitId:'A-odd-03', label:'3BHK (S) Type A',          type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),      iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),      points:'43.8,62.5 62,62.5 62,94.5 43.8,94.5' },
-        { unitId:'A-odd-04', label:'3BHK (L) Type C — Podium', type:'3 BHK', area:'', top:IK('PLAN/unit01_3bhk_l(c)_odd_tower_01.jpg'),     points:'19.5,24.3 35.5,24.3 35.5,56.5 19.5,56.5' },
-        { unitId:'A-odd-05', label:'3BHK (L) Type B',          type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),      points:'37.5,13.5 56.5,13.5 56.5,41.5 37.5,41.5' },
-        { unitId:'A-odd-06', label:'4BHK Type E',              type:'4 BHK', area:'', top:IK('PLAN/unit04_4bhk_(e)_odd_tower_04.jpg'),      points:'62.5,46 80,46 80,88.5 62.5,88.5' },
+        { unitId:'A-odd-01', top:IK('topview/unit03_4bhk_(c)_tower_01.jpg'),       iso:IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),       points:'59,07.5 78,07.5 78,45 59,45' },
+        { unitId:'A-odd-02', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),      iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),      points:'26,63 41.75,63 41.75,91.4 26,91.4' },
+        { unitId:'A-odd-03', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),      iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),      points:'43.8,62.5 62,62.5 62,94.5 43.8,94.5' },
+        { unitId:'A-odd-04', top:IK('PLAN/unit01_3bhk_l(c)_odd_tower_01.jpg'),     points:'19.5,24.3 35.5,24.3 35.5,56.5 19.5,56.5' },
+        { unitId:'A-odd-05', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),      points:'37.5,13.5 56.5,13.5 56.5,41.5 37.5,41.5' },
+        { unitId:'A-odd-06', top:IK('PLAN/unit04_4bhk_(e)_odd_tower_04.jpg'),      points:'62.5,46 80,46 80,88.5 62.5,88.5' },
       ],
       evenUnits: [
-        { unitId:'A-even-01', label:'3BHK (L) Type C — Podium', type:'3 BHK', area:'', top:IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'),  iso:IK('isometric/unit01_3bhk_l(c)_podium_tower_02.jpg'),   points:'19.5,24.3 35.5,24.3 35.5,56.5 19.5,56.5' },
-        { unitId:'A-even-02', label:'3BHK (L) Type B',          type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),          iso:IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),         points:'37.5,13.5 56.5,13.5 56.5,41.5 37.5,41.5' },
-        { unitId:'A-even-03', label:'3BHK (L) Type D',          type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),          iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),         points:'26,63 41.75,63 41.75,91.4 26,91.4' },
-        { unitId:'A-even-04', label:'3BHK (S) Type A',          type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),          iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),         points:'43.8,62.5 62,62.5 62,94.5 43.8,94.5' },
-        { unitId:'A-even-05', label:'4BHK Type C',              type:'4 BHK', area:'', top:IK('PLAN/unit03_4bhk_(c)_even_tower_01.jpg'),         points:'59,06 78,06 78,43 59,43' },
-        { unitId:'A-even-06', label:'4BHK Type E',              type:'4 BHK', area:'', top:IK('PLAN/unit04_4bhk_(e)_odd_tower_04.jpg'),          points:'62.5,46 80,46 80,87.5 62.5,87.5' },
+        { unitId:'A-even-01', top:IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'),  iso:IK('isometric/unit01_3bhk_l(c)_podium_tower_02.jpg'),   points:'19.5,24.3 35.5,24.3 35.5,56.5 19.5,56.5' },
+        { unitId:'A-even-02', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),          iso:IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),         points:'37.5,13.5 56.5,13.5 56.5,41.5 37.5,41.5' },
+        { unitId:'A-even-03', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),          iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),         points:'26,63 41.75,63 41.75,91.4 26,91.4' },
+        { unitId:'A-even-04', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),          iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),         points:'43.8,62.5 62,62.5 62,94.5 43.8,94.5' },
+        { unitId:'A-even-05', top:IK('PLAN/unit03_4bhk_(c)_even_tower_01.jpg'),         points:'59,06 78,06 78,43 59,43' },
+        { unitId:'A-even-06', top:IK('PLAN/unit04_4bhk_(e)_odd_tower_04.jpg'),          points:'62.5,46 80,46 80,87.5 62.5,87.5' },
       ],
     },
 
@@ -76,20 +82,20 @@ window.FloorplanModule = (function () {
       odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_02.jpg')  },
       even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_02.jpg') },
       oddUnits: [
-        { unitId:'B-odd-01', label:'4BHK Type C',              type:'4 BHK', area:'', top:IK('topview/unit03_4bhk_(c)_tower_01.jpg'),  iso:IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),  points:'58.25,3 80.25,3 80.25,41 58.25,41' },
-        { unitId:'B-odd-02', label:'3BHK (L) Type D',          type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'), iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'), points:'19.5,65 37.5,65 37.5,97.7 19.5,97.7' },
-        { unitId:'B-odd-03', label:'3BHK (S) Type A',          type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'), iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'), points:'40,67.5 61,67.5 61,97.4 40,97.4' },
-        { unitId:'B-odd-04', label:'3BHK (L) Type B',          type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),                                                    points:'34,7.5 56,7.5 56,41 34,41' },
-        { unitId:'B-odd-05', label:'3BHK (L) Type C — Podium', type:'3 BHK', area:'', top:IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'), iso:IK('isometric/unit01_3bhk_l(c)_podium_tower_02.jpg'), points:'13.1,22.3 31.5,22.3 31.5,59.5 13.1,59.5' },
-        { unitId:'B-odd-06', label:'4BHK Type D',              type:'4 BHK', area:'', top:IK('PLAN/unit04_4bhk_(d)_odd_tower_02.jpg'),                                                    points:'63.5,43 85.5,43 85.5,84.5 63.5,84.5' },
+        { unitId:'B-odd-01', top:IK('topview/unit03_4bhk_(c)_tower_01.jpg'),  iso:IK('isometric/unit03_4bhk_(c)_tower_01.jpg'),  points:'58.25,3 80.25,3 80.25,41 58.25,41' },
+        { unitId:'B-odd-02', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'), iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'), points:'19.5,65 37.5,65 37.5,97.7 19.5,97.7' },
+        { unitId:'B-odd-03', top:IK('NewAssets/unit05_3bhk_s(a).jpg'), iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'), points:'40,67.5 61,67.5 61,97.4 40,97.4' },
+        { unitId:'B-odd-04', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),                                                    points:'34,7.5 56,7.5 56,41 34,41' },
+        { unitId:'B-odd-05', top:IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'), iso:IK('isometric/unit01_3bhk_l(c)_podium_tower_02.jpg'), points:'13.1,22.3 31.5,22.3 31.5,59.5 13.1,59.5' },
+        { unitId:'B-odd-06', top:IK('PLAN/unit04_4bhk_(d)_odd_tower_02.jpg'),                                                    points:'63.5,43 85.5,43 85.5,84.5 63.5,84.5' },
       ],
       evenUnits: [
-        { unitId:'B-even-01', label:'3BHK (L) Type C — Podium', type:'3 BHK', area:'', top:IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'), iso:IK('isometric/unit01_3bhk_l(c)_podium_tower_02.jpg'),  points:'13.3,22.3 31.5,22.3 31.5,59.5 13.3,59.5' },
-        { unitId:'B-even-02', label:'3BHK (L) Type B',          type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),         iso:IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),        points:'34,7.5 55.5,7.5 55.5,41 34,41' },
-        { unitId:'B-even-03', label:'3BHK (L) Type D',          type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),         iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),        points:'19.5,65 37.5,65 37.5,97.7 19.5,97.7' },
-        { unitId:'B-even-04', label:'3BHK (S) Type A',          type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'),         iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),        points:'40,67.5 61,67.5 61,97 40,97' },
-        { unitId:'B-even-05', label:'4BHK Type D',              type:'4 BHK', area:'', top:IK('topview/unit04_4bhk_(d)_tower_02.jpg'),          iso:IK('isometric/unit04_4bhk_(d)_tower_02.jpg'),         points:'63.5,43 85.25,43 85.25,84.5 63.5,84.5' },
-        { unitId:'B-even-06', label:'4BHK Type C',              type:'4 BHK', area:'', top:IK('PLAN/unit03_4bhk_(c)_even_tower_01.jpg'),        points:'58.25,0.35 80.25,.35 80.25,39 58.25,39' },
+        { unitId:'B-even-01', top:IK('topview/unit01_3bhk_l(C)_podium_tower_02.jpg'), iso:IK('isometric/unit01_3bhk_l(c)_podium_tower_02.jpg'),  points:'13.3,22.3 31.5,22.3 31.5,59.5 13.3,59.5' },
+        { unitId:'B-even-02', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'),         iso:IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'),        points:'34,7.5 55.5,7.5 55.5,41 34,41' },
+        { unitId:'B-even-03', top:IK('topview/unit06_3bhk_l(d)_tower_02.jpg'),         iso:IK('isometric/unit06_3bhk_l(d)_tower_02.jpg'),        points:'19.5,65 37.5,65 37.5,97.7 19.5,97.7' },
+        { unitId:'B-even-04', top:IK('NewAssets/unit05_3bhk_s(a).jpg'),         iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'),        points:'40,67.5 61,67.5 61,97 40,97' },
+        { unitId:'B-even-05', top:IK('topview/unit04_4bhk_(d)_tower_02.jpg'),          iso:IK('isometric/unit04_4bhk_(d)_tower_02.jpg'),         points:'63.5,43 85.25,43 85.25,84.5 63.5,84.5' },
+        { unitId:'B-even-06', top:IK('PLAN/unit03_4bhk_(c)_even_tower_01.jpg'),        points:'58.25,0.35 80.25,.35 80.25,39 58.25,39' },
       ],
     },
 
@@ -101,22 +107,22 @@ window.FloorplanModule = (function () {
       odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_03.jpg')  },
       even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_03.jpg') },
       oddUnits: [
-        { unitId:'C-odd-01', label:'3BHK (L) Type G', type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),  iso:IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'), points:'43,60 65,60 65,92 43,92' },
-        { unitId:'C-odd-02', label:'3BHK (S) Type B', type:'3 BHK', area:'', top:IK('PLAN/unit02_3bhk_s(b)_odd_tower_03.jpg'),                                                    points:'52,16.6 72,16.6 72,50 52,50' },
-        { unitId:'C-odd-03', label:'3BHK (S) Type B', type:'3 BHK', area:'', top:IK('PLAN/unit02_3bhk_s(b)_odd_tower_03.jpg'),                                                    points:'29.5,11 49.5,11 49.5,39.5 29.5,39.5' },
-        { unitId:'C-odd-04', label:'3BHK (L) Type F', type:'3 BHK', area:'', top:IK('PLAN/unit04_3bhk_l(f)_odd_tower_03.jpg'),                                                    points:'74,22.5 91.5,22.5 91.5,55.5 74,55.5' },
-        { unitId:'C-odd-05', label:'4BHK Type G',     type:'4 BHK', area:'', top:IK('PLAN/unit01_4bhk_g_odd_tower_03.jpg'),                                                       points:'10,12 27.5,12 27.5,56.5 10,56.5' },
-        { unitId:'C-odd-06', label:'3BHK (L) Type E', type:'3 BHK', area:'', top:IK('PLAN/unit05_3bhk_l(e)_odd_tower_03.jpg'),                                                    points:'66.6,60 86,60 86,91.6 66.6,91.6' },
-        { unitId:'C-odd-07', label:'4BHK Type F',     type:'4 BHK', area:'', top:IK('PLAN/unit07_4bhk_(f)_odd_tower_03.jpg'),                                                     points:'15.5,59.5 41,59.5 41,92 15.5,92' },
+        { unitId:'C-odd-01', top:IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),  iso:IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'), points:'43,60 65,60 65,92 43,92' },
+        { unitId:'C-odd-02', top:IK('PLAN/unit02_3bhk_s(b)_odd_tower_03.jpg'),                                                    points:'52,16.6 72,16.6 72,50 52,50' },
+        { unitId:'C-odd-03', top:IK('PLAN/unit02_3bhk_s(b)_odd_tower_03.jpg'),                                                    points:'29.5,11 49.5,11 49.5,39.5 29.5,39.5' },
+        { unitId:'C-odd-04', top:IK('PLAN/unit04_3bhk_l(f)_odd_tower_03.jpg'),                                                    points:'74,22.5 91.5,22.5 91.5,55.5 74,55.5' },
+        { unitId:'C-odd-05', top:IK('PLAN/unit01_4bhk_g_odd_tower_03.jpg'),                                                       points:'10,12 27.5,12 27.5,56.5 10,56.5' },
+        { unitId:'C-odd-06', top:IK('PLAN/unit05_3bhk_l(e)_odd_tower_03.jpg'),                                                    points:'66.6,60 86,60 86,91.6 66.6,91.6' },
+        { unitId:'C-odd-07', top:IK('PLAN/unit07_4bhk_(f)_odd_tower_03.jpg'),                                                     points:'15.5,59.5 41,59.5 41,92 15.5,92' },
       ],
       evenUnits: [
-        { unitId:'C-even-01', label:'4BHK Type G',     type:'4 BHK', area:'', top:IK('topview/unit01_4bhk_(g)_tower_03.jpg'),     iso:IK('isometric/unit01_4bhk_(g)_tower_03.jpg'),      points:'10,12 27.5,12 27.5,56.5 10,56.5' },
-        { unitId:'C-even-02', label:'3BHK (S) Type B', type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_s(b)_tower_03.jpg'),    iso:IK('isometric/unit02_3bhk_s(b)_tower_03.jpg'),     points:'30,11 49.5,11 49.5,39.5 30,39.5' },
-        { unitId:'C-even-03', label:'3BHK (S) Type B', type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_s(b)_tower_03.jpg'),    iso:IK('isometric/unit03_3bhk_s(b)_tower_03.jpg'),     points:'52,16.6 72,16.6 72,50 52,50' },
-        { unitId:'C-even-04', label:'3BHK (L) Type F', type:'3 BHK', area:'', top:IK('topview/unit04_3bhk_l(f)_tower_03.jpg'),    iso:IK('isometric/unit04_3bhk_l(f)_tower_03.jpg'),     points:'74,25 91.5,25 91.5,55.5 74,55.5' },
-        { unitId:'C-even-05', label:'3BHK (L) Type G', type:'3 BHK', area:'', top:IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),    iso:IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'),     points:'43.5,60 64,60 64,93 43.5,93' },
-        { unitId:'C-even-06', label:'3BHK (L) Type E', type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_l(e)_tower_03.jpg'),    iso:IK('isometric/unit05_3bhk_l(e)_tower_03.jpg'),     points:'66.6,60 86,60 86,91.6 66.6,91.6' },
-        { unitId:'C-even-07', label:'4BHK Type F',     type:'4 BHK', area:'', top:IK('topview/unit07_4bhk_(f)_even_tower_03.jpg'),iso:IK('isometric/unit07_4bhk_(f)_even_tower_03.jpg'), points:'15.5,60 41,60 41,92 15.5,92' },
+        { unitId:'C-even-01', top:IK('topview/unit01_4bhk_(g)_tower_03.jpg'),     iso:IK('isometric/unit01_4bhk_(g)_tower_03.jpg'),      points:'10,12 27.5,12 27.5,56.5 10,56.5' },
+        { unitId:'C-even-02', top:IK('topview/unit02_3bhk_s(b)_tower_03.jpg'),    iso:IK('isometric/unit02_3bhk_s(b)_tower_03.jpg'),     points:'30,11 49.5,11 49.5,39.5 30,39.5' },
+        { unitId:'C-even-03', top:IK('topview/unit02_3bhk_s(b)_tower_03.jpg'),    iso:IK('isometric/unit03_3bhk_s(b)_tower_03.jpg'),     points:'52,16.6 72,16.6 72,50 52,50' },
+        { unitId:'C-even-04', top:IK('topview/unit04_3bhk_l(f)_tower_03.jpg'),    iso:IK('isometric/unit04_3bhk_l(f)_tower_03.jpg'),     points:'74,25 91.5,25 91.5,55.5 74,55.5' },
+        { unitId:'C-even-05', top:IK('topview/unit06_3bhk_l(g)_tower_03.jpg'),    iso:IK('isometric/unit06_3bhk_l(g)_tower_03.jpg'),     points:'43.5,60 64,60 64,93 43.5,93' },
+        { unitId:'C-even-06', top:IK('topview/unit05_3bhk_l(e)_tower_03.jpg'),    iso:IK('isometric/unit05_3bhk_l(e)_tower_03.jpg'),     points:'66.6,60 86,60 86,91.6 66.6,91.6' },
+        { unitId:'C-even-07', top:IK('topview/unit07_4bhk_(f)_even_tower_03.jpg'),iso:IK('isometric/unit07_4bhk_(f)_even_tower_03.jpg'), points:'15.5,60 41,60 41,92 15.5,92' },
       ],
     },
 
@@ -128,20 +134,20 @@ window.FloorplanModule = (function () {
       odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_04.jpg')  },
       even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_04.jpg') },
       oddUnits: [
-        { unitId:'D-odd-01', label:'3BHK (L) Type A', type:'3 BHK', area:'', top:IK('topview/unit03_3bhk_l(a)_tower_04.jpg'), iso:IK('isometric/unit03_3bhk_l(a)_tower_04.jpg'), points:'60.5,7 76.5,7 76.5,38 60.5,38' },
-        { unitId:'D-odd-02', label:'3BHK (S) Type A', type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'), iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'), points:'43.3,61 61,61 61,85.5 43.3,85.5' },
-        { unitId:'D-odd-03', label:'4BHK Type A',     type:'4 BHK', area:'', top:IK('PLAN/unit01_4bhk_(a)_odd_tower_04.jpg'),                                                    points:'18,21.5 37,21.5 37,59 18,59' },
-        { unitId:'D-odd-04', label:'3BHK (L) Type B', type:'3 BHK', area:'', top:IK('PLAN/unit02_3bhk_l(b)_odd_tower_01.jpg'),                                                   points:'39.5,9 58.5,9 58.5,37 39.5,37' },
-        { unitId:'D-odd-05', label:'4BHK Type E',     type:'4 BHK', area:'', top:IK('PLAN/unit04_4bhk_(e)_odd_tower_04.jpg'),                                                    points:'62,41 79.5,41 79.5,84 62,84' },
-        { unitId:'D-odd-06', label:'4BHK Type B',     type:'4 BHK', area:'', top:IK('topview/unit06_4bhk_(b)_tower_04.jpg'),  iso:IK('isometric/unit06_4bhk_(b)_tower_04.jpg'), points:'22,58.5 41,58.5 41,92 22,92' },
+        { unitId:'D-odd-01', top:IK('topview/unit03_3bhk_l(a)_tower_04.jpg'), iso:IK('isometric/unit03_3bhk_l(a)_tower_04.jpg'), points:'60.5,7 76.5,7 76.5,38 60.5,38' },
+        { unitId:'D-odd-02', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'), iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'), points:'43.3,61 61,61 61,85.5 43.3,85.5' },
+        { unitId:'D-odd-03', top:IK('PLAN/unit01_4bhk_(a)_odd_tower_04.jpg'),                                                    points:'18,21.5 37,21.5 37,59 18,59' },
+        { unitId:'D-odd-04', top:IK('PLAN/unit02_3bhk_l(b)_odd_tower_01.jpg'),                                                   points:'39.5,9 58.5,9 58.5,37 39.5,37' },
+        { unitId:'D-odd-05', top:IK('PLAN/unit04_4bhk_(e)_odd_tower_04.jpg'),                                                    points:'62,41 79.5,41 79.5,84 62,84' },
+        { unitId:'D-odd-06', top:IK('topview/unit06_4bhk_(b)_tower_04.jpg'),  iso:IK('isometric/unit06_4bhk_(b)_tower_04.jpg'), points:'22,58.5 41,58.5 41,92 22,92' },
       ],
       evenUnits: [
-        { unitId:'D-even-01', label:'4BHK Type A',     type:'4 BHK', area:'', top:IK('topview/unit01_4bhk_(a)_tower_04.jpg'),  iso:IK('isometric/unit01_4bhk_(a)_tower_04.jpg'),  points:'18,21.5 37,21.5 37,59 18,59' },
-        { unitId:'D-even-02', label:'3BHK (L) Type B', type:'3 BHK', area:'', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'), iso:IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'), points:'39.5,9 58.5,9 58.5,37 39.5,37' },
-        { unitId:'D-even-03', label:'3BHK (L) Type A', type:'3 BHK', area:'', top:IK('topview/unit03_3bhk_l(a)_tower_04.jpg'), iso:IK('isometric/unit03_3bhk_l(a)_tower_04.jpg'), points:'60.5,7 76.5,7 76.5,38 60.5,38' },
-        { unitId:'D-even-04', label:'4BHK Type B',     type:'4 BHK', area:'', top:IK('topview/unit06_4bhk_(b)_tower_04.jpg'),  iso:IK('isometric/unit06_4bhk_(b)_tower_04.jpg'),  points:'22,59 41,59 41,92 22,92' },
-        { unitId:'D-even-05', label:'3BHK (S) Type A', type:'3 BHK', area:'', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'), iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'), points:'43.3,61 61,61 61,85.5 43.3,85.5' },
-        { unitId:'D-even-06', label:'4BHK Type E',     type:'4 BHK', area:'', top:IK('topview/unit04_4bhk_(e)_tower_04.jpg'),  iso:IK('isometric/unit04_4bhk_(e)_tower_04.jpg'),  points:'62,41 79,41 79,84 62,84' },
+        { unitId:'D-even-01', top:IK('topview/unit01_4bhk_(a)_tower_04.jpg'),  iso:IK('isometric/unit01_4bhk_(a)_tower_04.jpg'),  points:'18,21.5 37,21.5 37,59 18,59' },
+        { unitId:'D-even-02', top:IK('topview/unit02_3bhk_l(b)_tower_02.jpg'), iso:IK('isometric/unit02_3bhk_l(b)_tower_02.jpg'), points:'39.5,9 58.5,9 58.5,37 39.5,37' },
+        { unitId:'D-even-03', top:IK('topview/unit03_3bhk_l(a)_tower_04.jpg'), iso:IK('isometric/unit03_3bhk_l(a)_tower_04.jpg'), points:'60.5,7 76.5,7 76.5,38 60.5,38' },
+        { unitId:'D-even-04', top:IK('topview/unit06_4bhk_(b)_tower_04.jpg'),  iso:IK('isometric/unit06_4bhk_(b)_tower_04.jpg'),  points:'22,59 41,59 41,92 22,92' },
+        { unitId:'D-even-05', top:IK('topview/unit05_3bhk_s(a)_tower_02.jpg'), iso:IK('isometric/unit05_3bhk_s(a)_tower_02.jpg'), points:'43.3,61 61,61 61,85.5 43.3,85.5' },
+        { unitId:'D-even-06', top:IK('topview/unit04_4bhk_(e)_tower_04.jpg'),  iso:IK('isometric/unit04_4bhk_(e)_tower_04.jpg'),  points:'62,41 79,41 79,84 62,84' },
       ],
     },
   };
@@ -478,13 +484,15 @@ window.FloorplanModule = (function () {
       #fp-panel-unit { display: flex; flex-direction: column; transform: translateX(32px); background: #ffffff; }
       #fp-plan-area {
         flex: 1; display: flex; align-items: center; justify-content: center;
-        position: relative; overflow: hidden; padding: 16px; box-sizing: border-box;
+        position: relative; overflow: hidden; padding: 0; box-sizing: border-box;
         touch-action: none;
       }
       #fp-plan-img {
-        max-width: 100%; max-height: 100%; object-fit: contain;
-        border: 1px solid rgba(122,62,30,.12); border-radius: 3px;
-        box-shadow: 0 8px 40px rgba(0,0,0,.10);
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: contain;
+        object-position: center center;
+        border: none; border-radius: 0; box-shadow: none;
         opacity: 1; transition: opacity 0.28s; background: #f8f6f3;
         transform-origin: center center; user-select: none; -webkit-user-select: none;
       }
@@ -497,14 +505,8 @@ window.FloorplanModule = (function () {
         opacity: 0; transition: opacity 0.4s; white-space: nowrap;
       }
       #fp-zoom-hint.visible { opacity: 1; }
-      #fp-unit-info {
-        position: absolute; bottom: 20px; left: 20px;
-        display: flex; flex-direction: column; gap: 3px;
-        opacity: 0; transform: translateY(6px);
-        transition: opacity 0.30s ease 0.12s, transform 0.30s ease 0.12s;
-        pointer-events: none; max-width: calc(100vw - 40px);
-      }
-      #fp-unit-info.visible { opacity: 1; transform: translateY(0); }
+      #fp-unit-info { display: none; }
+      #fp-unit-info.visible { display: none; }
       #fp-unit-info-name { font-family: 'Cormorant Garamond', serif; font-size: 18px; font-weight: 300; font-style: italic; color: rgba(40,20,10,.75); line-height: 1.1; }
       #fp-unit-info-type { font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: rgba(122,62,30,.70); }
       #fp-unit-info-area { font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 400; letter-spacing: .10em; color: rgba(80,50,30,.45); }
@@ -1045,6 +1047,7 @@ window.FloorplanModule = (function () {
     showPanel('fp-panel-cluster', 'forward');
     updateTopbar();
     updateTitle();
+    if (!_poppingState) pushFpState();
   }
 
   // ─── GLTF MESH ZONE PICKER ───────────────────────────────────
@@ -1327,7 +1330,7 @@ window.FloorplanModule = (function () {
         scene.add(root);
 
         loaded++;
-        console.log('[GLTF] ✔ "' + file.split('/').pop() + '" → ' + unitId + (unitData ? ' (' + unitData.label + ')' : ' (no unitData)'));
+        console.log('[GLTF] ✔ "' + file.split('/').pop() + '" → ' + unitId + (unitData ? ' (' + unitData.unitId + ')' : ' (no unitData)'));
 
         syncToImage();
 
@@ -1449,14 +1452,14 @@ window.FloorplanModule = (function () {
 
   // ─── ZONE TOOLTIP ────────────────────────────────────────────
   function showZoneTip(u, e) {
-    document.getElementById('fp-zone-tip-name').textContent = u.label;
-    document.getElementById('fp-zone-tip-type').textContent = `${u.type}${u.area ? '  ·  ' + u.area : ''}`;
+    document.getElementById('fp-zone-tip-name').textContent = u.label || u.unitId;
+    document.getElementById('fp-zone-tip-type').textContent = `${u.type || ''}${u.area ? '  ·  ' + u.area : ''}`;
     document.getElementById('fp-zone-tip').classList.add('visible');
     moveZoneTip(e);
   }
   function showZoneTipTouch(u, e) {
-    document.getElementById('fp-zone-tip-name').textContent = u.label;
-    document.getElementById('fp-zone-tip-type').textContent = `${u.type}${u.area ? '  ·  ' + u.area : ''}`;
+    document.getElementById('fp-zone-tip-name').textContent = u.label || u.unitId;
+    document.getElementById('fp-zone-tip-type').textContent = `${u.type || ''}${u.area ? '  ·  ' + u.area : ''}`;
     const tip  = document.getElementById('fp-zone-tip');
     tip.classList.add('visible');
     const rect = document.getElementById('fp-cluster-wrap').getBoundingClientRect();
@@ -1483,7 +1486,6 @@ window.FloorplanModule = (function () {
     if (tip) tip.classList.remove('visible');
   }
 
-  // ─── DRILL TO UNIT ───────────────────────────────────────────
   // ─── DRILL TO UNIT ───────────────────────────────────────────
   // Reports how long the previously active unit was on screen, then resets
   // the timer. Call this right before switching away from a unit (back/close).
@@ -1518,8 +1520,8 @@ window.FloorplanModule = (function () {
     document.querySelectorAll('.fp-toggle-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.view === 'top');
     });
-    document.getElementById('fp-unit-info-name').textContent = unitData.label;
-    document.getElementById('fp-unit-info-type').textContent = unitData.type;
+    document.getElementById('fp-unit-info-name').textContent = unitData.label || '';
+    document.getElementById('fp-unit-info-type').textContent = unitData.type || '';
     document.getElementById('fp-unit-info-area').textContent = unitData.area || '';
     document.getElementById('fp-unit-info').classList.add('visible');
     document.querySelectorAll('.fp-zone').forEach(z => z.classList.remove('selected'));
@@ -1532,6 +1534,7 @@ window.FloorplanModule = (function () {
     updateTopbar();
     updateTitle();
     loadUnitImage();
+    if (!_poppingState) pushFpState();
   }
 
   // ─── LOAD UNIT IMAGE ─────────────────────────────────────────
@@ -1639,8 +1642,45 @@ window.FloorplanModule = (function () {
     }, { passive: true });
     content.addEventListener('touchend', (e) => {
       if (!active) return; active = false;
-      if (e.changedTouches[0].clientX - startX > 60 && level > 0) goBack();
+      if (e.changedTouches[0].clientX - startX > 60 && level > 0) requestBack();
     }, { passive: true });
+  }
+
+  // ─── BROWSER BACK BUTTON (mobile) ────────────────────────────
+  // Each drill-down pushes a history entry, so the phone's hardware
+  // back button / browser back gesture steps back through the viewer
+  // (unit → cluster → sitemap → close) instead of leaving the page.
+  //
+  // requestBack() is the single entry point used by the on-screen back
+  // arrow and swipe-back: it calls history.back() when we own a history
+  // entry, which fires popstate, which runs goBack()/close(). This keeps
+  // the history stack and the viewer state perfectly in sync.
+  let _poppingState = false;
+  let _fpHistoryDepth = 0; // how many history entries the viewer currently owns
+
+  function pushFpState() {
+    history.pushState({ fp: true, level }, '');
+    _fpHistoryDepth++;
+  }
+
+  function requestBack() {
+    if (_fpHistoryDepth > 0) {
+      history.back();               // → popstate → goBack()/close()
+    } else {
+      // No history entry of ours (e.g. pushState unavailable) — navigate directly
+      if (level > 0) goBack(); else close();
+    }
+  }
+
+  function bindHistoryNav() {
+    window.addEventListener('popstate', () => {
+      if (!overlayOpen || _fpHistoryDepth === 0) return; // not our entry — let browser handle it
+      _fpHistoryDepth--;
+      _poppingState = true;
+      if (level > 0) goBack();      // unit → cluster, or cluster → sitemap
+      else close();                 // sitemap → close overlay, page stays
+      _poppingState = false;
+    });
   }
 
   // ─── BACK NAV ────────────────────────────────────────────────
@@ -1709,6 +1749,7 @@ window.FloorplanModule = (function () {
     updateTopbar(); updateTitle();
     fpOverlay.classList.add('open');
     buildSitemapTiles();
+    if (!_poppingState) pushFpState();
   }
 
   let _closeResetTimer = null;
@@ -1717,6 +1758,17 @@ window.FloorplanModule = (function () {
     if (!overlayOpen) return;
     if (level === 2) { reportUnitDwell(); unitEnteredAt = 0; } // catch dwell if closed mid-unit-view
     overlayOpen = false;
+
+    // If the app closed the overlay directly (✕ button, nav elsewhere) while
+    // we still own history entries, unwind them silently so the browser back
+    // button doesn't need extra presses later. popstate will fire but the
+    // overlayOpen guard makes it a no-op.
+    if (!_poppingState && _fpHistoryDepth > 0) {
+      const n = _fpHistoryDepth;
+      _fpHistoryDepth = 0;
+      history.go(-n);
+    }
+
     clearTimeout(_closeResetTimer);
     const overlay = document.getElementById('fp-overlay');
     if (!overlay) return;
@@ -1734,8 +1786,8 @@ window.FloorplanModule = (function () {
   function bindEvents() {
     const backBtn  = document.getElementById('fp-back');
     if (!backBtn) return;
-    backBtn.addEventListener('click', goBack);
-    backBtn.addEventListener('touchend', (e) => { e.preventDefault(); goBack(); });
+    backBtn.addEventListener('click', requestBack);
+    backBtn.addEventListener('touchend', (e) => { e.preventDefault(); requestBack(); });
     document.querySelectorAll('.fp-parity-btn').forEach(btn => {
       btn.addEventListener('click', () => swapParity(btn.dataset.parity));
     });
@@ -1752,6 +1804,7 @@ window.FloorplanModule = (function () {
     });
     bindPinchZoom();
     bindSwipeBack();
+    bindHistoryNav();
     watchTopbarHeight();
   }
 
