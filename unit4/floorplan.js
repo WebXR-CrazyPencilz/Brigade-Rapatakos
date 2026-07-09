@@ -1,226 +1,237 @@
 ;(function () {
   'use strict'
 
-  // ─── CONFIG ─────────────────────────────────────────────────────
-  const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Dimension/4BHKF.jpg?updatedAt=1779451208452'
-
-  // The viewBox matches the image's natural pixel size.
-  // All polygon coordinates are based on these dimensions.
+  const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Dimension/3BHK(S)B.jpg?updatedAt=1779451188877'
   const VP_W = 1009
   const VP_H = 567
 
-  // ─── ZONES ──────────────────────────────────────────────────────
   const zones = [
-    { room: 'living',       label: 'LIVING ROOM',       points: '478,206 702,206 702,506 478,506',  fill: 'rgba(0,220,0,0)',    stroke: 'rgba(0,220,0,0)' },
-    { room: 'masterbedroom', label: 'MASTER BEDROOM', points: '235,184 356,184 356,455 235,455',  fill: 'rgba(255,200,0,0)',  stroke: 'rgba(255,200,0,0)' },
-    { room: 'kidsbedroom',   label: 'KIDS BEDROOM',   points: '360,248 475,248 475,506 360,506',  fill: 'rgba(60,140,255,0)', stroke: 'rgba(60,140,255,0)' },
-    { room: 'guestbedroom', label: 'GUEST BEDROOM', points: '704,248 820,248 820,455 704,455',  fill: 'rgba(255,80,140,0)', stroke: 'rgba(255,80,140,0)'},
-    { room: 'kitchen',        label: 'KITCHEN',       points: '482,70 705,70 705,205 482,205',    fill: 'rgba(255,80,80,0)',  stroke: 'rgba(255,80,80,0)' },
-    { room: 'bedroom3',       label: 'BEDROOM 3', points: '236,70 478,70 478,188 236,188',    fill: 'rgba(180,60,255,0)',     stroke: 'rgba(180,60,255,0)' },
-    { room: 'foyer',         label: 'LOBBY',         points: '705,67 820,67 820,248 705,248',    fill: 'rgba(0,204,204,0)',  stroke: 'rgba(0,204,204,0)' }
+    { room: 'lobby',           label: 'LOBBY',             points: '352,333 504,333 504,505 352,505' },
+    { room: 'masterbedroom',   label: 'MASTER BEDROOM',    points: '200,140 350,140 350,505 200,505' },
+    { room: 'kidsbedroom',     label: 'KIDS BEDROOM',      points: '354,140 504,140 504,332 354,332' },
+    { room: 'guestbedroom',    label: 'GUEST BEDROOM',     points: '666,70 810,70 810,390 666,390'   },
+    { room: 'livinganddining', label: 'LIVING AND DINING', points: '505,70 665,70 665,332 505,332'   },
+    { room: 'kitchen',         label: 'KITCHEN',           points: '505,332 668,332 668,505 505,505' },
   ]
 
-  // ─── INJECT LAYER ───────────────────────────────────────────────
-  function injectLayer () {
+  function injectLayer() {
     if (document.getElementById('fp-layer')) return
 
-    // ── Outer container (fullscreen dark backdrop)
     const layer = document.createElement('div')
     layer.id = 'fp-layer'
     layer.style.cssText = `
-      position: fixed;
-      inset: 0;
-      z-index: 10;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      background: #ffffff;
+      position: fixed; inset: 0; z-index: 10;
+      display: none; background: #f2ede8; overflow: hidden;
     `
 
-    // ── Wrapper: image + SVG stacked on top of each other
-    //    The KEY idea from R&D: SVG is position:absolute inside
-    //    a position:relative wrapper, so it always matches the image.
-    const wrap = document.createElement('div')
-    wrap.style.cssText = `
-      position: relative;
-      display: inline-block;
-      line-height: 0;
-      border-radius: 8px;
-      overflow: hidden;
-      box-shadow: 0 0 0 1px rgba(201,162,58,0.6), 0 0 40px rgba(201,162,58,0.15), 0 20px 60px rgba(0,0,0,0.5);
-      outline: 1px solid rgba(201,162,58,0.2);
-      outline-offset: 14px;
-    `
-
-    // ── The floorplan image
     const img = document.createElement('img')
-    img.id = 'fp-img'
+    img.id  = 'fp-img'
     img.alt = 'Floor Plan'
-    img.src = FP_IMAGE_URL
     img.style.cssText = `
+      position: absolute;
+      left: 50%; top: 50%;
+      transform: translate(-50%, -50%);
+      width: 96%; max-height: 92%;
+      object-fit: contain; height: auto;
       display: block;
-      max-width: 92vw;
-      max-height: 88vh;
-      width: auto;
-      height: auto;
-      border-radius: 6px;
-      user-select: none;
-      -webkit-user-drag: none;
+      opacity: 0; transition: opacity 0.25s ease;
+      user-select: none; -webkit-user-drag: none;
     `
 
-    // ── SVG overlay — sits exactly on top of the image
-    //    width:100% height:100% means it always matches image size.
-    //    viewBox uses the image's natural pixel dimensions,
-    //    so all polygon coordinates are always correct — no JS math needed!
+    // Loading spinner — shown while the floor plan image is fetching, so a
+    // slow/first-time connection to the image host shows visible feedback
+    // instead of a blank screen.
+    const spinner = document.createElement('div')
+    spinner.id = 'fp-spinner'
+    spinner.style.cssText = `
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      width: 34px; height: 34px;
+      border: 2.5px solid rgba(122,62,30,.20); border-top-color: rgba(122,62,30,.85);
+      border-radius: 50%; animation: fpSpin 0.75s linear infinite;
+    `
+    const spinKeyframes = document.createElement('style')
+    spinKeyframes.textContent = '@keyframes fpSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }'
+    document.head.appendChild(spinKeyframes)
+
+    const errorMsg = document.createElement('div')
+    errorMsg.id = 'fp-error'
+    errorMsg.textContent = 'Floor plan image failed to load. Retrying…'
+    errorMsg.style.cssText = `
+      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+      display: none; font-family: inherit; font-size: 12px; letter-spacing: 1px;
+      text-transform: uppercase; color: rgba(122,62,30,.75); text-align: center;
+    `
+
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
     svg.id = 'fp-svg'
-    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
     svg.setAttribute('viewBox', `0 0 ${VP_W} ${VP_H}`)
     svg.setAttribute('preserveAspectRatio', 'xMidYMid meet')
-    svg.style.cssText = `
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      overflow: visible;
-    `
+    svg.style.cssText = `position: absolute; pointer-events: none; overflow: visible;`
 
-    // ── Tooltip
     const tip = document.createElement('div')
     tip.id = 'fp-tip'
     tip.style.cssText = `
-      position: fixed;
-      bottom: 36px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: linear-gradient(135deg, #c9a23a 0%, #e8c9a 60%, #c9a23a 100%);
-      color: #07060a;
-      border: none;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-      font-weight: 700;
-      padding: 6px 18px;
-      border-radius: 20px;
-      font-size: 12px;
-      letter-spacing: 1.5px;
-      text-transform: uppercase;
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.2s;
-      font-family: inherit;
-      z-index: 20;
+      position: fixed; bottom: 36px; left: 50%; transform: translateX(-50%);
+      background: rgba(201,162,58,0.95); color: #07060a;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.4); font-weight: 700;
+      padding: 7px 20px; border-radius: 20px; font-size: 11px;
+      letter-spacing: 2px; text-transform: uppercase;
+      pointer-events: none; opacity: 0; transition: opacity 0.2s;
+      font-family: inherit; z-index: 20; white-space: nowrap;
     `
 
-    wrap.appendChild(img)
-    wrap.appendChild(svg)
-    layer.appendChild(wrap)
+    layer.appendChild(img)
+    layer.appendChild(spinner)
+    layer.appendChild(errorMsg)
+    layer.appendChild(svg)
     layer.appendChild(tip)
     document.body.appendChild(layer)
 
-    // Build zones once image is loaded
-    img.addEventListener('load', buildZones)
-    // If image was cached and already loaded
-    if (img.complete) buildZones()
+    function syncSVG() {
+      const rect = img.getBoundingClientRect()
+      const lr   = layer.getBoundingClientRect()
+      svg.style.left   = (rect.left - lr.left) + 'px'
+      svg.style.top    = (rect.top  - lr.top)  + 'px'
+      svg.style.width  = rect.width  + 'px'
+      svg.style.height = rect.height + 'px'
+    }
+
+    function showImage() {
+      spinner.style.display = 'none'
+      errorMsg.style.display = 'none'
+      img.style.opacity = '1'
+      syncSVG()
+      buildZones()
+    }
+
+    let retryCount = 0
+    const MAX_RETRIES = 3
+
+    function loadImage() {
+      spinner.style.display = ''
+      errorMsg.style.display = 'none'
+      img.style.opacity = '0'
+
+      img.onload = showImage
+
+      img.onerror = () => {
+        retryCount++
+        if (retryCount <= MAX_RETRIES) {
+          console.warn(`Floor plan image failed to load (attempt ${retryCount}/${MAX_RETRIES}), retrying…`)
+          setTimeout(() => {
+            img.src = FP_IMAGE_URL + (FP_IMAGE_URL.includes('?') ? '&' : '?') + 'retry=' + retryCount
+          }, 800 * retryCount)
+        } else {
+          spinner.style.display = 'none'
+          errorMsg.textContent = 'Floor plan image could not be loaded.'
+          errorMsg.style.display = ''
+          console.error('Floor plan image failed after', MAX_RETRIES, 'retries:', FP_IMAGE_URL)
+        }
+      }
+
+      img.src = FP_IMAGE_URL
+    }
+
+    loadImage()
+
+    const ro = new ResizeObserver(syncSVG)
+    ro.observe(layer)
+    window.addEventListener('resize', syncSVG)
   }
 
-  // ─── BUILD POLYGON ZONES ─────────────────────────────────────────
   let zonesBuilt = false
-
-  function buildZones () {
+  function buildZones() {
     if (zonesBuilt) return
     zonesBuilt = true
-
     const svg = document.getElementById('fp-svg')
     if (!svg) return
 
     zones.forEach(zone => {
-      // Polygon shape
       const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon')
       poly.setAttribute('class', 'fpz')
       poly.setAttribute('points', zone.points)
-      poly.setAttribute('fill', zone.fill)
-      poly.setAttribute('stroke', zone.stroke)
+      poly.setAttribute('fill', 'transparent')
+      poly.setAttribute('stroke', 'transparent')
       poly.setAttribute('stroke-width', '2')
       poly.setAttribute('vector-effect', 'non-scaling-stroke')
       poly.dataset.room  = zone.room
       poly.dataset.label = zone.label
-      poly.style.cssText = `
-        cursor: pointer;
-        pointer-events: all;
-        transition: filter 0.15s;
-      `
+      poly.style.cssText = `cursor: pointer; pointer-events: all; transition: fill 0.15s, filter 0.15s;`
       svg.appendChild(poly)
-
-      // Label text in the center of each zone
-      const pts = zone.points.trim().split(/\s+/).map(p => p.split(',').map(Number))
-      const cx  = pts.reduce((s, p) => s + p[0], 0) / pts.length
-      const cy  = pts.reduce((s, p) => s + p[1], 0) / pts.length
-
-     
     })
 
-    // ── Hover effect
     svg.addEventListener('mouseover', e => {
-      const z = e.target.closest('.fpz')
-      if (!z) return
-      z.setAttribute('stroke', 'rgba(255,255,255,1)')
-      z.setAttribute('stroke-width', '3')
-      z.style.filter = 'drop-shadow(0 0 8px rgba(255,255,255,1)) drop-shadow(0 0 4px rgba(255,255,255,0.8))'
+      const z = e.target.closest('.fpz'); if (!z) return
+      z.setAttribute('fill', 'rgba(201,162,58,0.12)')
+      z.setAttribute('stroke', 'rgba(255,255,255,0.9)')
+      z.setAttribute('stroke-width', '2.5')
+      z.style.filter = 'drop-shadow(0 0 8px rgba(255,255,255,0.8))'
       showTip(z.dataset.label || z.dataset.room)
     })
-
     svg.addEventListener('mouseout', e => {
-      const z = e.target.closest('.fpz')
-      if (!z) return
-      z.setAttribute('stroke', 'rgba(0,0,0,0)')
+      const z = e.target.closest('.fpz'); if (!z) return
+      z.setAttribute('fill', 'transparent')
+      z.setAttribute('stroke', 'transparent')
       z.style.filter = ''
       hideTip()
     })
-
-    // ── Click → go to 360 viewer
     svg.addEventListener('click', e => {
-      const z = e.target.closest('.fpz')
-      if (!z) return
+      const z = e.target.closest('.fpz'); if (!z) return
       goTo360(z.dataset.room)
     })
+    svg.addEventListener('touchend', e => {
+      const t = e.changedTouches[0]
+      const z = document.elementFromPoint(t.clientX, t.clientY)?.closest('.fpz')
+      if (!z) return
+      e.preventDefault()
+      goTo360(z.dataset.room)
+    }, { passive: false })
   }
 
-  // ─── TOOLTIP ────────────────────────────────────────────────────
-  function showTip (text) {
+  function showTip(text) {
     const tip = document.getElementById('fp-tip')
-    if (!tip) return
-    tip.textContent = text
-    tip.style.opacity = '1'
+    if (tip) { tip.textContent = text; tip.style.opacity = '1' }
   }
-
-  function hideTip () {
+  function hideTip() {
     const tip = document.getElementById('fp-tip')
     if (tip) tip.style.opacity = '0'
   }
-
-  // ─── GO TO 360 ───────────────────────────────────────────────────
-  function goTo360 (roomKey) {
+  function goTo360(roomKey) {
+    // Track which room zone was clicked from the floor plan
+    if (typeof gtag === 'function') {
+      const zone = zones.find(z => z.room === roomKey);
+      gtag('event', 'floorplan_zone_click', {
+        unit_number: window.UNIT_NUMBER || null,
+        room: roomKey,
+        room_label: zone ? zone.label : null
+      });
+    }
     if (window.AppView) window.AppView.switchTo('360')
     if (typeof loadRoom === 'function') loadRoom(roomKey)
   }
 
-  // ─── SHOW / HIDE ─────────────────────────────────────────────────
-  function show () {
+  function show() {
     const layer = document.getElementById('fp-layer')
-    if (layer) layer.style.display = 'flex'
-    // No sizeSVG needed — CSS + viewBox handles everything!
+    if (layer) layer.style.display = 'block'
+    requestAnimationFrame(() => {
+      const img = document.getElementById('fp-img')
+      const svg = document.getElementById('fp-svg')
+      const l   = document.getElementById('fp-layer')
+      if (!img || !svg || !l || !img.naturalWidth) return
+      const rect = img.getBoundingClientRect()
+      const lr   = l.getBoundingClientRect()
+      svg.style.left   = (rect.left - lr.left) + 'px'
+      svg.style.top    = (rect.top  - lr.top)  + 'px'
+      svg.style.width  = rect.width  + 'px'
+      svg.style.height = rect.height + 'px'
+    })
   }
-
-  function hide () {
+  function hide() {
     const layer = document.getElementById('fp-layer')
     if (layer) layer.style.display = 'none'
     hideTip()
   }
 
-  // ─── PUBLIC API ──────────────────────────────────────────────────
   window.FloorPlan = { show, hide }
-
-  // ─── INIT ────────────────────────────────────────────────────────
   injectLayer()
-
 })()

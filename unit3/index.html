@@ -2,34 +2,40 @@
 <html lang="en">
 <head>
   <!-- Preconnect to every external origin this page depends on, as early as
-       possible. Starts DNS + TCP + TLS handshakes in parallel with
-       everything else, rather than waiting until scripts/images request them. -->
+       possible. This makes the browser start DNS + TCP + TLS handshakes for
+       these hosts in parallel with everything else, rather than waiting
+       until the scripts/images actually request them. -->
   <link rel="preconnect" href="https://ik.imagekit.io" crossorigin>
   <link rel="preconnect" href="https://res.cloudinary.com" crossorigin>
   <!-- No crossorigin attribute here — must match the actual script tag
-       below, which also has none. -->
+       below, which also has none. A mismatched crossorigin mode between
+       preconnect and the real request means the browser can't reuse the
+       pre-warmed connection and opens a fresh one anyway, wasting it. -->
   <link rel="preconnect" href="https://cdnjs.cloudflare.com">
   <link rel="dns-prefetch" href="https://ik.imagekit.io">
   <link rel="dns-prefetch" href="https://res.cloudinary.com">
   <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com">
 
-  <!-- Preload the blocking script chain so fetching starts the moment
-       <head> parsing begins, not when the parser reaches these tags
-       near the bottom of the page. -->
+  <!-- Preload the actual blocking script chain. These scripts sit near the
+       bottom of the page, so without this the browser doesn't even START
+       fetching them until it finishes parsing everything above. Preloading
+       in <head> starts the fetch immediately, so by the time the parser
+       reaches the real <script> tags, the files are often already cached
+       and ready — this is the fix for the 20+ second hang on first load. -->
   <link rel="preload" as="script" href="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js">
   <link rel="preload" as="script" href="main.js">
   <link rel="preload" as="script" href="floorplan.js">
 
   <!-- Google tag (gtag.js) — GA4, same property as the main Brigade Stellaris site.
-       All events here are tagged unit_number: 3 so this unit's data can be
-       distinguished from the other units. -->
+       All events here are tagged unit_number: 1 so this unit's data can be
+       distinguished from Unit 2, 3, etc. once they're deployed from this template. -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-C4SSC9NWG5"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
     function gtag(){dataLayer.push(arguments);}
     gtag('js', new Date());
     gtag('config', 'G-C4SSC9NWG5');
-    window.UNIT_NUMBER = 3; // used by main.js / floorplan.js to tag events
+    window.UNIT_NUMBER = 1; // used by main.js / floorplan.js to tag events
   </script>
 
   <meta charset="UTF-8" />
@@ -58,7 +64,7 @@
     html, body {
       width: 100%; height: 100%;
       overflow: hidden;
-      background: var(--bg);
+      background: #f2ede8;
       font-family: 'Montserrat', sans-serif;
       color: var(--text-dark);
     }
@@ -354,7 +360,7 @@
     #fade-overlay {
       position: fixed; inset: 0;
       z-index: 500;
-      background: var(--bg);
+      background: #f2ede8;
       opacity: 0;
       pointer-events: none;
       transition: opacity 0.22s ease;
@@ -365,7 +371,7 @@
     /* ── Rotate warning ── */
     #rotate-warning {
       position: fixed; inset: 0;
-      background: var(--bg);
+      background: #f2ede8;
       color: var(--text-mid);
       align-items: center;
       justify-content: center;
@@ -407,31 +413,24 @@
   <div class="corner-accent bl"></div>
   <div class="corner-accent br"></div>
 
-  <!-- ── VIEW SWITCH PILL ── -->
   <div id="view-switch">
     <div id="vs-track"></div>
-
     <button class="vs-btn active" id="btn-fp" onclick="AppView.switchTo('floorplan')" aria-label="Floor Plan view">
       <svg viewBox="0 0 16 16"><rect x="1" y="1" width="6" height="6" rx="1"/><rect x="9" y="1" width="6" height="6" rx="1"/><rect x="1" y="9" width="6" height="6" rx="1"/><rect x="9" y="9" width="6" height="6" rx="1"/></svg>
       Floor Plan
     </button>
-
     <button class="vs-btn" id="btn-360" onclick="AppView.switchTo('360')" aria-label="360° view">
       <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" stroke="currentColor" stroke-width="1.5" fill="none"/><ellipse cx="8" cy="8" rx="3" ry="7" stroke="currentColor" stroke-width="1.5" fill="none"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1.5"/></svg>
       360° View
     </button>
   </div>
 
-  <!-- ── PANEL TOGGLE ARROW ── -->
   <div id="toggle" aria-label="Toggle side panel">❯</div>
-
-  <!-- ── FADE OVERLAY ── -->
   <div id="fade-overlay"></div>
 
-  <!-- ── SIDE PANEL ── -->
   <div id="side-panel">
     <div id="panel-header">
-      <div class="ph-eyebrow">4BHK Virtual</div>
+      <div class="ph-eyebrow">4 BHK Virtual</div>
       <div class="ph-title">Select a Room</div>
     </div>
     <div class="panel-divider"></div>
@@ -439,16 +438,13 @@
     <div id="panel-footer">Brigade Stellaris</div>
   </div>
 
-  <!-- ── ROOM LABEL ── -->
   <div id="room-label">LOBBY</div>
 
-  <!-- ── ROTATE WARNING ── -->
   <div id="rotate-warning">
     <span>🔄</span>
     Please rotate your device to landscape
   </div>
 
-  <!-- ── ORIENTATION CHECK ── -->
   <script>
     function checkOrientation () {
       const warn = document.getElementById('rotate-warning')
@@ -461,7 +457,6 @@
     checkOrientation()
   </script>
 
-  <!-- ── APP VIEW CONTROLLER — all logic untouched, styleToggleWhite added ── -->
   <script>
     window.AppView = (function () {
       const viewer360Els = () => [
@@ -472,13 +467,14 @@
 
       function getCanvas () { return document.querySelector('canvas') }
 
+      // ── Force toggle white style after it becomes visible ──
       function styleToggleWhite () {
         const tog = document.getElementById('toggle')
         if (!tog) return
-        tog.style.background = '#ffffff'
-        tog.style.color      = '#7a3e1e'
-        tog.style.border     = '1px solid rgba(122,62,30,0.25)'
-        tog.style.borderLeft = 'none'
+        tog.style.background   = '#ffffff'
+        tog.style.color        = '#7a3e1e'
+        tog.style.border       = '1px solid rgba(122,62,30,0.25)'
+        tog.style.borderLeft   = 'none'
       }
 
       let currentView = 'floorplan'
@@ -503,7 +499,7 @@
         if (pillFP && pill360 && track) {
           pillFP.classList.toggle('active', view === 'floorplan')
           pill360.classList.toggle('active', view === '360')
-          const switchEl  = document.getElementById('view-switch')
+          const switchEl   = document.getElementById('view-switch')
           const switchRect = switchEl.getBoundingClientRect()
           const activeRect = activeBtn.getBoundingClientRect()
           track.style.left  = (activeRect.left - switchRect.left) + 'px'
@@ -524,7 +520,7 @@
           viewer360Els().forEach(el => { if (el) el.style.display = '' })
           const cvs = getCanvas()
           if (cvs) cvs.style.display = 'block'
-          styleToggleWhite()
+          styleToggleWhite()  // ← re-apply white after display is restored
         }
       }
 
@@ -551,17 +547,10 @@
     })()
   </script>
 
-  <!-- ── THREE.JS ── -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-
-  <!-- ── 360 VIEWER ── -->
   <script src="main.js"></script>
-
-  <!-- ── FLOORPLAN ── -->
   <script src="floorplan.js"></script>
-  <script>
-    if (window.FloorPlan) window.FloorPlan.show()
-  </script>
+  <script>window.FloorPlan.show()</script>
 
 </body>
 </html>
