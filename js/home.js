@@ -369,10 +369,9 @@ window.HomeModule = (function () {
         border: 1px solid rgba(200,185,165,.25); background: rgba(20,16,12,.55);
         backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
         display: flex; align-items: center; justify-content: center;
-        cursor: pointer; transition: background .2s, border-color .2s;
-        -webkit-tap-highlight-color: transparent;
+        cursor: pointer; -webkit-tap-highlight-color: transparent;
       }
-      #unit-back:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); }
+      #unit-back svg { width: 15px; height: 15px; stroke: rgba(230,220,205,.9); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
       #unit-back svg { width: 15px; height: 15px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
       /* ── Portrait / small-screen refinements ── */
@@ -988,6 +987,12 @@ window.HomeModule = (function () {
         if (slot === '360view') {
           unitRowVisible = true;
           document.getElementById('unit-row')?.classList.add('visible');
+          // Warm the most-clicked unit while the user picks
+          const iframe = document.getElementById('unit-iframe');
+          if (iframe && !iframe.dataset.targetUrl) {
+            iframe.dataset.targetUrl = unitURLs[1];
+            iframe.src = unitURLs[1];
+          }
           return;
         }
         if (slot === 'floorplan') { if (window.FloorplanModule) FloorplanModule.open(); return; }
