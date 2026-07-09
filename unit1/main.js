@@ -122,9 +122,47 @@ const hotspots = {
   ],
 };
 
+// ─── ON-SCREEN ERROR SURFACE ───────────────────────────────────────
+// If anything below throws, show it on screen instead of a silent
+// blank page. This makes it possible to debug on mobile / without
+// opening devtools.
+function showFatalError(msg) {
+  let box = document.getElementById('fatal-error-box');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = 'fatal-error-box';
+    box.style.cssText = `
+      position: fixed; inset: 0; z-index: 99999;
+      background: #1a0000; color: #ffb4b4;
+      font: 13px/1.5 monospace; padding: 24px;
+      white-space: pre-wrap; overflow: auto;
+    `;
+    document.body.appendChild(box);
+  }
+  box.textContent = 'Unit viewer failed to start:\n\n' + msg;
+}
+
+window.addEventListener('error', (e) => {
+  showFatalError((e.error && e.error.stack) || e.message || String(e));
+});
+
 // ─── THREE.JS SCENE ────────────────────────────────────────────────
 // DOM elements (#toggle, #side-panel, #fade-overlay, #room-label)
 // are all in index.html — NOT recreated here.
+
+if (typeof THREE === 'undefined') {
+  showFatalError(
+    'THREE is not defined.\n' +
+    'This means the three.min.js <script> tag failed to load, was blocked, ' +
+    'or ran AFTER main.js instead of before it.\n\n' +
+    'Check:\n' +
+    '1. Network tab — is three.min.js returning 200?\n' +
+    '2. Script order in this page\'s HTML — three.min.js and GLTFLoader.js ' +
+    'must come before <script src="js/main.js">.\n' +
+    '3. No "defer"/"async" on the three.js CDN tag while main.js loads normally (or vice versa).'
+  );
+  throw new Error('THREE is not defined — see on-screen message.');
+}
 
 const scene = new THREE.Scene();
 scene.add(new THREE.AmbientLight(0xffffff, 1.2));
@@ -546,8 +584,12 @@ function animate(ts) {
 }
 
 // ─── INIT ──────────────────────────────────────────────────────────
-buildPanel();
-bindPanelToggle();
-preloadInitial();
-loadRoom('foyer');
-animate(0);
+try {
+  buildPanel();
+  bindPanelToggle();
+  preloadInitial();
+  loadRoom('foyer');
+  animate(0);
+} catch (err) {
+  showFatalError((err && err.stack) || String(err));
+}
