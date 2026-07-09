@@ -22,6 +22,24 @@ window.GalleryModule = (function () {
   let injected    = false;
   let imageEnteredAt = 0; // timestamp when the current image became visible — used for dwell-time tracking
 
+  // ─── BROWSER/HARDWARE BACK SUPPORT ────────────────────────────────
+  // Opening the gallery pushes a history entry so the phone's back
+  // button (or PC Backspace) closes the gallery instead of leaving
+  // the page. requestBack() is the single exit point used by ✕, the
+  // mobile back arrow, hardware back, Backspace and Escape.
+  let _historyDepth = 0;
+  let _popping      = false;
+
+  function pushGlState() {
+    history.pushState({ gl: true }, '');
+    _historyDepth++;
+  }
+
+  function requestBack() {
+    if (_historyDepth > 0) history.back(); // → popstate → close()
+    else close();
+  }
+
   // ─── INJECT ──────────────────────────────────────────────────────
   function inject() {
     if (injected) return;
@@ -71,6 +89,19 @@ window.GalleryModule = (function () {
         -webkit-tap-highlight-color: transparent; margin-left: 16px;
       }
       #gl-close:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); }
+
+      /* Back arrow — same glass style as close, sits left of the title */
+      #gl-back {
+        flex-shrink: 0; width: 38px; height: 38px;
+        border: 1px solid rgba(200,185,165,.25); background: rgba(20,16,12,.55);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        border-radius: 10px; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; margin-right: 14px;
+        transition: background .2s, border-color .2s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #gl-back:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); }
+      #gl-back svg { width: 16px; height: 16px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
       /* ── STAGE — full bleed image area, no border, no shadow card ── */
       #gl-stage {
@@ -153,11 +184,11 @@ window.GalleryModule = (function () {
       #gl-thumbs-track {
         display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
         padding: 4px; max-width: 100%;
-        background: rgba(20,16,12,.45);
-        border: 1px solid rgba(200,185,165,.14);
+        background: rgba(245,242,235,.92);
+        border: 1px solid rgba(180,160,120,.30);
         border-radius: 14px;
         backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-        box-shadow: 0 10px 32px rgba(0,0,0,.35);
+        box-shadow: 0 10px 32px rgba(0,0,0,.18);
       }
       #gl-thumbs-track::-webkit-scrollbar { display: none; }
 
@@ -165,26 +196,50 @@ window.GalleryModule = (function () {
         flex-shrink: 0; width: 60px; height: 42px;
         border-radius: 8px; overflow: hidden;
         border: 2px solid transparent;
-        cursor: pointer; opacity: .60;
+        cursor: pointer; opacity: .75;
         transition: opacity .28s cubic-bezier(0.22,1,0.36,1),
                     border-color .28s cubic-bezier(0.22,1,0.36,1),
                     transform .35s cubic-bezier(0.34,1.56,0.64,1);
-        background: #2a1e14;
+        background: #e8e2d8;
       }
       .gl-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; pointer-events: none; }
       .gl-thumb.active {
-        opacity: 1; border-color: #c9a23a; transform: translateY(-4px) scale(1.10);
-        box-shadow: 0 6px 16px rgba(201,162,58,.35);
+        opacity: 1; border-color: #7a3e1e; transform: translateY(-4px) scale(1.10);
+        box-shadow: 0 6px 16px rgba(122,62,30,.30);
       }
       .gl-thumb:not(.active):hover { opacity: .88; transform: translateY(-2px); }
 
       @media (max-width: 520px) {
-        #gl-header { padding: 14px 14px 32px; }
-        #gl-caption { font-size: 18px; }
-        .gl-arrow { width: 38px; height: 38px; }
+        #gl-header { padding: 12px 12px 32px; }
+        #gl-caption { font-size: 17px; }
+        #gl-label { font-size: 8px; margin-bottom: 2px; }
+        #gl-back, #gl-close { width: 34px; height: 34px; }
+        #gl-back { margin-right: 10px; }
+        .gl-arrow { width: 36px; height: 36px; }
         #gl-arrow-prev { left: 8px; } #gl-arrow-next { right: 8px; }
-        .gl-thumb { width: 46px; height: 32px; }
-        #gl-footer { padding: 28px 12px 14px; }
+        .gl-thumb { width: 44px; height: 31px; }
+        #gl-footer {
+        position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
+        display: flex; flex-direction: column; align-items: center; gap: 10px;
+        padding: 36px 20px 18px;
+        background: linear-gradient(to top, rgba(8,6,4,.35) 0%, transparent 100%);
+        pointer-events: none;
+      }
+      }
+
+      /* Portrait phones — keep full-bleed image (cover) but move the
+         arrows down out of the image centre and tighten chrome so the
+         photo owns the vertical screen */
+      @media (orientation: portrait) and (max-width: 520px) {
+        .gl-card img { object-fit: cover; }
+        .gl-arrow { top: auto; bottom: 118px; transform: none; }
+        .gl-arrow:hover { transform: scale(1.06); }
+        #gl-counter {
+        font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
+        letter-spacing: .20em; text-transform: uppercase;
+        color: rgba(245,240,232,.85);
+        text-shadow: 0 1px 6px rgba(0,0,0,.45);
+      }
       }
     `;
     document.head.appendChild(style);
@@ -211,6 +266,9 @@ window.GalleryModule = (function () {
         </div>
 
         <div id="gl-header">
+          <div id="gl-back">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </div>
           <div id="gl-title-wrap">
             <p id="gl-label">Gallery</p>
             <p id="gl-caption">${IMAGES[0].caption}</p>
@@ -350,7 +408,19 @@ window.GalleryModule = (function () {
 
   // ─── EVENTS ──────────────────────────────────────────────────────
   function bindEvents() {
-    document.getElementById('gl-close').addEventListener('click', close);
+    document.getElementById('gl-close').addEventListener('click', requestBack);
+    document.getElementById('gl-back').addEventListener('click', requestBack);
+    document.getElementById('gl-back').addEventListener('touchend', (e) => { e.preventDefault(); requestBack(); });
+
+    // Hardware/browser back button (mobile) — closes the gallery, not the page
+    window.addEventListener('popstate', () => {
+      const overlay = document.getElementById('gallery-overlay');
+      if (!overlay || !overlay.classList.contains('open') || _historyDepth === 0) return;
+      _historyDepth--;
+      _popping = true;
+      close();
+      _popping = false;
+    });
 
     document.getElementById('gl-arrow-prev').addEventListener('click', (e) => {
       e.stopPropagation();
@@ -396,13 +466,16 @@ window.GalleryModule = (function () {
       }
     });
 
-    // Keyboard
+    // Keyboard — arrows navigate, Backspace/Escape go back (PC)
     document.addEventListener('keydown', e => {
       const overlay = document.getElementById('gallery-overlay');
       if (!overlay || !overlay.classList.contains('open')) return;
+      const t = e.target;
+      const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
+      if (typing) return;
       if (e.key === 'ArrowRight') cardTo((current + 1) % IMAGES.length, 'next');
       if (e.key === 'ArrowLeft')  cardTo((current - 1 + IMAGES.length) % IMAGES.length, 'prev');
-      if (e.key === 'Escape')     close();
+      if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); requestBack(); }
     });
   }
 
@@ -443,13 +516,23 @@ window.GalleryModule = (function () {
     updateUI();
 
     requestAnimationFrame(() => overlay.classList.add('open'));
+    if (!_popping) pushGlState();
   }
 
   function close() {
     reportDwell(current); // capture dwell time for whichever image was showing when closed
     imageEnteredAt = 0;
     const overlay = document.getElementById('gallery-overlay');
-    if (overlay) overlay.classList.remove('open');
+    if (!overlay || !overlay.classList.contains('open')) return;
+    overlay.classList.remove('open');
+
+    // Closed from outside (e.g. closeAllModules) while we still own a
+    // history entry — unwind it silently so back doesn't need an extra press.
+    if (!_popping && _historyDepth > 0) {
+      const n = _historyDepth;
+      _historyDepth = 0;
+      history.go(-n);
+    }
     document.querySelectorAll('.panel-slot').forEach(s => {
       if (s.dataset.slot === 'gallery') s.classList.remove('active');
     });

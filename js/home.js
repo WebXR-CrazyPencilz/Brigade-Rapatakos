@@ -16,12 +16,37 @@ window.HomeModule = (function () {
   let activeUnitNumber       = null;
   let unitLoadTimeout        = null; // safety net so the unit-viewer spinner never spins forever
 
+  // ─── BROWSER/HARDWARE BACK SUPPORT ────────────────────────────────
+  // Map overlay, unit viewer and lightbox each push a history entry
+  // when opened, so the phone's back button (and PC Backspace) closes
+  // them instead of leaving the page. Each overlay tracks its own
+  // depth; popstate closes whichever of ours is open.
+  const _hist = { map: 0, unit: 0, lb: 0 };
+  let _popping = false;
+
+  function pushHist(key) {
+    history.pushState({ home: key }, '');
+    _hist[key]++;
+  }
+  function unwindHist(key) {
+    // Overlay closed via UI while it still owns a history entry —
+    // silently consume it so back never needs an extra press later.
+    if (!_popping && _hist[key] > 0) {
+      const n = _hist[key];
+      _hist[key] = 0;
+      history.go(-n);
+    }
+  }
+  function requestHistBack(key, closeFn) {
+    if (_hist[key] > 0) history.back(); // → popstate → closeFn
+    else closeFn();
+  }
+
   // ─── UNIT URL MAP ────────────────────────────────────────────────
   const unitURLs = {
     1: 'unit1/index.html',
     2: 'unit2/index.html',
     3: 'unit3/index.html',
-    4: 'unit4/index.html',
   };
 
   // ─── CAROUSEL IMAGES ─────────────────────────────────────────────
@@ -81,7 +106,7 @@ window.HomeModule = (function () {
 
       /* ── Carousel ── */
       #carousel {
-        position: fixed; inset: 0; bottom: 62px;
+        position: fixed; inset: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px));
         background: #e8e4dd;
         display: flex; align-items: center; justify-content: center;
         overflow: hidden; cursor: pointer;
@@ -148,7 +173,7 @@ window.HomeModule = (function () {
 
       /* ── Location Map Overlay ── */
       #map-overlay {
-        position: fixed; inset: 0; bottom: 62px; z-index: 300;
+        position: fixed; inset: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); z-index: 300;
         background: #e8e4dd;
         display: flex; flex-direction: column; padding: 24px; box-sizing: border-box;
         opacity: 0; pointer-events: none;
@@ -205,7 +230,7 @@ window.HomeModule = (function () {
 
       /* ── Unit Row — tab strip ── */
       #unit-row {
-        position: fixed; bottom: 62px; left: 0; right: 0;
+        position: fixed; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0;
         width: 100%;
         /* FIX #10: lowered from 101 so it doesn't overlap unit-viewer-overlay (z:99) top edge */
         z-index: 98;
@@ -231,7 +256,7 @@ window.HomeModule = (function () {
         border-top: 2.5px solid transparent;
         transition: border-color .22s, background .22s;
         -webkit-tap-highlight-color: transparent;
-        flex: 1; max-width: 140px;
+        flex: 1; max-width: 180px;
       }
       /* divider between tabs */
       .unit-btn + .unit-btn::before {
@@ -319,7 +344,7 @@ window.HomeModule = (function () {
 
       /* ── Unit Viewer Overlay ── */
       #unit-viewer-overlay {
-        position: fixed; top: 0; left: 0; right: 0; bottom: 62px; z-index: 99;
+        position: fixed; top: 0; left: 0; right: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); z-index: 99;
         transform: translateY(100%); transition: transform .5s cubic-bezier(0.22,1,0.36,1);
         background: transparent; padding: 0; box-sizing: border-box;
         display: flex; flex-direction: column;
@@ -336,6 +361,42 @@ window.HomeModule = (function () {
       #unit-loader.visible { opacity:1; }
       #unit-loader-ring { width:36px; height:36px; border:2.5px solid rgba(200,190,154,.25); border-top-color:rgba(200,190,154,.9); border-radius:50%; animation:spinRing .75s linear infinite; }
       @keyframes spinRing { to{transform:rotate(360deg);} }
+
+      /* Floating back button over the unit 360 viewer (mobile + desktop) */
+      #unit-back {
+        position: absolute; top: 14px; left: 14px; z-index: 5;
+        width: 36px; height: 36px; border-radius: 10px;
+        border: 1px solid rgba(200,185,165,.25); background: rgba(20,16,12,.55);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: background .2s, border-color .2s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #unit-back:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); }
+      #unit-back svg { width: 15px; height: 15px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+      /* ── Portrait / small-screen refinements ── */
+      @media (max-width: 520px) {
+        /* Bottom nav: compress so all four tabs fit a narrow screen */
+        .panel-slot { padding: 0 10px; gap: 5px; }
+        .panel-slot-label { font-size: 9px; letter-spacing: .08em; }
+        .panel-slot.active { margin: 8px 2px; }
+        /* Unit tab strip */
+        .unit-btn { padding: 10px 12px; max-width: none; }
+        .unit-btn-label { font-size: 9.5px; }
+        /* Carousel + map: slimmer frame so the image owns the screen */
+        #carousel { padding: 12px; }
+        #map-overlay { padding: 12px; }
+        #map-title { font-size: 13px; }
+        /* Lightbox close within thumb reach */
+        #lb-close { top: 12px; right: 12px; }
+      }
+      @media (max-width: 360px) {
+        .panel-slot { padding: 0 7px; gap: 4px; }
+        .panel-slot-label { font-size: 8px; }
+      }
+      /* Respect notch/home-indicator on phones */
+      #bottom-panel { padding-bottom: env(safe-area-inset-bottom, 0px); height: calc(62px + env(safe-area-inset-bottom, 0px)); }
     `;
     document.head.appendChild(style);
 
@@ -383,7 +444,7 @@ window.HomeModule = (function () {
         <div class="unit-btn" data-unit="1"><span class="unit-btn-label">Unit 1</span></div>
         <div class="unit-btn" data-unit="2"><span class="unit-btn-label">Unit 2</span></div>
         <div class="unit-btn" data-unit="3"><span class="unit-btn-label">Unit 3</span></div>
-        <div class="unit-btn" data-unit="4"><span class="unit-btn-label">Unit 4</span></div>
+        
       </div>
 
       <div id="bottom-panel">
@@ -410,6 +471,9 @@ window.HomeModule = (function () {
 
       <div id="unit-viewer-overlay">
         <div id="unit-viewer-card">
+          <div id="unit-back">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+          </div>
           <div id="unit-loader"><div id="unit-loader-ring"></div></div>
           <iframe id="unit-iframe" src="" allow="fullscreen"></iframe>
         </div>
@@ -544,8 +608,12 @@ window.HomeModule = (function () {
     lbReset(false);
     lightboxIndex     = index;
     lightboxEnteredAt = Date.now();
+    if (!_popping) pushHist('lb');
   }
   function closeLightbox() {
+    const lbEl = document.getElementById('lightbox');
+    if (!lbEl || !lbEl.classList.contains('open')) return;
+    unwindHist('lb');
     if (lightboxEnteredAt) {
       const dwellMs = Date.now() - lightboxEnteredAt;
       if (typeof gtag === 'function' && dwellMs > 200) {
@@ -599,10 +667,14 @@ window.HomeModule = (function () {
     let lastTap = 0;
     lb.addEventListener('touchend', () => { const now = Date.now(); if (now - lastTap < 300) lbReset(true); lastTap = now; });
     lb.addEventListener('dblclick', () => lbReset(true));
-    document.getElementById('lb-close').addEventListener('click', closeLightbox);
-    lb.addEventListener('click', (e) => { if (e.target === lb) closeLightbox(); });
+    function requestLbBack() { requestHistBack('lb', closeLightbox); }
+    document.getElementById('lb-close').addEventListener('click', requestLbBack);
+    lb.addEventListener('click', (e) => { if (e.target === lb) requestLbBack(); });
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' && document.getElementById('lightbox').classList.contains('open')) closeLightbox();
+      if (!document.getElementById('lightbox').classList.contains('open')) return;
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); requestLbBack(); }
     });
   }
 
@@ -613,6 +685,7 @@ window.HomeModule = (function () {
     const overlay = document.getElementById('map-overlay');
     if (!overlay) return;
     overlay.classList.add('open');
+    if (!_popping) pushHist('map');
     if (!_mapLoaded) {
       _mapLoaded = true;
       const img     = document.getElementById('map-img');
@@ -634,21 +707,24 @@ window.HomeModule = (function () {
 
   function closeMap() {
     const overlay = document.getElementById('map-overlay');
-    if (overlay) overlay.classList.remove('open');
+    if (!overlay || !overlay.classList.contains('open')) return;
+    overlay.classList.remove('open');
+    unwindHist('map');
   }
 
   function bindMapEvents() {
     const mapBack = document.getElementById('map-back');
     function handleMapBack() {
-      closeMap();
+      requestHistBack('map', closeMap);
       document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
     }
     mapBack.addEventListener('click', handleMapBack);
     mapBack.addEventListener('touchend', (e) => { e.preventDefault(); handleMapBack(); });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && document.getElementById('map-overlay').classList.contains('open')) {
-        handleMapBack();
-      }
+      if (!document.getElementById('map-overlay').classList.contains('open')) return;
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); handleMapBack(); }
     });
   }
 
@@ -801,7 +877,9 @@ window.HomeModule = (function () {
     }
 
     // Open overlay immediately so slide-up plays while iframe loads
+    const wasOpen = overlay.classList.contains('open');
     overlay.classList.add('open');
+    if (!wasOpen && !_popping) pushHist('unit');
   }
 
   // Reports how long the currently open unit's 360 viewer was on screen, then resets.
@@ -817,11 +895,53 @@ window.HomeModule = (function () {
   }
 
   function closeUnitViewer() {
+    const overlay = document.getElementById('unit-viewer-overlay');
+    if (!overlay || !overlay.classList.contains('open')) return;
     reportUnitViewerDwell();
     unitViewerEnteredAt = 0;
     activeUnitNumber = null;
-    const overlay = document.getElementById('unit-viewer-overlay');
-    if (overlay) overlay.classList.remove('open');
+    overlay.classList.remove('open');
+    document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+    unwindHist('unit');
+  }
+
+  // ─── BACK NAVIGATION (hardware back / Backspace) ─────────────────
+  function bindBackNav() {
+    // Unit viewer floating back button
+    const unitBack = document.getElementById('unit-back');
+    function requestUnitBack() { requestHistBack('unit', closeUnitViewer); }
+    if (unitBack) {
+      unitBack.addEventListener('click', requestUnitBack);
+      unitBack.addEventListener('touchend', (e) => { e.preventDefault(); requestUnitBack(); });
+    }
+
+    // Backspace / Escape closes the unit viewer on PC
+    document.addEventListener('keydown', (e) => {
+      const overlay = document.getElementById('unit-viewer-overlay');
+      if (!overlay || !overlay.classList.contains('open')) return;
+      const t = e.target;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); requestUnitBack(); }
+    });
+
+    // Hardware/browser back button — closes whichever of our overlays
+    // is open, most-recent first (lightbox > unit viewer > map).
+    window.addEventListener('popstate', () => {
+      _popping = true;
+      const lb      = document.getElementById('lightbox');
+      const unitOvl = document.getElementById('unit-viewer-overlay');
+      const mapOvl  = document.getElementById('map-overlay');
+
+      if (lb && lb.classList.contains('open') && _hist.lb > 0) {
+        _hist.lb--; closeLightbox();
+      } else if (unitOvl && unitOvl.classList.contains('open') && _hist.unit > 0) {
+        _hist.unit--; closeUnitViewer();
+      } else if (mapOvl && mapOvl.classList.contains('open') && _hist.map > 0) {
+        _hist.map--; closeMap();
+        document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+      }
+      _popping = false;
+    });
   }
 
   // ─── CLOSE ALL MODULES ───────────────────────────────────────────
@@ -943,6 +1063,7 @@ window.HomeModule = (function () {
       bindLightboxZoom();
       bindMapEvents();
       bindPanelEvents();
+      bindBackNav();
       bindOrientationCheck();
       if (window.App && typeof window.App.finishLoad === 'function') App.finishLoad();
     }
