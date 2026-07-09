@@ -47,9 +47,7 @@
       line-height: 0;
       border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 0 0 1px rgba(201,162,58,0.6), 0 0 40px rgba(201,162,58,0.15), 0 20px 60px rgba(0,0,0,0.5);
-      outline: 1px solid rgba(201,162,58,0.2);
-      outline-offset: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
     `
 
     // ── The floorplan image
@@ -94,10 +92,10 @@
       bottom: 36px;
       left: 50%;
       transform: translateX(-50%);
-      background: linear-gradient(135deg, #c9a23a 0%, #e8c9a 60%, #c9a23a 100%);
-      color: #07060a;
+      background: #7a3e1e;
+      color: #ffffff;
       border: none;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25);
       font-weight: 700;
       padding: 6px 18px;
       border-radius: 20px;

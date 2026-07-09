@@ -5,6 +5,15 @@ function cloudThumb(url) {
   return url.replace('/upload/', '/upload/w_300,h_90,c_fill,q_auto,f_auto/');
 }
 
+// ─── CLOUDINARY FULL-PANO OPTIMIZATION ─────────────────────────────
+// Panoramas are equirectangular and displayed on a sphere, so lossless
+// full-res detail is wasted — q_auto,f_auto typically cuts file size
+// 50-70% (serves WebP/AVIF where supported) with no visible quality
+// loss. w_4096 caps width since sources may be larger than needed.
+function cloudOptimized(url) {
+  return url.replace('/upload/', '/upload/w_4096,q_auto,f_auto/');
+}
+
 // ─── ROOMS ─────────────────────────────────────────────────────────
 const rooms = {
   foyer:                 { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1777702080/foyer_fuoeml.jpg',                   label: 'LOBBY',                   startYaw: 1.55  },
@@ -163,7 +172,7 @@ function loadTexture(key, onDone) {
   if (loadingSet.has(key)) { return; }
   loadingSet.add(key);
   loader.load(
-    rooms[key].image,
+    cloudOptimized(rooms[key].image),
     (tex) => {
       tex.minFilter       = THREE.LinearFilter;
       tex.magFilter       = THREE.LinearFilter;
@@ -183,8 +192,19 @@ function loadTexture(key, onDone) {
 }
 
 function preloadInitial() {
-  const priority = ['foyer', 'foyertoliving1', 'foyertoliving2', 'living', 'livingtobedroom', 'masterbedroomcorridor'];
-  priority.forEach((k, i) => setTimeout(() => loadTexture(k), i * 150));
+  // Everything here is a "nice to have" for smoother navigation later —
+  // none of it should compete for bandwidth with the very first room
+  // the visitor is actually looking at. So we wait until that texture
+  // is cached before kicking off the rest, staggered, in the background.
+  const priority = ['foyertoliving1', 'foyertoliving2', 'living', 'livingtobedroom', 'masterbedroomcorridor'];
+  function startBackgroundPreload() {
+    priority.forEach((k, i) => setTimeout(() => loadTexture(k), 600 + i * 400));
+  }
+  if (textureCache['foyer']) {
+    startBackgroundPreload();
+  } else {
+    loadTexture('foyer', startBackgroundPreload);
+  }
 }
 
 let preloadQueue = [], isPreloading = false;
