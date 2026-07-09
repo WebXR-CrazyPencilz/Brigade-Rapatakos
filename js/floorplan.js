@@ -57,11 +57,11 @@ window.FloorplanModule = (function () {
       odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_01.jpg')  },
       even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_01.jpg') },
       oddUnits: [
-        { unitId:'A-odd-01', top:IK('Dimension/unit01_3bhk_l(c)_odd_tower_01.jpgDimension/unit01_3bhk_l(c)_odd_tower_01.jpg'),       iso:IK('Isometric/unit03_4bhk_(c)_tower_01.jpg'),       points:'59,07.5 78,07.5 78,45 59,45' },
+        { unitId:'A-odd-01', top:IK('Dimension/unit03_4bhk_(c)_tower_01.jpg'),       iso:IK('Isometric/unit03_4bhk_(c)_tower_01.jpg'),       points:'59,07.5 78,07.5 78,45 59,45' },
         { unitId:'A-odd-02', top:IK('Dimension/unit06_3bhk_l(d)_tower_02.jpg'),      iso:IK('Isometric/unit06_3bhk_l(d)_tower_02.jpg'),      points:'26,63 41.75,63 41.75,91.4 26,91.4' },
         { unitId:'A-odd-03', top:IK('Dimension/unit05_3bhk_s(a)_tower_02.jpg'),      iso:IK('Isometric/unit05_3bhk_s(a)_tower_02.jpg'),      points:'43.8,62.5 62,62.5 62,94.5 43.8,94.5' },
-        { unitId:'A-odd-04', top:IK('Dimension/unit01_3bhk_l(c)_podium_tower_02.jpg'),     points:'19.5,24.3 35.5,24.3 35.5,56.5 19.5,56.5' },
-        { unitId:'A-odd-05', top:IK('Dimension/unit02_3bhk_l(b)_odd_tower_01.jpg'),      points:'37.5,13.5 56.5,13.5 56.5,41.5 37.5,41.5' },
+        { unitId:'A-odd-04', top:IK('Dimension/unit01_3bhk_l(c)_odd_tower_01.jpg'),     points:'19.5,24.3 35.5,24.3 35.5,56.5 19.5,56.5' },
+        { unitId:'A-odd-05', top:IK('Dimension/unit02_3bhk_l(b)_tower_02.jpg'),      points:'37.5,13.5 56.5,13.5 56.5,41.5 37.5,41.5' },
         { unitId:'A-odd-06', top:IK('Dimension/unit04_4bhk_(e)_odd_tower_04.jpg'),      points:'62.5,46 80,46 80,88.5 62.5,88.5' },
       ],
       evenUnits: [
