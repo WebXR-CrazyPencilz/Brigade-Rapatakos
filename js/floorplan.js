@@ -70,7 +70,7 @@ window.FloorplanModule = (function () {
         { unitId:'A-even-03', top:IK('Dimension/unit06_3bhk_l(d)_tower_02.jpg'),          iso:IK('Isometric/unit06_3bhk_l(d)_tower_02.jpg'),         points:'26,63 41.75,63 41.75,91.4 26,91.4' },
         { unitId:'A-even-04', top:IK('Dimension/unit05_3bhk_s(a)_tower_02.jpg'),          iso:IK('Isometric/unit05_3bhk_s(a)_tower_02.jpg'),         points:'43.8,62.5 62,62.5 62,94.5 43.8,94.5' },
         { unitId:'A-even-05', top:IK('Dimension/unit03_4bhk_(c)_even_tower_01.jpg'),         points:'59,06 78,06 78,43 59,43' },
-        { unitId:'A-even-06', top:IK('Dimension/unit04_4bhk_(e)_odd_tower_04.jpg'),          points:'62.5,46 80,46 80,87.5 62.5,87.5' },
+        { unitId:'A-even-06', top:IK('Dimension/unit04_4bhk_(e)_tower_04.jpg'),          points:'62.5,46 80,46 80,87.5 62.5,87.5' },
       ],
     },
 
