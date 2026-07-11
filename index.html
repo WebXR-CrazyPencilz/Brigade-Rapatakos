@@ -20,183 +20,245 @@
   <meta property="og:image" content="preview.jpg" />
   <meta name="theme-color" content="#0d0d0d" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Syne:wght@400;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300&family=Syne:wght@400;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 
   <style>
-    /* ═══════════════════════════════════════
-       LEAD GATE SCREEN  (fullscreen, z:9999)
-       Shows BEFORE the 3D scene loads
-    ═══════════════════════════════════════ */
+    /* ═══════════════════════════════════════════════════════
+       BRIGADE STELLARIS — Landing Gate
+       Fullscreen, shown BEFORE the 3D scene loads.
+       After a successful lead submission → dismissGateAndStart()
+       fades this out and hands off to the interactive experience.
+    ═══════════════════════════════════════════════════════ */
+
     #lead-gate {
+      --brg-bronze: #A56A3C;
+      --brg-navy: #101726;
+      --brg-white: #FFFFFF;
+      --brg-text-secondary: rgba(255, 255, 255, 0.75);
+      --brg-glass-border: rgba(255, 255, 255, 0.15);
+
+      /* Paste your Cloudinary hero image URL below — everything else
+         (cover / center / fixed / responsive) is already wired up.
+         Until it's set, a navy gradient stands in as a graceful
+         fallback so the page still reads as finished. */
+      --brg-hero-image: url('PASTE_YOUR_CLOUDINARY_IMAGE_URL_HERE');
+
       position: fixed;
       inset: 0;
       z-index: 9999;
-      background: #eae7e0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
       overflow-y: auto;
-      transition: opacity 0.65s ease;
+      overflow-x: hidden;
+      color: var(--brg-white);
+      font-family: 'Inter', sans-serif;
+      transition: opacity 0.7s ease;
     }
     #lead-gate.fade-out {
       opacity: 0;
       pointer-events: none;
     }
 
-    /* Subtle city illustration overlay (mimics PDF background) */
-    #lead-gate::before {
-      content: '';
-      position: absolute;
+    /* ── Hero background layer — plain, no scrim ──
+       A separate position:fixed layer (rather than
+       background-attachment:fixed on the scrolling container) so the
+       image stays truly pinned to the viewport even on iOS Safari,
+       where background-attachment:fixed is unreliable.
+       The image itself already contains the full brand design (logo,
+       headline, accent), so no dark overlay is layered on top of it
+       here — the card below supplies its own contrast independently. */
+    .brg-hero-bg {
+      position: fixed;
       inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
-      background-size: 200px;
-      pointer-events: none;
-      opacity: 0.5;
+      z-index: 0;
+      background-image: var(--brg-hero-image),
+        linear-gradient(160deg, #0c111d 0%, #16202f 55%, #0c111d 100%);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
     }
 
-    /* Card */
-    #lead-gate-card {
+    /* ── Layout shell — card only, positioned over the right side
+       of the image so it doesn't sit over the headline baked into
+       the left side of the artwork ── */
+    .brg-layout {
       position: relative;
-      z-index: 1;
+      z-index: 2;
+      min-height: 100%;
+      min-height: 100dvh;
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 56px clamp(24px, 6vw, 96px);
+      box-sizing: border-box;
+    }
+
+    /* ── Registration card ── */
+    .brg-right {
+      display: flex;
+      justify-content: center;
+      animation: brgFadeUp 0.9s ease both;
+    }
+
+    .brg-card {
       width: 100%;
       max-width: 420px;
-      margin: 40px 20px;
       padding: 44px 40px 40px;
-      background: #ffffff;
-      border-radius: 8px;
-      box-shadow: 0 8px 48px rgba(0,0,0,.10), 0 2px 12px rgba(0,0,0,.06);
+      background: rgba(16, 23, 38, 0.55);
+      border: 1px solid var(--brg-glass-border);
+      border-radius: 14px;
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      box-shadow: 0 24px 70px rgba(0,0,0,0.45), 0 2px 10px rgba(0,0,0,0.25);
       box-sizing: border-box;
     }
 
-    /* Header */
-    .gate-logo {
+    .brg-card-brand {
       font-family: 'Syne', sans-serif;
-      font-size: 15px;
+      font-size: 12px;
       font-weight: 700;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      color: #1e2d3d;
-      text-align: center;
-      margin-bottom: 12px;
-    }
-    .gate-title {
-      font-family: 'Syne', sans-serif;
-      font-size: 16px;
-      font-weight: 600;
-      color: #7a3e1e;
-      letter-spacing: 0.16em;
+      letter-spacing: 0.28em;
       text-transform: uppercase;
       text-align: center;
-      margin-bottom: 4px;
+      color: var(--brg-white);
+      margin-bottom: 18px;
     }
-    .gate-subtitle {
+
+    .brg-card-title {
+      margin: 0 0 8px;
       font-family: 'Syne', sans-serif;
-      font-size: 9px;
-      color: rgba(80,60,40,.45);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      text-align: center;
-      margin-bottom: 28px;
-    }
-    .gate-rule {
-      width: 40px; height: 1px;
-      background: rgba(120,80,40,.20);
-      margin: 0 auto 24px;
-    }
-
-    /* ── Lead form field styles ── */
-    #lead-gate-form {
-      background: transparent;
-      color: #2a2018;
-      max-width: 100%;
-      padding: 0;
-    }
-
-    .gate_row { margin: 0 0 16px 0; }
-
-    .gate_col_lab {
-      width: 100%;
-      margin: 0 0 5px 0;
-      font-family: 'Syne', sans-serif;
-      font-size: 9px;
+      font-size: 20px;
       font-weight: 700;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: rgba(50,38,25,.60);
+      letter-spacing: 0.01em;
+      text-align: center;
+      color: var(--brg-white);
     }
-    .gate_col_fld {
-      width: 100%;
-      padding: 0;
-      margin: 0;
-    }
-    .gate_col_fld input[type=text] {
-      width: 100%;
-      background: #f7f5f2;
-      border: 1px solid rgba(160,130,90,.25);
-      border-radius: 4px;
-      color: #2a2018;
-      font-family: 'Syne', sans-serif;
+
+    .brg-card-subtitle {
+      margin: 0 0 30px;
+      font-family: 'Inter', sans-serif;
       font-size: 13px;
-      padding: 12px 14px;
-      outline: none;
-      transition: border-color 0.2s, background 0.2s;
-      box-sizing: border-box;
-    }
-    .gate_col_fld input[type=text]:focus {
-      border-color: rgba(122,62,30,.50);
-      background: #ffffff;
-    }
-    .gate_col_fld input[type=text]::placeholder {
-      color: rgba(100,80,55,.35);
+      line-height: 1.6;
+      text-align: center;
+      color: var(--brg-text-secondary);
     }
 
-    /* Submit button */
-    .gate_button {
-      width: 100%;
-      padding: 15px;
-      background: #7a3e1e;
-      color: #f5f0e8;
-      font-family: 'Syne', sans-serif;
-      font-size: 10.5px;
-      font-weight: 700;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-top: 6px;
-      transition: opacity 0.2s, transform 0.2s;
+    /* ── Form ── */
+    .brg-field {
+      margin: 0 0 18px;
     }
-    .gate_button:hover {
-      opacity: 0.88;
+
+    .brg-label {
+      display: block;
+      margin: 0 0 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--brg-text-secondary);
+    }
+    .brg-req {
+      color: var(--brg-bronze);
+    }
+
+    .brg-input {
+      width: 100%;
+      padding: 13px 16px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--brg-glass-border);
+      border-radius: 6px;
+      color: var(--brg-white);
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.2s ease, background 0.2s ease;
+      box-sizing: border-box;
+    }
+    .brg-input::placeholder {
+      color: rgba(255, 255, 255, 0.35);
+    }
+    .brg-input:focus {
+      border-color: var(--brg-bronze);
+      background: rgba(255, 255, 255, 0.10);
+    }
+    .brg-input:focus-visible {
+      outline: 2px solid var(--brg-bronze);
+      outline-offset: 2px;
+    }
+
+    /* ── Submit ── */
+    .brg-submit {
+      width: 100%;
+      margin-top: 8px;
+      padding: 15px;
+      background: var(--brg-bronze);
+      color: var(--brg-white);
+      border: none;
+      border-radius: 6px;
+      font-family: 'Syne', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.20em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+    }
+    .brg-submit:hover {
+      opacity: 0.90;
       transform: translateY(-1px);
     }
-
-    /* Success message */
-    .gate_success_box {
-      font-family: 'Syne', sans-serif !important;
-      font-size: 12px !important;
-      color: #2a2018 !important;
+    .brg-submit:focus-visible {
+      outline: 2px solid var(--brg-white);
+      outline-offset: 3px;
+    }
+    .brg-submit:disabled {
+      opacity: 0.65;
+      cursor: default;
+      transform: none;
     }
 
-    /* Error message */
-    .gate-error {
-      font-family: 'Syne', sans-serif;
-      font-size: 10.5px;
-      color: #a33b2e;
-      background: rgba(163,59,46,.08);
-      border: 1px solid rgba(163,59,46,.20);
-      border-radius: 4px;
-      padding: 9px 12px;
-      margin: 0 0 14px 0;
+    /* ── Error ── */
+    .brg-error {
+      margin: 0 0 16px;
+      padding: 11px 14px;
+      background: rgba(214, 90, 70, 0.14);
+      border: 1px solid rgba(214, 90, 70, 0.32);
+      border-radius: 6px;
+      font-family: 'Inter', sans-serif;
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: #f3c6bd;
     }
 
-    /* Mobile */
-    @media (max-width: 480px) {
-      #lead-gate-card { padding: 36px 24px 32px; margin: 24px 16px; }
-      .gate-logo { font-size: 13px; }
+    /* ── Motion ── */
+    @keyframes brgFadeUp {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .brg-right { animation: none; }
+      #lead-gate, .brg-submit { transition: none; }
+    }
+
+    /* ── Tablet — center the card over the image ── */
+    @media (max-width: 1024px) {
+      .brg-layout {
+        justify-content: center;
+        padding: 48px clamp(24px, 6vw, 64px) 64px;
+      }
+    }
+
+    /* ── Mobile — full-screen background, centered card ── */
+    @media (max-width: 640px) {
+      .brg-layout {
+        align-items: center;
+        justify-content: center;
+        min-height: 100dvh;
+        padding: 32px 20px;
+      }
+      .brg-card { padding: 36px 26px 32px; }
     }
   </style>
 </head>
@@ -216,63 +278,48 @@
 <div id="home-view"></div>
 
 <!-- ═══════════════════════════════════════════════════════
-     LEAD GATE — Fullscreen form shown BEFORE 3D loads
-     Same pattern as the old Firebase login screen.
-     After submit → startApp() fires.
+     LEAD GATE — Fullscreen luxury landing page shown BEFORE
+     the 3D scene loads. After submit → startApp() fires via
+     dismissGateAndStart() (defined below, unchanged).
 ════════════════════════════════════════════════════════ -->
 <div id="lead-gate">
-  <div id="lead-gate-card">
 
-    <div class="gate-logo">Brigade Stellaris</div>
-    <div class="gate-title">Register Your Interest</div>
-    <div class="gate-subtitle">Enter your details to begin the experience</div>
-    <div class="gate-rule"></div>
+  <div class="brg-hero-bg" aria-hidden="true"></div>
 
-    <!-- LEAD FORM -->
-    <div id='lead-gate-form'>
-      <div class='gate_success_box' id='gate-success' style='display:none'>
-        <div class='wf_customCircle'><div class='wf_customCheckMark'></div></div>
-        <span id='gate-success-info'></span>
+  <div class="brg-layout">
+
+    <!-- RIGHT — registration card -->
+    <div class="brg-right">
+      <div class="brg-card">
+
+        <div class="brg-card-brand">Brigade Stellaris</div>
+        <h2 class="brg-card-title">Register Your Interest</h2>
+        <p class="brg-card-subtitle">Share your details to begin the experience</p>
+
+        <form id="leadForm" autocomplete="off" novalidate>
+
+          <div id="lead-error" class="brg-error" role="alert" style="display:none;"></div>
+
+          <div class="brg-field">
+            <label class="brg-label" for="Name">Name <span class="brg-req">*</span></label>
+            <input type="text" id="Name" class="brg-input" maxlength="80" placeholder="Your full name" />
+          </div>
+
+          <div class="brg-field">
+            <label class="brg-label" for="Phone">Phone Number <span class="brg-req">*</span></label>
+            <input type="text" id="Phone" class="brg-input" maxlength="30" placeholder="+91 00000 00000" />
+          </div>
+
+          <div class="brg-field">
+            <label class="brg-label" for="Email">Email <span class="brg-req">*</span></label>
+            <input type="text" id="Email" class="brg-input" maxlength="100" placeholder="you@email.com" />
+          </div>
+
+          <input type="submit" id="submitLeadBtn" class="brg-submit" value="Begin Experience" />
+
+        </form>
       </div>
-
-      <form id='leadForm' autocomplete='off'>
-
-        <div id='lead-error' class='gate-error' style='display:none;'></div>
-
-        <!-- Name -->
-        <div class='gate_row'>
-          <div class='gate_col_lab'><label for='Name'>Name <span style='color:#c9a96e;'>*</span></label></div>
-          <div class='gate_col_fld'>
-            <input type='text' id='Name' maxlength='80' placeholder='Your name'/>
-          </div>
-        </div>
-
-        <!-- Phone (WhatsApp) -->
-        <div class='gate_row'>
-          <div class='gate_col_lab'><label for='Phone'>WhatsApp Number <span style='color:#c9a96e;'>*</span></label></div>
-          <div class='gate_col_fld'>
-            <input type='text' id='Phone' maxlength='30' placeholder='+91 00000 00000'/>
-          </div>
-        </div>
-
-        <!-- Email -->
-        <div class='gate_row'>
-          <div class='gate_col_lab'><label for='Email'>Email</label></div>
-          <div class='gate_col_fld'>
-            <input type='text' id='Email' maxlength='100' placeholder='your@email.com'/>
-          </div>
-        </div>
-
-        <!-- Submit -->
-        <div class='gate_row'>
-          <div class='gate_col_lab'></div>
-          <div class='gate_col_fld'>
-            <input type='submit' id='submitLeadBtn' role='button' class='gate_button' value='Submit' aria-label='Submit'/>
-          </div>
-        </div>
-      </form>
     </div>
-    <!-- END LEAD FORM -->
 
   </div>
 </div>
@@ -286,7 +333,7 @@
 <script src="js/gallery.js"></script>
 
 <!-- Lead collection — communicates only with the Google Apps Script Web App -->
-<script src="js/Config.js"></script>
+<script src="js/config.js"></script>
 <script src="js/lead.js"></script>
 
 <script>
