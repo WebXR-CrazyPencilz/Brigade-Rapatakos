@@ -15,7 +15,7 @@
 const CONFIG = {
   // Paste your deployed Google Apps Script Web App URL here.
   // Apps Script editor → Deploy → New deployment → Web app → Copy URL
-  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbxxoaGZWnBpWzP6DOgIq_ToKR9HK-c3pwko4osi6EX1UBd3NfAI8lJfkzBzeZTqO7sYPQ/exec",
+  WEB_APP_URL: "https://script.google.com/macros/s/AKfycbx7s9u2-QU12ddwkUMWDypxfQcoMSRwqEEtSC8klZPztoEiMTD3tHGbMwC8t5HRxWoFzw/exec",
 
   // Must exactly match the SECRET_KEY constant in Code.gs.
   // This is a shared-secret check (keeps random bots off the endpoint),
