@@ -45,9 +45,8 @@
       position: relative;
       display: inline-block;
       line-height: 0;
-      border-radius: 8px;
       overflow: hidden;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+      box-shadow: none;
     `
 
     // ── The floorplan image
@@ -57,11 +56,9 @@
     img.src = FP_IMAGE_URL
     img.style.cssText = `
       display: block;
-      max-width: 92vw;
-      max-height: 88vh;
-      width: auto;
+      width: 100vw;
+      max-height: 100vh;
       height: auto;
-      border-radius: 6px;
       user-select: none;
       -webkit-user-drag: none;
     `

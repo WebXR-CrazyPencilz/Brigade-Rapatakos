@@ -2,16 +2,17 @@
 
 // ─── CLOUDINARY THUMB ──────────────────────────────────────────────
 function cloudThumb(url) {
-  return url.replace('/upload/', '/upload/w_300,h_90,c_fill,q_auto,f_auto/');
+  return url.replace('/upload/', '/upload/w_260,h_80,c_fill,q_auto:eco,f_auto/');
 }
 
 // ─── CLOUDINARY FULL-PANO OPTIMIZATION ─────────────────────────────
 // Panoramas are equirectangular and displayed on a sphere, so lossless
-// full-res detail is wasted — q_auto,f_auto typically cuts file size
-// 50-70% (serves WebP/AVIF where supported) with no visible quality
-// loss. w_4096 caps width since sources may be larger than needed.
+// full-res detail is wasted. w_2600 caps width to a size that still
+// looks sharp on the sphere but is meaningfully smaller to download;
+// q_auto:good + f_auto (serves WebP/AVIF where supported) typically
+// cuts file size 60-75% combined, with no visible quality loss.
 function cloudOptimized(url) {
-  return url.replace('/upload/', '/upload/w_4096,q_auto,f_auto/');
+  return url.replace('/upload/', '/upload/w_2600,q_auto:good,f_auto/');
 }
 
 // ─── ROOMS ─────────────────────────────────────────────────────────
@@ -199,12 +200,33 @@ function preloadInitial() {
   const priority = ['foyertoliving1', 'foyertoliving2', 'living', 'livingtobedroom', 'masterbedroomcorridor'];
   function startBackgroundPreload() {
     priority.forEach((k, i) => setTimeout(() => loadTexture(k), 600 + i * 400));
+    // Once the priority set is queued, keep going through everything
+    // else in the unit during idle time, one at a time, so the whole
+    // tour ends up cached even before the visitor reaches those rooms.
+    const remaining = Object.keys(rooms).filter(k => k !== 'foyer' && !priority.includes(k));
+    const delayBase = 600 + priority.length * 400 + 500;
+    scheduleIdlePreload(remaining, delayBase);
   }
   if (textureCache['foyer']) {
     startBackgroundPreload();
   } else {
     loadTexture('foyer', startBackgroundPreload);
   }
+}
+
+function scheduleIdlePreload(keys, startDelay) {
+  let i = 0;
+  function next() {
+    if (i >= keys.length) return;
+    const key = keys[i++];
+    const run = () => loadTexture(key, next);
+    if (typeof requestIdleCallback === 'function') {
+      requestIdleCallback(run, { timeout: 2000 });
+    } else {
+      setTimeout(run, 300);
+    }
+  }
+  setTimeout(next, startDelay);
 }
 
 let preloadQueue = [], isPreloading = false;

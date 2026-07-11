@@ -7,6 +7,15 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 
+  <!-- Kick off the critical first-paint images as early as possible,
+       before any script has even run, using the compressed/resized
+       versions (same transforms main.js and floorplan.js apply). -->
+  <link rel="preload" as="image" href="https://res.cloudinary.com/dp5ifzgge/image/upload/w_2600,q_auto:good,f_auto/v1777702080/foyer_fuoeml.jpg">
+  <link rel="preload" as="image" href="https://ik.imagekit.io/pwzaetheh/Dimension/4BHKF.jpg?updatedAt=1779451208452&tr=w-1600,q-70">
+  <link rel="preconnect" href="https://res.cloudinary.com">
+  <link rel="preconnect" href="https://ik.imagekit.io">
+
+
   <style>
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -102,6 +111,17 @@
       #view-switch { top: 10px; }
       #side-panel { width: 100vw; }
       #toggle.open { left: 100vw; }
+      #panel-header .ph-title { font-size: 22px; }
+      #room-label {
+        bottom: 18px;
+        font-size: 9px;
+        letter-spacing: 2.5px;
+        padding: 8px 18px;
+        max-width: 90vw;
+        white-space: normal;
+        text-align: center;
+      }
+      .room-btn { height: 50px; }
     }
 
     /* ── PANEL TOGGLE — white, rust arrow ── */
@@ -331,26 +351,6 @@
 
     #fade-overlay.fading { opacity: 1; pointer-events: all; }
 
-    /* ── Rotate warning ── */
-    #rotate-warning {
-      position: fixed; inset: 0;
-      background: var(--bg);
-      color: var(--text-mid);
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      gap: 14px;
-      font-size: 11px;
-      letter-spacing: 2px;
-      text-transform: uppercase;
-      z-index: 9999;
-      text-align: center;
-      padding: 20px;
-      display: none;
-    }
-
-    #rotate-warning span { font-size: 30px; }
-
     /* ── Corner accents ── */
     .corner-accent {
       position: fixed;
@@ -402,23 +402,6 @@
   </div>
 
   <div id="room-label">LOBBY</div>
-
-  <div id="rotate-warning">
-    <span>🔄</span>
-    Please rotate your device to landscape
-  </div>
-
-  <script>
-    function checkOrientation () {
-      const warn = document.getElementById('rotate-warning')
-      if (!warn) return
-      const isPortrait = window.innerHeight > window.innerWidth && window.innerWidth <= 768
-      warn.style.display = isPortrait ? 'flex' : 'none'
-    }
-    window.addEventListener('resize', checkOrientation)
-    window.addEventListener('orientationchange', checkOrientation)
-    checkOrientation()
-  </script>
 
   <script>
     window.AppView = (function () {
