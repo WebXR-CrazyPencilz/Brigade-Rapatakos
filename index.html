@@ -47,6 +47,10 @@
       position: fixed;
       inset: 0;
       z-index: 9999;
+      height: 100vh;   /* fallback for older browsers without dvh support */
+      height: 100dvh;  /* the real, current mobile viewport — shrinks/grows
+                           as the browser's address bar shows/hides, so this
+                           is the ONE place "full screen height" is decided */
       overflow-y: auto;
       overflow-x: hidden;
       color: var(--brg-white);
@@ -89,7 +93,6 @@
       position: relative;
       z-index: 2;
       min-height: 100%;
-      min-height: 100dvh;
       display: flex;
       align-items: center;
       justify-content: flex-end;
@@ -306,7 +309,6 @@
       .brg-layout {
         align-items: center;
         justify-content: center;
-        min-height: 100dvh;
         padding: 32px 20px;
       }
       .brg-card { padding: 36px 26px 32px; }
