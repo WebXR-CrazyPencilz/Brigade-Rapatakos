@@ -309,9 +309,47 @@
       .brg-layout {
         align-items: center;
         justify-content: center;
-        padding: 32px 20px;
+        padding: 20px 16px;
       }
-      .brg-card { padding: 36px 26px 32px; }
+
+      /* Nearly full-width and noticeably taller/roomier than the
+         desktop card — on a phone screen the previous compact sizing
+         read as a small floating widget rather than the main event. */
+      .brg-right {
+        width: 100%;
+      }
+      .brg-card {
+        max-width: 480px;
+        width: 100%;
+        padding: 44px 28px 40px;
+      }
+
+      .brg-card-brand { font-size: 13px; margin-bottom: 20px; }
+      .brg-card-title { font-size: 24px; }
+      .brg-card-subtitle { font-size: 14px; margin-bottom: 34px; }
+
+      .brg-field { margin-bottom: 22px; }
+      .brg-label { font-size: 12px; margin-bottom: 10px; }
+
+      /* font-size:16px specifically avoids iOS Safari's automatic
+         zoom-on-focus behavior for inputs sized smaller than that */
+      .brg-input {
+        padding: 17px 18px;
+        font-size: 16px;
+        border-radius: 8px;
+      }
+
+      .brg-submit {
+        padding: 19px;
+        font-size: 13px;
+        border-radius: 8px;
+        margin-top: 12px;
+      }
+
+      .brg-skip {
+        font-size: 11px;
+        margin-top: 18px;
+      }
     }
   </style>
 </head>
