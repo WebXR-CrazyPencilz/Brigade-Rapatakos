@@ -65,7 +65,12 @@
        where background-attachment:fixed is unreliable.
        The image itself already contains the full brand design (logo,
        headline, accent), so no dark overlay is layered on top of it
-       here — the card below supplies its own contrast independently. */
+       here — the card below supplies its own contrast independently.
+       background-position is overridden to "right" at narrower
+       widths (see the ≤1024px query below) — cover naturally crops
+       more aggressively on tall/narrow screens, so anchoring to the
+       right pushes the headline (on the image's left side) out of
+       frame instead of letting it land under the card. */
     .brg-hero-bg {
       position: fixed;
       inset: 0;
@@ -219,6 +224,33 @@
       transform: none;
     }
 
+    /* ── Skip — deliberately small/low-emphasis, never competes
+       visually with the primary "Begin Experience" CTA above it ── */
+    .brg-skip {
+      display: block;
+      width: 100%;
+      margin-top: 14px;
+      padding: 4px;
+      background: transparent;
+      border: none;
+      font-family: 'Inter', sans-serif;
+      font-size: 10px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      text-align: center;
+      color: rgba(255, 255, 255, 0.40);
+      cursor: pointer;
+      transition: color 0.2s ease;
+    }
+    .brg-skip:hover {
+      color: rgba(255, 255, 255, 0.70);
+    }
+    .brg-skip:focus-visible {
+      outline: 1px solid var(--brg-bronze);
+      outline-offset: 2px;
+    }
+
     /* ── Error ── */
     .brg-error {
       margin: 0 0 16px;
@@ -242,15 +274,34 @@
       #lead-gate, .brg-submit { transition: none; }
     }
 
-    /* ── Tablet — center the card over the image ── */
+    /* ── Tablet — card moves to the left, over the image ── */
     @media (max-width: 1024px) {
       .brg-layout {
-        justify-content: center;
+        justify-content: flex-end;
         padding: 48px clamp(24px, 6vw, 64px) 64px;
+      }
+
+      /* At narrower widths, cover/center would put the headline baked
+         into the image right under the card. Anchoring the crop to
+         the right pushes that headline (on the image's left side)
+         out of frame, while the card stays on the right where the
+         image has clear space. Pure CSS — no second image request
+         needed. The extra card opacity is a readability safety net
+         either way. */
+      .brg-hero-bg {
+        background-position: right;
+      }
+      .brg-card {
+        background: rgba(16, 23, 38, 0.82);
       }
     }
 
-    /* ── Mobile — full-screen background, centered card ── */
+    /* ── Mobile — full-screen background, card centered ──
+       (crop position + card opacity for readability are already
+       applied by the ≤1024px block above, which covers this range too.
+       Centering here — rather than the tablet block's flex-end — is
+       safe because the crop already keeps the headline fully out of
+       frame at this width, so there's no overlap risk either way. ) */
     @media (max-width: 640px) {
       .brg-layout {
         align-items: center;
@@ -318,6 +369,9 @@
           <input type="submit" id="submitLeadBtn" class="brg-submit" value="Begin Experience" />
 
         </form>
+
+        <button type="button" id="gate-skip" class="brg-skip">Skip</button>
+
       </div>
     </div>
 
@@ -333,7 +387,7 @@
 <script src="js/gallery.js"></script>
 
 <!-- Lead collection — communicates only with the Google Apps Script Web App -->
-<script src="js/Config.js"></script>
+<script src="js/config.js"></script>
 <script src="js/lead.js"></script>
 
 <script>
@@ -359,6 +413,12 @@ function dismissGateAndStart() {
   if (window.FloorplanModule && typeof FloorplanModule.init === 'function') FloorplanModule.init();
   if (window.GalleryModule   && typeof GalleryModule.init   === 'function') GalleryModule.init();
 }
+
+// Skip — bypasses lead capture entirely and jumps straight into the
+// experience. Deliberately calls dismissGateAndStart() directly
+// rather than going through lead.js, so no lead is ever recorded
+// for a skipped visit.
+document.getElementById('gate-skip')?.addEventListener('click', dismissGateAndStart);
 
 /* ─── APP CONTROLLER ─── */
 window.App = {
