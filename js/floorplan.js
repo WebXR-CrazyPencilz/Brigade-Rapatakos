@@ -38,7 +38,7 @@ window.FloorplanModule = (function () {
 
   // ─── LEVEL 0 — SITEMAP ────────────────────────────────────────
   const SITEMAP = {
-    image: IK('Cluster/siteplan.jpg'),
+    image: IK('Cluster/siteplan00.jpg'),
     towerTiles: [
       { id: 'tower-A', label: 'Tower A', points: '40,1.2 62,1.2 62,38 40,38' },
       { id: 'tower-B', label: 'Tower B', points: '45.5,31 69,31 69,63 45.5,63' },
