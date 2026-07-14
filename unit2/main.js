@@ -2,6 +2,67 @@ function cloudThumb(url) {
   return url.replace('/upload/', '/upload/w_300,h_90,c_fill,q_auto,f_auto/')
 }
 
+// ─── CLOUDINARY FULL-PANO OPTIMIZATION ─────────────────────────────
+// Every room image here ships with a baked-in `f_auto,q_auto` transform
+// and NO width cap — meaning every visitor, phone or desktop, was
+// downloading the full original-resolution upload for every panorama.
+// This replaces that fixed transform with a device/connection-aware
+// one: desktop gets a sensible width cap (still full detail for a
+// sphere projection), mobile gets a meaningfully smaller, more
+// compressed version of the SAME image, and slow/metered mobile
+// connections get a further step down. No new uploads needed — it's
+// all done via the Cloudinary URL.
+function isMobileViewport() {
+  return window.innerWidth <= 768
+}
+
+// Network Information API — Chrome/Android only, not universally
+// supported. Only ever used to go MORE conservative on data usage;
+// never assumed present, and desktop/unsupported browsers are
+// completely unaffected by this check.
+function isSlowConnection() {
+  const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection
+  if (!conn) return false
+  if (conn.saveData) return true
+  return ['slow-2g', '2g', '3g'].includes(conn.effectiveType)
+}
+
+function cloudOptimized(url) {
+  let width   = 2600
+  let quality = 'q_auto:good'
+
+  if (isMobileViewport()) {
+    // w_1200 is applied to EVERY mobile visitor by default, not just
+    // ones detected as being on a slow connection — the Network
+    // Information API below doesn't exist at all on iOS Safari, so
+    // gating the aggressive tier behind "isSlowConnection()" alone
+    // would leave a large share of real phone traffic (including
+    // every iPhone) on a bigger download than necessary. q_auto:eco
+    // compresses harder than q_auto:good; the combination is a large
+    // cut in download size, prioritizing load speed on a small screen
+    // where the difference is hard to see anyway.
+    width   = 1200
+    quality = 'q_auto:eco'
+
+    if (isSlowConnection()) {
+      // A further step down specifically for visitors CONFIRMED to be
+      // on metered or 2g/3g connections (Chrome/Android only), where
+      // every extra KB has a real cost.
+      width = 900
+    }
+  }
+
+  const transform = `w_${width},${quality},f_auto`
+
+  // These URLs already ship with a baked-in `f_auto,q_auto` transform
+  // segment — replace it outright rather than stacking a second
+  // transform on top of it (Cloudinary would apply both, wastefully).
+  if (url.includes('/upload/f_auto,q_auto/')) {
+    return url.replace('/upload/f_auto,q_auto/', `/upload/${transform}/`)
+  }
+  return url.replace('/upload/', `/upload/${transform}/`)
+}
+
 // ─── ROOMS ─────────────────────────────────────────────────────
 const rooms = {
   lobby:                 { image: 'https://res.cloudinary.com/dp5ifzgge/image/upload/f_auto,q_auto/v1779452949/Lobby_jghq0s.jpg',                     label: 'LOBBY', startYaw: 1.6 },
@@ -143,7 +204,7 @@ function loadTexture(key, onDone) {
   if (!rooms[key]) { console.warn('loadTexture: unknown key', key); onDone && onDone(null); return }
   if (textureCache[key]) { onDone && onDone(textureCache[key]); return }
   loader.load(
-    rooms[key].image,
+    cloudOptimized(rooms[key].image),
     (tex) => {
       tex.minFilter       = THREE.LinearFilter
       tex.magFilter       = THREE.LinearFilter

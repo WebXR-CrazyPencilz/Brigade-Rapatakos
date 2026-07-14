@@ -9,9 +9,47 @@
 
   <!-- Kick off the critical first-paint images as early as possible,
        before any script has even run, using the compressed/resized
-       versions (same transforms main.js and floorplan.js apply). -->
-  <link rel="preload" as="image" href="https://res.cloudinary.com/dp5ifzgge/image/upload/w_2600,q_auto:good,f_auto/v1777702080/foyer_fuoeml.jpg">
-  <link rel="preload" as="image" href="https://ik.imagekit.io/pwzaetheh/Dimension/4BHKF.jpg?updatedAt=1779451208452&tr=w-1600,q-70">
+       versions (same transforms main.js and floorplan.js apply).
+
+       IMPORTANT — these use imagesrcset/imagesizes rather than a
+       single hardcoded href. A single href can't adapt to viewport
+       size (there's no JS running yet to decide "mobile vs desktop"),
+       so the previous version always preloaded the DESKTOP tier for
+       every visitor, phone included — meaning mobile browsers
+       downloaded the full 2600px image immediately on page load,
+       then main.js/floorplan.js's own device-aware logic would go
+       request a DIFFERENT, smaller URL once it ran, wasting the
+       preloaded bytes entirely. imagesrcset lets the browser itself
+       pick the candidate matching the real viewport width, before any
+       script runs, landing close to what the JS will independently
+       decide.
+
+       crossorigin="anonymous" on the Cloudinary preload matters
+       because Three.js's TextureLoader fetches this same image with
+       CORS credentials to use it on a WebGL canvas without tainting
+       it — without a matching crossorigin here, Chrome can't reuse
+       the preloaded response at all (that mismatch is what the
+       "preload found, but not used" console warning was about). The
+       ImageKit preload doesn't need it — it's a plain <img>, not fed
+       into WebGL.
+
+       Values below match cloudOptimized() in main.js and
+       imagekitOptimized() in floorplan.js as of this fix. If those
+       tiers change, these should be updated to match, or this preload
+       just goes back to being wasted bytes for whichever tier it
+       no longer represents. -->
+  <link rel="preload" as="image" crossorigin="anonymous"
+        imagesrcset="
+          https://res.cloudinary.com/dp5ifzgge/image/upload/w_1200,q_auto:eco,f_auto/v1777702080/foyer_fuoeml.jpg 1200w,
+          https://res.cloudinary.com/dp5ifzgge/image/upload/w_2600,q_auto:good,f_auto/v1777702080/foyer_fuoeml.jpg 2600w
+        "
+        imagesizes="100vw">
+  <link rel="preload" as="image"
+        imagesrcset="
+          https://ik.imagekit.io/pwzaetheh/Dimension/4BHKF.jpg?updatedAt=1779451208452&tr=w-700,q-65 700w,
+          https://ik.imagekit.io/pwzaetheh/Dimension/4BHKF.jpg?updatedAt=1779451208452&tr=w-1600,q-80 1600w
+        "
+        imagesizes="100vw">
   <link rel="preconnect" href="https://res.cloudinary.com">
   <link rel="preconnect" href="https://ik.imagekit.io">
 

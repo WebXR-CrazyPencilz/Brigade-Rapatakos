@@ -1,17 +1,18 @@
 ;(function () {
   'use strict'
 
-  const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Dimension/3BHK(S)B.jpg?updatedAt=1779451188877'
+  const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Dimension/4BHKF.jpg?updatedAt=1779451208452'
   const VP_W = 1009
   const VP_H = 567
 
   const zones = [
-    { room: 'lobby',           label: 'LOBBY',             points: '352,333 504,333 504,505 352,505' },
-    { room: 'masterbedroom',   label: 'MASTER BEDROOM',    points: '200,140 350,140 350,505 200,505' },
-    { room: 'kidsbedroom',     label: 'KIDS BEDROOM',      points: '354,140 504,140 504,332 354,332' },
-    { room: 'guestbedroom',    label: 'GUEST BEDROOM',     points: '666,70 810,70 810,390 666,390'   },
-    { room: 'livinganddining', label: 'LIVING AND DINING', points: '505,70 665,70 665,332 505,332'   },
-    { room: 'kitchen',         label: 'KITCHEN',           points: '505,332 668,332 668,505 505,505' },
+    { room: 'living',        label: 'LIVING ROOM',   points: '478,206 702,206 702,506 478,506' },
+    { room: 'masterbedroom', label: 'MASTER BEDROOM',points: '235,184 356,184 356,455 235,455' },
+    { room: 'kidsbedroom',   label: 'KIDS BEDROOM',  points: '360,248 475,248 475,506 360,506' },
+    { room: 'guestbedroom',  label: 'GUEST BEDROOM', points: '704,248 820,248 820,455 704,455' },
+    { room: 'kitchen',       label: 'KITCHEN',       points: '482,70 705,70 705,205 482,205'   },
+    { room: 'bedroom3',      label: 'BEDROOM 3',     points: '236,70 478,70 478,188 236,188'   },
+    { room: 'foyer',         label: 'LOBBY',         points: '705,67 820,67 820,248 705,248'   },
   ]
 
   function injectLayer() {
@@ -27,6 +28,7 @@
     const img = document.createElement('img')
     img.id  = 'fp-img'
     img.alt = 'Floor Plan'
+    img.src = FP_IMAGE_URL
     img.style.cssText = `
       position: absolute;
       left: 50%; top: 50%;
@@ -34,32 +36,7 @@
       width: 96%; max-height: 92%;
       object-fit: contain; height: auto;
       display: block;
-      opacity: 0; transition: opacity 0.25s ease;
       user-select: none; -webkit-user-drag: none;
-    `
-
-    // Loading spinner — shown while the floor plan image is fetching, so a
-    // slow/first-time connection to the image host shows visible feedback
-    // instead of a blank screen.
-    const spinner = document.createElement('div')
-    spinner.id = 'fp-spinner'
-    spinner.style.cssText = `
-      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-      width: 34px; height: 34px;
-      border: 2.5px solid rgba(122,62,30,.20); border-top-color: rgba(122,62,30,.85);
-      border-radius: 50%; animation: fpSpin 0.75s linear infinite;
-    `
-    const spinKeyframes = document.createElement('style')
-    spinKeyframes.textContent = '@keyframes fpSpin { to { transform: translate(-50%, -50%) rotate(360deg); } }'
-    document.head.appendChild(spinKeyframes)
-
-    const errorMsg = document.createElement('div')
-    errorMsg.id = 'fp-error'
-    errorMsg.textContent = 'Floor plan image failed to load. Retrying…'
-    errorMsg.style.cssText = `
-      position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
-      display: none; font-family: inherit; font-size: 12px; letter-spacing: 1px;
-      text-transform: uppercase; color: rgba(122,62,30,.75); text-align: center;
     `
 
     const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -81,8 +58,6 @@
     `
 
     layer.appendChild(img)
-    layer.appendChild(spinner)
-    layer.appendChild(errorMsg)
     layer.appendChild(svg)
     layer.appendChild(tip)
     document.body.appendChild(layer)
@@ -96,43 +71,8 @@
       svg.style.height = rect.height + 'px'
     }
 
-    function showImage() {
-      spinner.style.display = 'none'
-      errorMsg.style.display = 'none'
-      img.style.opacity = '1'
-      syncSVG()
-      buildZones()
-    }
-
-    let retryCount = 0
-    const MAX_RETRIES = 3
-
-    function loadImage() {
-      spinner.style.display = ''
-      errorMsg.style.display = 'none'
-      img.style.opacity = '0'
-
-      img.onload = showImage
-
-      img.onerror = () => {
-        retryCount++
-        if (retryCount <= MAX_RETRIES) {
-          console.warn(`Floor plan image failed to load (attempt ${retryCount}/${MAX_RETRIES}), retrying…`)
-          setTimeout(() => {
-            img.src = FP_IMAGE_URL + (FP_IMAGE_URL.includes('?') ? '&' : '?') + 'retry=' + retryCount
-          }, 800 * retryCount)
-        } else {
-          spinner.style.display = 'none'
-          errorMsg.textContent = 'Floor plan image could not be loaded.'
-          errorMsg.style.display = ''
-          console.error('Floor plan image failed after', MAX_RETRIES, 'retries:', FP_IMAGE_URL)
-        }
-      }
-
-      img.src = FP_IMAGE_URL
-    }
-
-    loadImage()
+    img.addEventListener('load', () => { syncSVG(); buildZones() })
+    if (img.complete && img.naturalWidth) { syncSVG(); buildZones() }
 
     const ro = new ResizeObserver(syncSVG)
     ro.observe(layer)
