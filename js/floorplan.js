@@ -38,12 +38,12 @@ window.FloorplanModule = (function () {
 
   // ─── LEVEL 0 — SITEMAP ────────────────────────────────────────
   const SITEMAP = {
-    image: IK('Cluster/sitemap.jpg'),
+    image: IK('Cluster/siteplan.jpg'),
     towerTiles: [
-      { id: 'tower-A', label: 'Tower A', points: '42,8 57.8,8 57.8,31 42,31' },
-      { id: 'tower-B', label: 'Tower B', points: '46.5,36 63,36 63,59.5 46.75,59.75' },
-      { id: 'tower-C', label: 'Tower C', points: '24,53.25 44.65,53.25 44.65,78.5 24,78.5' },
-      { id: 'tower-D', label: 'Tower D', points: '24.1,28 40.45,28 40.45,50.35 24.1,50.35' },
+      { id: 'tower-A', label: 'Tower A', points: '40,1.2 62,1.2 62,38 40,38' },
+      { id: 'tower-B', label: 'Tower B', points: '45.5,31 69,31 69,63 45.5,63' },
+      { id: 'tower-C', label: 'Tower C', points: '14.5,52 43.5,52 43.5,80 14.65,80' },
+      { id: 'tower-D', label: 'Tower D', points: '15,24.5 37.5,24.5 37.5,51 15,51' },
     ],
   };
 
@@ -323,6 +323,54 @@ window.FloorplanModule = (function () {
         position: relative;
       }
 
+      /* ── ONE-TIME SHINE ──
+         A reusable diagonal light sweep, top-left to bottom-right,
+         attached to specific elements (GLB canvases, toggle switches)
+         via attachShineOnce() — each target plays it exactly once,
+         ever, the first time it appears. Class-based (not id-based)
+         since multiple instances can exist on screen at once (e.g. a
+         GLB canvas and a toggle switch both revealing at similar
+         times). Positioned/animated via top/left percentages rather
+         than transform, so the travel direction is true screen-space
+         top-left→bottom-right regardless of the gradient's internal
+         angle — no rotate+translate order ambiguity to worry about. */
+      .fp-shine {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+        pointer-events: none;
+        z-index: 50;
+      }
+      /* Rounded targets (the pill-shaped toggle switches) need the
+         sweep clipped to the same shape, otherwise it'd flare past
+         the pill's rounded corners as a visible rectangle. */
+      .fp-shine.fp-shine--pill {
+        border-radius: 999px;
+      }
+      .fp-shine .fp-shine-band {
+        position: absolute;
+        top: -60%;
+        left: -60%;
+        width: 55%;
+        height: 220%;
+        background: linear-gradient(
+          100deg,
+          rgba(255,255,255,0)    0%,
+          rgba(255,255,255,0.35) 46%,
+          rgba(255,255,255,0.60) 50%,
+          rgba(255,255,255,0.35) 54%,
+          rgba(255,255,255,0)    100%
+        );
+        animation: fpShineSweep 2s ease-in-out 1 forwards;
+      }
+      @keyframes fpShineSweep {
+        from { top: -60%; left: -60%; }
+        to   { top: 100%; left: 100%; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .fp-shine { display: none; }
+      }
+
       :root { --fp-topbar-h: 56px; }
 
       @media (max-width: 480px) {
@@ -480,6 +528,14 @@ window.FloorplanModule = (function () {
       #fp-zone-tip-name { font-family: 'Cormorant Garamond', serif; font-size: 14px; font-weight: 500; color: #2a1a0a; display: block; }
       #fp-zone-tip-type { font-family: 'Syne', sans-serif; font-size: 8.5px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(122,62,30,.70); display: block; margin-top: 2px; }
 
+      #fp-cluster-hint {
+        position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
+        font-family: 'Cormorant Garamond', serif; font-size: 11px; font-style: italic;
+        color: rgba(80,50,30,.40); pointer-events: none; white-space: nowrap;
+        opacity: 0; transition: opacity 0.4s;
+      }
+      #fp-cluster-hint.visible { opacity: 1; }
+
       /* ── UNIT PANEL ── */
       #fp-panel-unit { display: flex; flex-direction: column; transform: translateX(32px); background: #ffffff; }
       #fp-plan-area {
@@ -564,6 +620,7 @@ window.FloorplanModule = (function () {
                   <span id="fp-zone-tip-name"></span>
                   <span id="fp-zone-tip-type"></span>
                 </div>
+                <div id="fp-cluster-hint">Tap a unit to view its floor plan</div>
               </div>
             </div>
             <div id="fp-panel-unit" class="fp-panel">
@@ -631,6 +688,8 @@ window.FloorplanModule = (function () {
     if (spinner) spinner.classList.remove('visible');
     const zoomHint = document.getElementById('fp-zoom-hint');
     if (zoomHint) zoomHint.classList.remove('visible');
+    const clusterHint = document.getElementById('fp-cluster-hint');
+    if (clusterHint) clusterHint.classList.remove('visible');
     document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
     hideZoneTip();
     showPanel('fp-panel-sitemap', 'back');
@@ -644,8 +703,8 @@ window.FloorplanModule = (function () {
 
   // ─── SITEMAP GLTF TILES ──────────────────────────────────────
   // GLB files: assets/sitemap/TOWER A.glb … TOWER D.glb
-  // Same approach as buildGltfZones: invisible fill + white glow edges,
-  // glow only on hover. Falls back to SVG polygons if Three.js missing.
+  // Same approach as buildGltfZones: idle copper edge lines, white glow on
+  // hover. Falls back to SVG polygons if Three.js missing.
   // ─────────────────────────────────────────────────────────────
 
   // GLB file list — points derived from SITEMAP.towerTiles (single source of truth)
@@ -785,7 +844,19 @@ window.FloorplanModule = (function () {
     // ── Canvas ──────────────────────────────────────────────────
     const canvas = document.createElement('canvas');
     canvas.id = 'fp-sitemap-canvas';
-    Object.assign(canvas.style, { position: 'absolute', pointerEvents: 'all', zIndex: '5' });
+    Object.assign(canvas.style, {
+      position: 'absolute', pointerEvents: 'all', zIndex: '5',
+      // Thickens/glows the edge lines. WebGL's LineBasicMaterial
+      // linewidth is ignored by almost every browser (a long-standing
+      // ANGLE/WebGL limitation — it always renders at 1px regardless
+      // of the value set), so bumping linewidth in the material itself
+      // does nothing. drop-shadow blurs based on the canvas's own
+      // alpha silhouette instead, giving the thin lines an actual
+      // thicker, softly-glowing appearance. Uses a neutral dark+light
+      // halo rather than a fixed hue, so it reads correctly whether
+      // the lines are currently copper (idle) or white (hover).
+      filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.5)) drop-shadow(0 0 2.5px rgba(255,255,255,0.35))',
+    });
     wrap.appendChild(canvas);
     _sitemapCanvas = canvas;
 
@@ -807,17 +878,26 @@ window.FloorplanModule = (function () {
     _sitemapMeshMap  = {};
     _sitemapRootList = [];
 
-    // ── Material factories (same as cluster zones) ───────────────
+    // ── Colors & opacities ───────────────────────────────────────
+    // Idle: dark copper edges, faint fill — always visible, not just on
+    // hover (touch devices have no hover state at all).
+    // Hover: edges turn white and brighten.
+    const COLOR_IDLE  = 0x6A3A22;
+    const COLOR_HOVER = 0xffffff;
+
+    const IDLE_FILL_OPACITY = 0.10;
+    const IDLE_EDGE_OPACITY = 1.0;
+
     function makeFill() {
       return new THREE.MeshBasicMaterial({
-        color: 0xffffff, transparent: true, opacity: 0,
+        color: 0xffffff, transparent: true, opacity: IDLE_FILL_OPACITY,
         side: THREE.DoubleSide, depthWrite: false,
       });
     }
     function makeEdge(opacity) {
       return new THREE.LineBasicMaterial({
-        color: 0xffffff, transparent: true, opacity,
-        blending: THREE.AdditiveBlending, depthWrite: false,
+        color: COLOR_IDLE, transparent: true, opacity,
+        blending: THREE.NormalBlending, depthWrite: false,
       });
     }
 
@@ -839,15 +919,23 @@ window.FloorplanModule = (function () {
         const size0 = new THREE.Vector3(); box0.getSize(size0);
         if (size0.y < 0.01) { root.rotation.x = Math.PI / 2; root.updateMatrixWorld(true); }
 
-        // Assign materials: invisible fill + 3-layer glow edges
+        // Assign materials: idle copper fill + 3-layer edge lines
         root.traverse(child => {
           if (!child.isMesh) return;
           child.material = makeFill();
           const edgesGeo = new THREE.EdgesGeometry(child.geometry);
 
-          const e1 = new THREE.LineSegments(edgesGeo, makeEdge(0)); e1.renderOrder = 1; child.add(e1);
-          const e2 = new THREE.LineSegments(edgesGeo, makeEdge(0)); e2.renderOrder = 1; child.add(e2);
-          const e3 = new THREE.LineSegments(edgesGeo, makeEdge(0)); e3.renderOrder = 1; child.add(e3);
+          const e1 = new THREE.LineSegments(edgesGeo, makeEdge(1.0));
+          e1.renderOrder = 1;
+          child.add(e1);
+
+          const e2 = new THREE.LineSegments(edgesGeo, makeEdge(0.75));
+          e2.renderOrder = 1;
+          child.add(e2);
+
+          const e3 = new THREE.LineSegments(edgesGeo, makeEdge(0.50));
+          e3.renderOrder = 1;
+          child.add(e3);
 
           _sitemapMeshMap[child.uuid] = { mesh: child, e1, e2, e3, towerId };
         });
@@ -857,8 +945,11 @@ window.FloorplanModule = (function () {
         loaded++;
         _syncSitemapToImage(wrap, img);
         console.log('[SITEMAP GLTF] ✔ ' + file.split('/').pop() + ' → ' + towerId);
-        if (loaded + failed === total)
+        if (loaded + failed === total) {
           console.log('[SITEMAP GLTF] DONE — Loaded:', loaded, '| Failed:', failed);
+          pulseRevealSitemap();
+          attachShineOnce(wrap, 'sitemap-glb', { matchRect: canvas });
+        }
 
       }, undefined, (err) => {
         failed++;
@@ -887,21 +978,33 @@ window.FloorplanModule = (function () {
       return hits.length ? _sitemapMeshMap[hits[0].object.uuid] : null;
     }
 
+    // Restores a tile to its idle appearance (dark copper edges, faint fill).
+    function applyIdle(entry) {
+      entry.mesh.material.opacity = IDLE_FILL_OPACITY;
+      if (entry.e1) { entry.e1.material.color.set(COLOR_IDLE); entry.e1.material.opacity = 1.0; }
+      if (entry.e2) { entry.e2.material.color.set(COLOR_IDLE); entry.e2.material.opacity = 0.75; }
+      if (entry.e3) { entry.e3.material.color.set(COLOR_IDLE); entry.e3.material.opacity = 0.50; }
+    }
+
+    // Brightens a tile to its hover appearance (white edges, brighter fill).
+    function applyHover(entry) {
+      entry.mesh.material.opacity = 0.18;
+      if (entry.e1) { entry.e1.material.color.set(COLOR_HOVER); entry.e1.material.opacity = 1.0; }
+      if (entry.e2) { entry.e2.material.color.set(COLOR_HOVER); entry.e2.material.opacity = 0.9; }
+      if (entry.e3) { entry.e3.material.color.set(COLOR_HOVER); entry.e3.material.opacity = 0.75; }
+    }
+
     function setHover(hit) {
       if (hovered) {
-        hovered.mesh.material.opacity = 0;
-        if (hovered.e1) hovered.e1.material.opacity = 0;
-        if (hovered.e2) hovered.e2.material.opacity = 0;
-        if (hovered.e3) hovered.e3.material.opacity = 0;
+        applyIdle(hovered);
         hovered = null;
       }
+
       if (hit) {
-        hit.mesh.material.opacity = 0.10;
-        if (hit.e1) hit.e1.material.opacity = 1.0;
-        if (hit.e2) hit.e2.material.opacity = 0.75;
-        if (hit.e3) hit.e3.material.opacity = 0.50;
+        applyHover(hit);
         hovered = hit;
       }
+
       canvas.style.cursor = hit ? 'pointer' : '';
     }
 
@@ -911,7 +1014,11 @@ window.FloorplanModule = (function () {
     canvas.addEventListener('click', e => {
       if (e.detail === 0) return;
       const hit = pick(e.clientX, e.clientY);
-      if (hit) drillToCluster(hit.towerId);
+      if (!hit) return;
+
+      // Keep the edge color white until navigation actually occurs.
+      applyHover(hit);
+      drillToCluster(hit.towerId);
     });
 
     let touchMoved = false, touchHit = null;
@@ -930,6 +1037,32 @@ window.FloorplanModule = (function () {
       _sitemapAnimId = requestAnimationFrame(loop);
       renderer.render(scene, camera);
     })();
+  }
+
+  // ── One-time "reveal" pulse — teaches first-time visitors that the
+  // tower tiles are interactive, without needing a tutorial overlay.
+  // Runs once per sitemap build, right after all towers finish loading.
+  //
+  // Note: idle fill/edge opacity values here (0.10 / 1.0 / 0.75 / 0.50)
+  // intentionally mirror the IDLE_* constants and per-layer opacities
+  // defined inside _buildSitemapGltf() above — they can't be referenced
+  // directly since this function lives outside that closure.
+  function pulseRevealSitemap() {
+    const meshes = Object.values(_sitemapMeshMap);
+    if (!meshes.length) return;
+    const duration = 1100; // ms
+    const start = performance.now();
+    function tick(now) {
+      const t = Math.min(1, (now - start) / duration);
+      meshes.forEach(({ mesh, e1, e2, e3 }) => {
+        mesh.material.opacity = 0.10;
+        if (e1) e1.material.opacity = 1.0;
+        if (e2) e2.material.opacity = 0.75;
+        if (e3) e3.material.opacity = 0.50;
+      });
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
   }
 
   // ── SVG fallback (original polygon approach) ──────────────────
@@ -1063,6 +1196,8 @@ window.FloorplanModule = (function () {
     if (old) old.remove();
     const dbg = document.getElementById('fp-debug-svg');
     if (dbg) dbg.remove();
+    const clusterHint = document.getElementById('fp-cluster-hint');
+    if (clusterHint) clusterHint.classList.remove('visible');
   }
 
   function buildGltfZones(towerId, parity) {
@@ -1111,6 +1246,10 @@ window.FloorplanModule = (function () {
       position: 'absolute',
       pointerEvents: 'all',
       zIndex: '5',
+      // Same thickening/glow treatment as the sitemap canvas — see the
+      // comment there for why this is CSS drop-shadow rather than a
+      // WebGL linewidth (which browsers ignore).
+      filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.5)) drop-shadow(0 0 2.5px rgba(255,255,255,0.35))',
     });
     wrap.appendChild(canvas);
 
@@ -1134,25 +1273,34 @@ window.FloorplanModule = (function () {
     const meshMap  = {};
     const rootList = [];
 
-    // ── Material factories ────────────────────────────────────────
-    // Fill: fully invisible, still raycasts
+    // ── Colors & opacities ───────────────────────────────────────
+    // Same pattern as the sitemap tiles: idle copper edges (always
+    // visible, not just on hover — touch devices have no hover state
+    // at all), turning white on hover.
+    const COLOR_IDLE  = 0x6A3A22;
+    const COLOR_HOVER = 0xffffff;
+
+    const IDLE_FILL_OPACITY = 0.08;
+    const IDLE_EDGE_OPACITY = 1.0;
+
+    // Fill: faint at rest, still raycasts
     function makeFillMaterial() {
       return new THREE.MeshBasicMaterial({
         color:       0xffffff,
         transparent: true,
-        opacity:     0,           // completely invisible fill
+        opacity:     IDLE_FILL_OPACITY,
         side:        THREE.DoubleSide,
         depthWrite:  false,
       });
     }
 
-    // Edge: white glow via additive blending — invisible at rest, bright on hover
-    function makeEdgeMaterial(glowing) {
+    // Edge: idle copper, turns white on hover — see setHover() below
+    function makeEdgeMaterial(opacity) {
       return new THREE.LineBasicMaterial({
-        color:       0xffffff,
+        color:       COLOR_IDLE,
         transparent: true,
-        opacity:     glowing ? 1.0 : 0.0,   // 0 = hidden at rest, full glow on hover
-        blending:    THREE.AdditiveBlending,
+        opacity,
+        blending:    THREE.NormalBlending,
         depthWrite:  false,
         linewidth:   1,
       });
@@ -1300,26 +1448,28 @@ window.FloorplanModule = (function () {
           root.updateMatrixWorld(true);
         }
 
-        // ── Assign materials: invisible fill + white glowing edges ──
+        // ── Assign materials: faint idle fill + white glowing edges ──
         root.traverse(child => {
           if (!child.isMesh) return;
 
-          // Invisible fill — still receives raycasts
+          // Faint fill at rest — still receives raycasts
           child.material = makeFillMaterial();
 
           // Stack 3 LineSegments layers for a strong glow bloom effect.
           // Each layer uses additive blending so they accumulate brightness.
+          // Layer 1 stays faintly visible at rest; layers 2/3 stay fully
+          // hidden until hover, so the glow still reads as a clear step
+          // up from the idle state rather than "always maximally lit".
           const edgesGeo = new THREE.EdgesGeometry(child.geometry);
-          const edgeLines = new THREE.LineSegments(edgesGeo, makeEdgeMaterial(false));
+          const edgeLines = new THREE.LineSegments(edgesGeo, makeEdgeMaterial(IDLE_EDGE_OPACITY));
           edgeLines.renderOrder = 1;
           child.add(edgeLines);
 
-          // Second + third layers for bloom width (additive accumulation)
-          const edgeLines2 = new THREE.LineSegments(edgesGeo, makeEdgeMaterial(false));
+          const edgeLines2 = new THREE.LineSegments(edgesGeo, makeEdgeMaterial(0));
           edgeLines2.renderOrder = 1;
           child.add(edgeLines2);
 
-          const edgeLines3 = new THREE.LineSegments(edgesGeo, makeEdgeMaterial(false));
+          const edgeLines3 = new THREE.LineSegments(edgesGeo, makeEdgeMaterial(0));
           edgeLines3.renderOrder = 1;
           child.add(edgeLines3);
 
@@ -1336,6 +1486,10 @@ window.FloorplanModule = (function () {
 
         if (loaded + failed === total) {
           console.log('[GLTF] DONE — Loaded:', loaded, '| Failed:', failed, '| Total:', total);
+          pulseRevealZones(meshMap, IDLE_FILL_OPACITY, IDLE_EDGE_OPACITY);
+          attachShineOnce(wrap, 'unit-zone-glb', { matchRect: canvas });
+          const clusterHint = document.getElementById('fp-cluster-hint');
+          if (clusterHint) clusterHint.classList.add('visible');
         }
 
       }, (xhr) => {
@@ -1365,24 +1519,33 @@ window.FloorplanModule = (function () {
       return hits.length ? meshMap[hits[0].object.uuid] : null;
     }
 
+    // Restores a zone to its idle appearance (copper edges, faint fill).
+    function applyIdle(entry) {
+      entry.mesh.material.opacity = IDLE_FILL_OPACITY;
+      if (entry.edgeLines)  { entry.edgeLines.material.color.set(COLOR_IDLE);  entry.edgeLines.material.opacity  = 1.0; }
+      if (entry.edgeLines2) { entry.edgeLines2.material.color.set(COLOR_IDLE); entry.edgeLines2.material.opacity = 0; }
+      if (entry.edgeLines3) { entry.edgeLines3.material.color.set(COLOR_IDLE); entry.edgeLines3.material.opacity = 0; }
+    }
+
+    // Brightens a zone to its hover appearance (white edges, brighter fill).
+    function applyHover(entry) {
+      entry.mesh.material.opacity = 0.18;
+      if (entry.edgeLines)  { entry.edgeLines.material.color.set(COLOR_HOVER);  entry.edgeLines.material.opacity  = 1.0; }
+      if (entry.edgeLines2) { entry.edgeLines2.material.color.set(COLOR_HOVER); entry.edgeLines2.material.opacity = 0.9; }
+      if (entry.edgeLines3) { entry.edgeLines3.material.color.set(COLOR_HOVER); entry.edgeLines3.material.opacity = 0.75; }
+    }
+
     function setHover(hit) {
-      // Restore previous hovered mesh to invisible
       if (hovered) {
-        hovered.mesh.material.opacity = 0;
-        if (hovered.edgeLines)  hovered.edgeLines.material.opacity  = 0;
-        if (hovered.edgeLines2) hovered.edgeLines2.material.opacity = 0;
-        if (hovered.edgeLines3) hovered.edgeLines3.material.opacity = 0;
+        applyIdle(hovered);
         hovered = null;
       }
+
       if (hit) {
-        // Faint fill tint so zone area reads as active
-        hit.mesh.material.opacity = 0.10;
-        // Three stacked additive layers = strong white bloom glow
-        if (hit.edgeLines)  hit.edgeLines.material.opacity  = 1.0;
-        if (hit.edgeLines2) hit.edgeLines2.material.opacity = 0.75;
-        if (hit.edgeLines3) hit.edgeLines3.material.opacity = 0.50;
+        applyHover(hit);
         hovered = hit;
       }
+
       canvas.style.cursor = hit ? 'pointer' : '';
     }
 
@@ -1392,7 +1555,11 @@ window.FloorplanModule = (function () {
     canvas.addEventListener('click', e => {
       if (e.detail === 0) return;
       const hit = pick(e.clientX, e.clientY);
-      if (hit && hit.unitData) drillToUnit(hit.unitData);
+      if (!hit || !hit.unitData) return;
+
+      // Keep the edge color white until navigation actually occurs.
+      applyHover(hit);
+      drillToUnit(hit.unitData);
     });
 
     // ── Touch events ──────────────────────────────────────────────
@@ -1415,6 +1582,27 @@ window.FloorplanModule = (function () {
       _gltfAnimId = requestAnimationFrame(loop);
       renderer.render(scene, camera);
     })();
+  }
+
+  // ── One-time "reveal" pulse for unit zones — same idea as
+  // pulseRevealSitemap(): briefly brightens every zone together the
+  // moment a cluster's meshes finish loading, then settles back to the
+  // faint idle state. Teaches "these are tappable" without a tutorial.
+  function pulseRevealZones(meshMap, idleFill, idleEdge) {
+    const entries = Object.values(meshMap);
+    if (!entries.length) return;
+    const duration = 1100; // ms
+    const start = performance.now();
+    function tick(now) {
+      const t = Math.min(1, (now - start) / duration);
+      const curve = t < 0.35 ? (t / 0.35) : Math.max(0, 1 - (t - 0.35) / 0.65);
+      entries.forEach(({ mesh, edgeLines }) => {
+        mesh.material.opacity = idleFill + curve * 0.09;
+        if (edgeLines) edgeLines.material.opacity = idleEdge + curve * 0.55;
+      });
+      if (t < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
   }
 
   // ─── BUILD ZONES (SVG fallback) ──────────────────────────────
@@ -1448,6 +1636,9 @@ window.FloorplanModule = (function () {
       });
       svg.appendChild(poly);
     });
+
+    const clusterHint = document.getElementById('fp-cluster-hint');
+    if (clusterHint) clusterHint.classList.add('visible');
   }
 
   // ─── ZONE TOOLTIP ────────────────────────────────────────────
@@ -1731,15 +1922,61 @@ window.FloorplanModule = (function () {
       back.classList.add('visible');
       parityToggle.classList.add('visible');
       viewToggle.classList.remove('visible');
+      attachShineOnce(parityToggle, 'parity-toggle', { pill: true });
     } else if (level === 2) {
       back.classList.add('visible');
       parityToggle.classList.remove('visible');
       const hasIso = !!(activeUnit && activeUnit.iso);
       viewToggle.classList.toggle('visible', hasIso);
+      if (hasIso) attachShineOnce(viewToggle, 'view-toggle', { pill: true });
     }
   }
 
   // ─── OPEN / CLOSE ────────────────────────────────────────────
+  // ─── ONE-TIME SHINE ───────────────────────────────────────────
+  // A diagonal light sweep (top-left → bottom-right) attached to a
+  // specific element, playing exactly once, ever, per unique key —
+  // used for the GLB canvases (sitemap tower tiles, unit zones) and
+  // the toggle switches, NOT the whole page/card. Each target reveals
+  // itself once when it first appears; never repeats afterward.
+  const _shinedKeys = new Set();
+
+  function attachShineOnce(container, key, opts) {
+    if (!container || _shinedKeys.has(key)) return;
+    _shinedKeys.add(key);
+
+    const { pill, matchRect } = opts || {};
+
+    const shine = document.createElement('div');
+    shine.className = pill ? 'fp-shine fp-shine--pill' : 'fp-shine';
+
+    if (matchRect) {
+      // Bound the shine to another element's exact rendered box (the
+      // GLB canvas) instead of filling `container`'s own bounds — the
+      // canvas is the actual "GLB plane"; the wrap around it also
+      // contains the full floorplan/cluster image, which is much
+      // bigger and reads as "the whole page" on a phone screen.
+      // matchRect.style.top/left/width/height are set in px by
+      // syncToImage()/_syncSitemapToImage() already, so this copies
+      // that same box exactly. Setting all four explicitly overrides
+      // the .fp-shine class's inset:0 for this instance.
+      shine.style.position = 'absolute';
+      shine.style.top    = matchRect.style.top;
+      shine.style.left   = matchRect.style.left;
+      shine.style.width  = matchRect.style.width;
+      shine.style.height = matchRect.style.height;
+    }
+
+    shine.innerHTML = `<div class="fp-shine-band"></div>`;
+    container.appendChild(shine);
+
+    const band = shine.querySelector('.fp-shine-band');
+    band.addEventListener('animationend', () => shine.remove(), { once: true });
+    // Safety fallback in case animationend doesn't fire for any reason
+    // (e.g. prefers-reduced-motion disables the animation entirely)
+    setTimeout(() => shine.remove(), 2200);
+  }
+
   function open(floorNum) {
     if (overlayOpen) return;
     overlayOpen = true;
