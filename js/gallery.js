@@ -21,6 +21,7 @@ window.GalleryModule = (function () {
   let startY      = 0;
   let injected    = false;
   let imageEnteredAt = 0; // timestamp when the current image became visible — used for dwell-time tracking
+  let glImgScale  = 1; // current pinch-zoom scale of the stage — read by the swipe handler to block navigation while zoomed in
 
   // ─── BROWSER/HARDWARE BACK SUPPORT ────────────────────────────────
   // Opening the gallery pushes a history entry so the phone's back
@@ -49,7 +50,8 @@ window.GalleryModule = (function () {
     style.textContent = `
       /* ── Overlay — full bleed, no padding, no card ── */
       #gallery-overlay {
-        position: fixed; top: 0; left: 0; right: 0; bottom: 62px;
+        position: fixed; top: 0; left: 0; right: 0;
+        bottom: calc(62px + env(safe-area-inset-bottom, 0px));
         z-index: 200; background: #080604;
         opacity: 0; pointer-events: none;
         transition: opacity .38s cubic-bezier(0.22,1,0.36,1);
@@ -61,7 +63,7 @@ window.GalleryModule = (function () {
       #gl-header {
         position: absolute; top: 0; left: 0; right: 0; z-index: 30;
         display: flex; align-items: center; justify-content: space-between;
-        padding: 18px 20px 40px;
+        padding: calc(18px + env(safe-area-inset-top, 0px)) calc(20px + env(safe-area-inset-right, 0px)) 40px calc(20px + env(safe-area-inset-left, 0px));
         background: linear-gradient(to bottom, rgba(8,6,4,.85) 0%, transparent 100%);
         pointer-events: none;
       }
@@ -80,7 +82,7 @@ window.GalleryModule = (function () {
       }
       #gl-caption.fading { opacity: 0; }
       #gl-close {
-        flex-shrink: 0; width: 38px; height: 38px;
+        flex-shrink: 0; width: 38px; height: 38px; min-width: 38px; min-height: 38px;
         border: 1px solid rgba(200,185,165,.25); background: rgba(20,16,12,.55);
         backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
         border-radius: 10px; display: flex; align-items: center; justify-content: center;
@@ -92,7 +94,7 @@ window.GalleryModule = (function () {
 
       /* Back arrow — same glass style as close, sits left of the title */
       #gl-back {
-        flex-shrink: 0; width: 38px; height: 38px;
+        flex-shrink: 0; width: 38px; height: 38px; min-width: 38px; min-height: 38px;
         border: 1px solid rgba(200,185,165,.25); background: rgba(20,16,12,.55);
         backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
         border-radius: 10px; display: flex; align-items: center; justify-content: center;
@@ -154,7 +156,7 @@ window.GalleryModule = (function () {
       /* ── Arrows ── */
       .gl-arrow {
         position: absolute; top: 50%; transform: translateY(-50%);
-        z-index: 20; width: 44px; height: 44px;
+        z-index: 20; width: 44px; height: 44px; min-width: 44px; min-height: 44px;
         background: rgba(15,12,9,.45); border: 1px solid rgba(200,185,165,.20);
         backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
         border-radius: 12px; display: flex; align-items: center; justify-content: center;
@@ -162,15 +164,15 @@ window.GalleryModule = (function () {
         -webkit-tap-highlight-color: transparent;
       }
       .gl-arrow:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); transform: translateY(-50%) scale(1.06); }
-      #gl-arrow-prev { left: 18px; }
-      #gl-arrow-next { right: 18px; }
+      #gl-arrow-prev { left: calc(18px + env(safe-area-inset-left, 0px)); }
+      #gl-arrow-next { right: calc(18px + env(safe-area-inset-right, 0px)); }
       .gl-arrow svg { width: 17px; height: 17px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
       /* ── FOOTER — floating thumbnail strip OVER the image ── */
       #gl-footer {
         position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
         display: flex; flex-direction: column; align-items: center; gap: 10px;
-        padding: 36px 20px 18px;
+        padding: 36px calc(20px + env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) calc(20px + env(safe-area-inset-left, 0px));
         background: linear-gradient(to top, rgba(8,6,4,.88) 0%, transparent 100%);
         pointer-events: none;
       }
@@ -210,21 +212,19 @@ window.GalleryModule = (function () {
       .gl-thumb:not(.active):hover { opacity: .88; transform: translateY(-2px); }
 
       @media (max-width: 520px) {
-        #gl-header { padding: 12px 12px 32px; }
+        #gl-header { padding: calc(12px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) 32px calc(12px + env(safe-area-inset-left, 0px)); }
         #gl-caption { font-size: 17px; }
         #gl-label { font-size: 8px; margin-bottom: 2px; }
-        #gl-back, #gl-close { width: 34px; height: 34px; }
+        #gl-back, #gl-close { width: 34px; height: 34px; min-width: 34px; min-height: 34px; }
         #gl-back { margin-right: 10px; }
-        .gl-arrow { width: 36px; height: 36px; }
-        #gl-arrow-prev { left: 8px; } #gl-arrow-next { right: 8px; }
+        .gl-arrow { width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
+        #gl-arrow-prev { left: calc(8px + env(safe-area-inset-left, 0px)); }
+        #gl-arrow-next { right: calc(8px + env(safe-area-inset-right, 0px)); }
         .gl-thumb { width: 44px; height: 31px; }
         #gl-footer {
-        position: absolute; left: 0; right: 0; bottom: 0; z-index: 30;
-        display: flex; flex-direction: column; align-items: center; gap: 10px;
-        padding: 36px 20px 18px;
-        background: linear-gradient(to top, rgba(8,6,4,.35) 0%, transparent 100%);
-        pointer-events: none;
-      }
+          padding: 36px calc(12px + env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px));
+          background: linear-gradient(to top, rgba(8,6,4,.35) 0%, transparent 100%);
+        }
       }
 
       /* Portrait phones — keep full-bleed image (cover) but move the
@@ -311,6 +311,90 @@ window.GalleryModule = (function () {
     }
   }
 
+  // ─── PINCH-ZOOM ON THE CURRENT PHOTO ────────────────────────────
+  // Zooms the whole #gl-stage container (not the individual card, whose
+  // id gets swapped between elements on every navigation) — child card
+  // transforms from cardTo()'s flight animation compose correctly on
+  // top of this since CSS transforms are relative to the parent.
+  let _glZoomOrigin = { x: 0, y: 0 };
+  let _glStageEl = null;
+
+  function resetGalleryZoom() {
+    glImgScale = 1;
+    _glZoomOrigin = { x: 0, y: 0 };
+    if (_glStageEl) {
+      _glStageEl.style.transition = 'transform 0.25s ease';
+      _glStageEl.style.transform = 'translate(0px, 0px) scale(1)';
+      setTimeout(() => { if (_glStageEl) _glStageEl.style.transition = ''; }, 260);
+    }
+  }
+
+  function bindGalleryZoom(stage) {
+    _glStageEl = stage;
+    let lastDist = null;
+    let panStartX = 0, panStartY = 0, panOriginX = 0, panOriginY = 0, lastTap = 0;
+    const MAX_SCALE = 4, MIN_SCALE = 1;
+
+    function apply() {
+      stage.style.transform = `translate(${_glZoomOrigin.x}px, ${_glZoomOrigin.y}px) scale(${glImgScale})`;
+    }
+    function dist(t) { return Math.sqrt((t[0].clientX-t[1].clientX)**2+(t[0].clientY-t[1].clientY)**2); }
+    function mid(t)  { return { x:(t[0].clientX+t[1].clientX)/2, y:(t[0].clientY+t[1].clientY)/2 }; }
+
+    stage.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 2) {
+        lastDist = dist(e.touches);
+      } else if (e.touches.length === 1 && glImgScale > 1) {
+        const now = Date.now();
+        if (now - lastTap < 300) { resetGalleryZoom(); }
+        lastTap = now;
+        panStartX = e.touches[0].clientX; panStartY = e.touches[0].clientY;
+        panOriginX = _glZoomOrigin.x; panOriginY = _glZoomOrigin.y;
+      }
+    }, { passive: true });
+
+    stage.addEventListener('touchmove', (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const d = dist(e.touches), m = mid(e.touches), rect = stage.getBoundingClientRect();
+        if (lastDist !== null) {
+          const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, glImgScale * (d/lastDist)));
+          const pivotX = m.x - rect.left - rect.width/2;
+          const pivotY = m.y - rect.top  - rect.height/2;
+          _glZoomOrigin.x = pivotX + (_glZoomOrigin.x - pivotX) * (newScale / glImgScale);
+          _glZoomOrigin.y = pivotY + (_glZoomOrigin.y - pivotY) * (newScale / glImgScale);
+          glImgScale = newScale;
+          apply();
+        }
+        lastDist = d;
+      } else if (e.touches.length === 1 && glImgScale > 1) {
+        e.preventDefault();
+        _glZoomOrigin.x = panOriginX + (e.touches[0].clientX - panStartX);
+        _glZoomOrigin.y = panOriginY + (e.touches[0].clientY - panStartY);
+        apply();
+      }
+    }, { passive: false });
+
+    stage.addEventListener('touchend', (e) => {
+      if (e.touches.length < 2) lastDist = null;
+      if (glImgScale <= MIN_SCALE + 0.05) resetGalleryZoom();
+    }, { passive: true });
+
+    // Desktop: wheel to zoom
+    stage.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const rect = stage.getBoundingClientRect();
+      const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, glImgScale * (e.deltaY < 0 ? 1.12 : 0.89)));
+      const pivotX = e.clientX - rect.left - rect.width/2;
+      const pivotY = e.clientY - rect.top  - rect.height/2;
+      _glZoomOrigin.x = pivotX + (_glZoomOrigin.x - pivotX) * (newScale / glImgScale);
+      _glZoomOrigin.y = pivotY + (_glZoomOrigin.y - pivotY) * (newScale / glImgScale);
+      glImgScale = newScale;
+      apply();
+      if (glImgScale <= MIN_SCALE + 0.01) resetGalleryZoom();
+    }, { passive: false });
+  }
+
   function cardTo(targetIdx, direction) {
     if (isAnimating || targetIdx === current) return;
     isAnimating = true;
@@ -389,6 +473,7 @@ window.GalleryModule = (function () {
       cardIncoming.id = 'gl-card-current';
       cardBehind.id   = 'gl-card-incoming';
 
+      resetGalleryZoom(); // new image — start it unzoomed
       reportDwell(current); // 'current' is still the outgoing image here
       current = targetIdx;
       imageEnteredAt = Date.now(); // start the clock on the new image
@@ -441,16 +526,23 @@ window.GalleryModule = (function () {
 
     // Swipe
     const stage = document.getElementById('gl-stage');
-    stage.addEventListener('touchstart', e => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, { passive: true });
+    stage.addEventListener('touchstart', e => {
+      if (e.touches.length > 1) return; // multi-touch = pinch-zoom, not a swipe
+      startX = e.touches[0].clientX; startY = e.touches[0].clientY;
+    }, { passive: true });
     stage.addEventListener('touchend', e => {
+      if (e.touches.length > 0) return; // still mid-pinch
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
+      if (glImgScale > 1.05) return; // zoomed in — single-finger drag pans instead
       if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
         dx < 0
           ? cardTo((current + 1) % IMAGES.length, 'next')
           : cardTo((current - 1 + IMAGES.length) % IMAGES.length, 'prev');
       }
     }, { passive: true });
+
+    bindGalleryZoom(stage);
 
     // Mouse drag
     let mStart = 0, mDrag = false;
@@ -519,7 +611,7 @@ window.GalleryModule = (function () {
     if (!_popping) pushGlState();
   }
 
-  function close() {
+  function close(skipHistory) {
     reportDwell(current); // capture dwell time for whichever image was showing when closed
     imageEnteredAt = 0;
     const overlay = document.getElementById('gallery-overlay');
@@ -528,10 +620,13 @@ window.GalleryModule = (function () {
 
     // Closed from outside (e.g. closeAllModules) while we still own a
     // history entry — unwind it silently so back doesn't need an extra press.
+    // skipHistory=true bypasses history.go() when another module's open()
+    // is about to push a new state right after (tab switch) — see the
+    // matching comment in floorplan.js's close() for why that race matters.
     if (!_popping && _historyDepth > 0) {
       const n = _historyDepth;
       _historyDepth = 0;
-      history.go(-n);
+      if (!skipHistory) history.go(-n);
     }
     document.querySelectorAll('.panel-slot').forEach(s => {
       if (s.dataset.slot === 'gallery') s.classList.remove('active');

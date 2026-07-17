@@ -513,20 +513,67 @@ window.FloorplanModule = (function () {
       }
       .fp-glb-label-main {
         display: block; font-family: 'Cormorant Garamond', serif;
-        font-size: 22px; font-weight: 600; font-style: italic;
+        font-size: 30px; font-weight: 600; font-style: italic;
         color: #d9a15c;
-        text-shadow: 0 1px 2px rgba(0,0,0,.65), 0 0 12px rgba(0,0,0,.45), 0 0 2px rgba(122,62,30,.9);
+        text-shadow: 0 1px 2px rgba(0,0,0,.65), 0 0 2px rgba(122,62,30,.9);
         -webkit-text-stroke: 0.4px rgba(122,62,30,.6);
+        transition: color 0.15s ease, text-shadow 0.15s ease, -webkit-text-stroke-color 0.15s ease;
       }
       .fp-glb-label-sub {
-        display: block; font-family: 'Syne', sans-serif; font-size: 10px;
+        display: block; font-family: 'Syne', sans-serif; font-size: 13px;
         font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-        color: #c9803f; text-shadow: 0 1px 2px rgba(0,0,0,.65), 0 0 8px rgba(0,0,0,.35);
+        color: #c9803f; text-shadow: 0 1px 2px rgba(0,0,0,.65);
         margin-top: 2px;
+        transition: color 0.15s ease, text-shadow 0.15s ease;
+      }
+      /* Blink "flash" state — toggled every 500ms by blinkRevealSitemap().
+         White, alternating with the steady copper state above. Light
+         shadow only, no heavy glow. */
+      .fp-glb-label--flash .fp-glb-label-main {
+        color: #ffffff;
+        text-shadow: 0 0 3px rgba(255,255,255,.7), 0 1px 2px rgba(0,0,0,.5);
+        -webkit-text-stroke-color: rgba(255,255,255,.7);
+      }
+      .fp-glb-label--flash .fp-glb-label-sub {
+        color: #ffffff;
+        text-shadow: 0 0 3px rgba(255,255,255,.7), 0 1px 2px rgba(0,0,0,.5);
       }
       @media (max-width: 480px) {
-        .fp-glb-label-main { font-size: 17px; }
-        .fp-glb-label-sub  { font-size: 8.5px; }
+        .fp-glb-label-main { font-size: 22px; }
+        .fp-glb-label-sub  { font-size: 11px; }
+      }
+
+      /* Per-unit BHK labels at cluster level — e.g. "4BHK-C", "3BHK(L)-D",
+         pulled straight from each unit's GLB filename. Classic copper
+         italic serif, no background box — matches the tower-level label
+         style, just smaller since several sit close together on screen. */
+      .fp-unit-label {
+        position: absolute; transform: translate(-50%, -50%);
+        pointer-events: none; z-index: 6; text-align: center;
+        white-space: nowrap;
+      }
+      .fp-unit-label-text {
+        display: block; font-family: 'Cormorant Garamond', serif;
+        font-size: 13px; font-weight: 600; font-style: italic;
+        color: #c9803f;
+        text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 0 2px rgba(122,62,30,.7);
+      }
+      @media (max-width: 480px) {
+        .fp-unit-label-text { font-size: 10px; }
+      }
+
+      /* Cluster badge — shows which tower + odd/even floor set is active */
+      #fp-cluster-badge {
+        position: absolute; top: 10px; left: 10px; z-index: 7;
+        font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+        letter-spacing: .10em; text-transform: uppercase;
+        color: #f5f0e8; background: rgba(122,62,30,.88);
+        padding: 5px 12px; border-radius: 999px;
+        box-shadow: 0 2px 8px rgba(0,0,0,.20);
+        pointer-events: none; white-space: nowrap;
+      }
+      @media (max-width: 480px) {
+        #fp-cluster-badge { font-size: 8.5px; padding: 4px 10px; top: 8px; left: 8px; }
       }
 
       #fp-sitemap-hint {
@@ -658,6 +705,7 @@ window.FloorplanModule = (function () {
               <div id="fp-cluster-wrap">
                 <img id="fp-cluster-img" src="" alt="Cluster Plan" />
                 <svg id="fp-zone-svg" viewBox="0 0 100 100"></svg>
+                <div id="fp-cluster-badge"></div>
                 <div id="fp-zone-tip">
                   <span id="fp-zone-tip-name"></span>
                   <span id="fp-zone-tip-type"></span>
@@ -718,6 +766,8 @@ window.FloorplanModule = (function () {
     if (_sitemapRO) { _sitemapRO.disconnect(); _sitemapRO = null; }
     const clusterWrap = document.getElementById('fp-cluster-wrap');
     if (clusterWrap) clusterWrap.style.transform = '';
+    const clusterBadge = document.getElementById('fp-cluster-badge');
+    if (clusterBadge) clusterBadge.textContent = '';
     level = 0; activeTower = null; activeUnit = null;
     viewMode = 'top'; floorParity = 'odd';
     const svg = document.getElementById('fp-zone-svg');
@@ -923,16 +973,12 @@ window.FloorplanModule = (function () {
     canvas.id = 'fp-sitemap-canvas';
     Object.assign(canvas.style, {
       position: 'absolute', pointerEvents: 'all', zIndex: '5',
-      // Thickens/glows the edge lines. WebGL's LineBasicMaterial
-      // linewidth is ignored by almost every browser (a long-standing
-      // ANGLE/WebGL limitation — it always renders at 1px regardless
-      // of the value set), so bumping linewidth in the material itself
-      // does nothing. drop-shadow blurs based on the canvas's own
-      // alpha silhouette instead, giving the thin lines an actual
-      // thicker, softly-glowing appearance. Uses a neutral dark+light
-      // halo rather than a fixed hue, so it reads correctly whether
-      // the lines are currently copper (idle) or white (hover).
-      filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.5)) drop-shadow(0 0 2.5px rgba(255,255,255,0.35))',
+      // Thin drop-shadow just to thicken the otherwise 1px WebGL lines
+      // (browsers ignore LineBasicMaterial linewidth) — no ambient glow.
+      // The white glow is applied only during the blink's "flash" phase,
+      // toggled dynamically in blinkRevealSitemap() below.
+      filter: 'drop-shadow(0 0 0.6px rgba(0,0,0,0.5))',
+      transition: 'filter 0.15s ease',
     });
     wrap.appendChild(canvas);
     _sitemapCanvas = canvas;
@@ -959,7 +1005,7 @@ window.FloorplanModule = (function () {
     // Idle: dark copper edges, faint fill — always visible, not just on
     // hover (touch devices have no hover state at all).
     // Hover: edges turn white and brighten.
-    const COLOR_IDLE  = 0x6A3A22;
+    const COLOR_IDLE  = 0x8a5a30; // matches blink copper (COPPER_HEX)
     const COLOR_HOVER = 0xffffff;
 
     const IDLE_FILL_OPACITY = 0.10;
@@ -1085,18 +1131,17 @@ window.FloorplanModule = (function () {
     })();
   }
 
-  // ── Continuous blink — tower tiles flash on/off every 500ms for as
-  // long as the sitemap is open, so it's always obvious they're
-  // interactive (not just a one-time reveal). Runs on an interval so
-  // it can be cleared cleanly in disposeSitemapCanvas() whenever the
-  // panel is rebuilt or the floorplan is closed.
-  //
-  // Note: idle fill/edge opacity values here (0.10 / 1.0 / 0.75 / 0.50)
-  // intentionally mirror the IDLE_* constants and per-layer opacities
-  // defined inside _buildSitemapGltf() above — they can't be referenced
-  // directly since this function lives outside that closure.
+  // ── Continuous blink — tower tiles + their "Tower N" labels alternate
+  // between steady copper and a bright white glow every 500ms for as
+  // long as the sitemap is open. The canvas has NO ambient glow filter
+  // at rest (see _buildSitemapGltf) — the glow only exists during the
+  // white "flash" half of each cycle, applied here directly. Cleared in
+  // disposeSitemapCanvas() whenever the panel is rebuilt/closed.
+  const COPPER_HEX  = 0x8a5a30; // matches label CSS copper tone
   let _sitemapBlinkTimer = null;
   const SITEMAP_BLINK_MS = 500;
+  const GLOW_FILTER  = 'drop-shadow(0 0 1.2px rgba(255,255,255,0.85))';
+  const IDLE_FILTER  = 'drop-shadow(0 0 0.6px rgba(0,0,0,0.5))';
 
   function blinkRevealSitemap() {
     if (_sitemapBlinkTimer) { clearInterval(_sitemapBlinkTimer); _sitemapBlinkTimer = null; }
@@ -1105,24 +1150,29 @@ window.FloorplanModule = (function () {
       on = !on;
       const meshes = Object.values(_sitemapMeshMap);
       meshes.forEach(({ mesh, e1, e2, e3 }) => {
-        mesh.material.opacity = on ? 0.10 : 0.0;
-        if (e1) e1.material.opacity = on ? 1.0  : 0.08;
-        if (e2) e2.material.opacity = on ? 0.75 : 0.05;
-        if (e3) e3.material.opacity = on ? 0.50 : 0.0;
+        mesh.material.opacity = 0.10;
+        const c = on ? 0xffffff : COPPER_HEX;
+        if (e1) { e1.material.color.set(c); e1.material.opacity = 1.0; }
+        if (e2) { e2.material.color.set(c); e2.material.opacity = 0.85; }
+        if (e3) { e3.material.color.set(c); e3.material.opacity = 0.60; }
       });
+      if (_sitemapCanvas) _sitemapCanvas.style.filter = on ? GLOW_FILTER : IDLE_FILTER;
+      Object.values(_sitemapLabelEls).forEach(el => el.classList.toggle('fp-glb-label--flash', on));
     }, SITEMAP_BLINK_MS);
   }
 
   function stopSitemapBlink() {
     if (_sitemapBlinkTimer) { clearInterval(_sitemapBlinkTimer); _sitemapBlinkTimer = null; }
-    // Leave tiles at steady idle appearance
+    // Leave tiles at steady idle (copper) appearance
     Object.values(_sitemapMeshMap).forEach(({ mesh, e1, e2, e3 }) => {
       if (!mesh) return;
       mesh.material.opacity = 0.10;
-      if (e1) e1.material.opacity = 1.0;
-      if (e2) e2.material.opacity = 0.75;
-      if (e3) e3.material.opacity = 0.50;
+      if (e1) { e1.material.color.set(COPPER_HEX); e1.material.opacity = 1.0; }
+      if (e2) { e2.material.color.set(COPPER_HEX); e2.material.opacity = 0.85; }
+      if (e3) { e3.material.color.set(COPPER_HEX); e3.material.opacity = 0.60; }
     });
+    if (_sitemapCanvas) _sitemapCanvas.style.filter = IDLE_FILTER;
+    Object.values(_sitemapLabelEls).forEach(el => el.classList.remove('fp-glb-label--flash'));
   }
 
 
@@ -1173,6 +1223,18 @@ window.FloorplanModule = (function () {
   }
 
   // ─── SWAP PARITY ─────────────────────────────────────────────
+  // ─── CLUSTER BADGE ─────────────────────────────────────────────
+  // Shows which tower + which floor set (odd/even) is currently on
+  // screen — e.g. "Tower 2 · Odd Floors" — since several units can look
+  // similar and the odd/even toggle alone isn't always obvious at a glance.
+  function updateClusterBadge(towerId, parity) {
+    const badge = document.getElementById('fp-cluster-badge');
+    if (!badge) return;
+    const num = _towerDisplayNumber[towerId] || '';
+    const parityLabel = parity === 'even' ? 'Even Floors' : 'Odd Floors';
+    badge.textContent = `Tower ${num} · ${parityLabel}`;
+  }
+
   function swapParity(newParity) {
     if (!activeTower || newParity === floorParity || level !== 1) return;
     activeUnit  = null;
@@ -1180,6 +1242,7 @@ window.FloorplanModule = (function () {
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
     });
+    updateClusterBadge(activeTower, floorParity);
     const img = document.getElementById('fp-cluster-img');
     const svg = document.getElementById('fp-zone-svg');
     if (!img || !svg) return;
@@ -1219,6 +1282,7 @@ window.FloorplanModule = (function () {
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
     });
+    updateClusterBadge(activeTower, floorParity);
     const img = document.getElementById('fp-cluster-img');
     const svg = document.getElementById('fp-zone-svg');
     if (!img || !svg) return;
@@ -1264,6 +1328,35 @@ window.FloorplanModule = (function () {
     if (dbg) dbg.remove();
     const clusterHint = document.getElementById('fp-cluster-hint');
     if (clusterHint) clusterHint.classList.remove('visible');
+    Object.values(_clusterLabelEls).forEach(el => el.remove());
+    _clusterLabelEls = {};
+  }
+
+  // ─── UNIT BHK LABEL HELPERS ────────────────────────────────────
+  // Derives a readable label straight from the GLB filename, e.g.
+  // "./assets/typical_odd_tower_01/4BHK-C.glb" → "4BHK-C",
+  // "./assets/typical_odd_tower_02/3BHK(L)-D.glb" → "3BHK(L)-D".
+  // This is the single source of truth already used to load the mesh,
+  // so the label can never drift out of sync with which unit it's on.
+  function bhkLabelFromFile(file) {
+    if (!file) return '';
+    return file.split('/').pop().replace(/\.glb$/i, '');
+  }
+
+  let _clusterLabelEls = {}; // unitId → label DOM element, for the current cluster build
+
+  function _positionClusterLabels(canvas, unitPolyData) {
+    if (!canvas) return;
+    const left = parseFloat(canvas.style.left)  || 0;
+    const top  = parseFloat(canvas.style.top)   || 0;
+    const W    = parseFloat(canvas.style.width)  || 0;
+    const H    = parseFloat(canvas.style.height) || 0;
+    Object.entries(_clusterLabelEls).forEach(([unitId, el]) => {
+      const poly = unitPolyData[unitId];
+      if (!poly) return;
+      el.style.left = (left + (poly.cx / 100) * W) + 'px';
+      el.style.top  = (top  + (poly.cy / 100) * H) + 'px';
+    });
   }
 
   function buildGltfZones(towerId, parity) {
@@ -1312,10 +1405,11 @@ window.FloorplanModule = (function () {
       position: 'absolute',
       pointerEvents: 'all',
       zIndex: '5',
-      // Same thickening/glow treatment as the sitemap canvas — see the
-      // comment there for why this is CSS drop-shadow rather than a
-      // WebGL linewidth (which browsers ignore).
-      filter: 'drop-shadow(0 0 1px rgba(0,0,0,0.5)) drop-shadow(0 0 2.5px rgba(255,255,255,0.35))',
+      // Thin drop-shadow just to thicken the otherwise 1px WebGL lines —
+      // no ambient glow. White glow is applied only during the blink's
+      // "flash" phase, toggled dynamically in blinkRevealZones() below.
+      filter: 'drop-shadow(0 0 0.6px rgba(0,0,0,0.5))',
+      transition: 'filter 0.15s ease',
     });
     wrap.appendChild(canvas);
 
@@ -1343,7 +1437,7 @@ window.FloorplanModule = (function () {
     // Same pattern as the sitemap tiles: idle copper edges (always
     // visible, not just on hover — touch devices have no hover state
     // at all), turning white on hover.
-    const COLOR_IDLE  = 0x6A3A22;
+    const COLOR_IDLE  = 0x8a5a30; // matches blink copper (COPPER_HEX)
     const COLOR_HOVER = 0xffffff;
 
     const IDLE_FILL_OPACITY = 0.08;
@@ -1394,6 +1488,7 @@ window.FloorplanModule = (function () {
         height: H + 'px',
       });
       renderer.setSize(W, H, false);
+      _positionClusterLabels(canvas, unitPolyData);
 
       camera.left   = -aspect * 0.5;
       camera.right  =  aspect * 0.5;
@@ -1545,6 +1640,16 @@ window.FloorplanModule = (function () {
         rootList.push({ root, unitData, idx });
         scene.add(root);
 
+        // ── BHK label — one per unit, positioned at its centroid ──
+        if (unitData && unitPolyData[unitId] && !_clusterLabelEls[unitId]) {
+          const labelText = bhkLabelFromFile(file);
+          const el = document.createElement('div');
+          el.className = 'fp-unit-label';
+          el.innerHTML = `<span class="fp-unit-label-text">${labelText}</span>`;
+          wrap.appendChild(el);
+          _clusterLabelEls[unitId] = el;
+        }
+
         loaded++;
         console.log('[GLTF] ✔ "' + file.split('/').pop() + '" → ' + unitId + (unitData ? ' (' + unitData.unitId + ')' : ' (no unitData)'));
 
@@ -1552,7 +1657,7 @@ window.FloorplanModule = (function () {
 
         if (loaded + failed === total) {
           console.log('[GLTF] DONE — Loaded:', loaded, '| Failed:', failed, '| Total:', total);
-          blinkRevealZones(meshMap, IDLE_FILL_OPACITY, IDLE_EDGE_OPACITY);
+          blinkRevealZones(meshMap, IDLE_FILL_OPACITY, IDLE_EDGE_OPACITY, canvas);
           attachShineOnce(wrap, 'unit-zone-glb', { matchRect: canvas });
           const clusterHint = document.getElementById('fp-cluster-hint');
           if (clusterHint) clusterHint.classList.add('visible');
@@ -1617,34 +1722,42 @@ window.FloorplanModule = (function () {
     })();
   }
 
-  // ── Continuous blink for unit zones — same idea as blinkRevealSitemap():
-  // zones flash on/off every 500ms for as long as this cluster view is
-  // open, so they always read as tappable. Cleared in disposeGltfCanvas()
-  // whenever the cluster is rebuilt (parity swap, new tower, navigating away).
+  // ── Continuous blink for unit zones — same treatment as
+  // blinkRevealSitemap(): steady copper at rest, alternating to a
+  // bright white glow every 500ms for as long as this cluster view is
+  // open. Cleared in disposeGltfCanvas() whenever the cluster is
+  // rebuilt (parity swap, new tower, navigating away).
   let _zoneBlinkTimer = null;
   const ZONE_BLINK_MS = 500;
 
-  function blinkRevealZones(meshMap, idleFill, idleEdge) {
+  function blinkRevealZones(meshMap, idleFill, idleEdge, canvas) {
     if (_zoneBlinkTimer) { clearInterval(_zoneBlinkTimer); _zoneBlinkTimer = null; }
     let on = true;
     _zoneBlinkTimer = setInterval(() => {
       on = !on;
-      Object.values(meshMap).forEach(({ mesh, edgeLines }) => {
-        mesh.material.opacity = on ? idleFill : 0;
-        if (edgeLines) edgeLines.material.opacity = on ? idleEdge : 0.08;
+      const c = on ? 0xffffff : COPPER_HEX;
+      Object.values(meshMap).forEach(({ mesh, edgeLines, edgeLines2, edgeLines3 }) => {
+        mesh.material.opacity = idleFill;
+        if (edgeLines)  { edgeLines.material.color.set(c);  edgeLines.material.opacity  = idleEdge; }
+        if (edgeLines2) { edgeLines2.material.color.set(c); edgeLines2.material.opacity = on ? 0.9  : 0; }
+        if (edgeLines3) { edgeLines3.material.color.set(c); edgeLines3.material.opacity = on ? 0.75 : 0; }
       });
+      if (canvas) canvas.style.filter = on ? GLOW_FILTER : IDLE_FILTER;
     }, ZONE_BLINK_MS);
   }
 
-  function stopZoneBlink(meshMap, idleFill, idleEdge) {
+  function stopZoneBlink(meshMap, idleFill, idleEdge, canvas) {
     if (_zoneBlinkTimer) { clearInterval(_zoneBlinkTimer); _zoneBlinkTimer = null; }
     if (meshMap) {
-      Object.values(meshMap).forEach(({ mesh, edgeLines }) => {
+      Object.values(meshMap).forEach(({ mesh, edgeLines, edgeLines2, edgeLines3 }) => {
         if (!mesh) return;
         mesh.material.opacity = idleFill;
-        if (edgeLines) edgeLines.material.opacity = idleEdge;
+        if (edgeLines)  { edgeLines.material.color.set(COPPER_HEX);  edgeLines.material.opacity  = idleEdge; }
+        if (edgeLines2) { edgeLines2.material.color.set(COPPER_HEX); edgeLines2.material.opacity = 0; }
+        if (edgeLines3) { edgeLines3.material.color.set(COPPER_HEX); edgeLines3.material.opacity = 0; }
       });
     }
+    if (canvas) canvas.style.filter = IDLE_FILTER;
   }
 
 
@@ -2064,6 +2177,13 @@ window.FloorplanModule = (function () {
   const _shinedKeys = new Set();
 
   function attachShineOnce(container, key, opts) {
+    // Shine sweep effect removed per request — kept as a no-op so the
+    // existing call sites (sitemap tiles, unit zones, toggle switches)
+    // don't need to be touched individually.
+    return;
+  }
+
+  function _unusedAttachShineOnce(container, key, opts) {
     if (!container || _shinedKeys.has(key)) return;
     _shinedKeys.add(key);
 
@@ -2126,7 +2246,7 @@ window.FloorplanModule = (function () {
 
   let _closeResetTimer = null;
 
-  function close() {
+  function close(skipHistory) {
     if (!overlayOpen) return;
     if (level === 2) { reportUnitDwell(); unitEnteredAt = 0; } // catch dwell if closed mid-unit-view
     overlayOpen = false;
@@ -2135,10 +2255,15 @@ window.FloorplanModule = (function () {
     // we still own history entries, unwind them silently so the browser back
     // button doesn't need extra presses later. popstate will fire but the
     // overlayOpen guard makes it a no-op.
+    // skipHistory=true bypasses the history.go() call entirely — used when
+    // the caller (e.g. home.js switching bottom-nav tabs) is about to open
+    // a different module immediately after, whose own pushState would
+    // otherwise race this async history.go() and intermittently bounce
+    // back to the home view.
     if (!_poppingState && _fpHistoryDepth > 0) {
       const n = _fpHistoryDepth;
       _fpHistoryDepth = 0;
-      history.go(-n);
+      if (!skipHistory) history.go(-n);
     }
 
     clearTimeout(_closeResetTimer);

@@ -28,13 +28,19 @@ window.HomeModule = (function () {
     history.pushState({ home: key }, '');
     _hist[key]++;
   }
-  function unwindHist(key) {
+  function unwindHist(key, skipGo) {
     // Overlay closed via UI while it still owns a history entry —
     // silently consume it so back never needs an extra press later.
+    // skipGo=true just zeroes the counter without calling history.go():
+    // used when we know another module's open() is about to push a
+    // fresh state right after (tab switch) — calling history.go() here
+    // would be async and race with that immediate pushState, which is
+    // what caused switching tabs to intermittently bounce to the home
+    // view and need a second click.
     if (!_popping && _hist[key] > 0) {
       const n = _hist[key];
       _hist[key] = 0;
-      history.go(-n);
+      if (!skipGo) history.go(-n);
     }
   }
   function requestHistBack(key, closeFn) {
@@ -221,21 +227,43 @@ window.HomeModule = (function () {
       #map-body {
         flex: 1; display: flex; align-items: center; justify-content: center;
         overflow: hidden; position: relative; background: #0d1a24;
+        touch-action: none;
       }
-      #map-img { width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; -webkit-user-drag: none; }
+      #map-img {
+        width: 100%; height: 100%; object-fit: cover; display: block;
+        user-select: none; -webkit-user-drag: none;
+        transform-origin: center center; will-change: transform;
+      }
+      #map-zoom-hint {
+        position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+        font-family: 'Syne', sans-serif; font-size: 8.5px; font-weight: 600;
+        letter-spacing: .12em; text-transform: uppercase;
+        color: rgba(255,255,255,.55); pointer-events: none;
+        opacity: 0; transition: opacity 0.4s; white-space: nowrap;
+        background: rgba(0,0,0,.35); padding: 5px 12px; border-radius: 999px;
+      }
+      #map-zoom-hint.visible { opacity: 1; }
       #map-spinner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.22s; }
       #map-spinner.visible { opacity: 1; }
       #map-spinner-ring { width: 32px; height: 32px; border: 2px solid rgba(122,62,30,.20); border-top-color: rgba(122,62,30,.85); border-radius: 50%; animation: spinMap 0.72s linear infinite; }
       @keyframes spinMap { to { transform: rotate(360deg); } }
 
-      /* ── Unit Row — tab strip ── */
+      /* ── Unit Row — thumbnail strip ──
+         Each thumbnail is a tiny, non-interactive live iframe of that
+         unit's own 360 tour page (unitURLs[n]) scaled way down — so the
+         "thumbnail" is always the real scene, no separate image asset
+         needed. Desktop: horizontal strip above the bottom nav, same as
+         before. Mobile: a vertical rail docked to the right edge, since
+         a full-width horizontal strip eats too much vertical space on
+         a phone screen and a side rail stays out of the way of the
+         360 viewer itself. */
       #unit-row {
         position: fixed; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0;
         width: 100%;
-        /* FIX #10: lowered from 101 so it doesn't overlap unit-viewer-overlay (z:99) top edge */
         z-index: 98;
         display: flex; flex-direction: row;
         align-items: stretch; justify-content: center;
+        gap: 10px; padding: 10px 14px;
         opacity: 0; pointer-events: none;
         transform: translateY(6px);
         transition: opacity .28s ease, transform .28s cubic-bezier(0.22,1,0.36,1);
@@ -249,31 +277,72 @@ window.HomeModule = (function () {
 
       .unit-btn {
         position: relative;
-        display: flex; align-items: center; justify-content: center;
-        padding: 11px 32px; cursor: pointer;
-        background: transparent;
-        border-bottom: 2.5px solid transparent;
-        border-top: 2.5px solid transparent;
-        transition: border-color .22s, background .22s;
+        display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+        cursor: pointer;
+        border-radius: 10px; overflow: hidden;
+        border: 2px solid transparent;
+        transition: border-color .22s, transform .22s;
         -webkit-tap-highlight-color: transparent;
-        flex: 1; max-width: 180px;
+        flex: 1; max-width: 220px; min-width: 90px;
+        aspect-ratio: 16 / 10;
+        background: #0d0d0d;
       }
-      /* divider between tabs */
-      .unit-btn + .unit-btn::before {
-        content: '';
-        position: absolute; left: 0; top: 20%; height: 60%;
-        width: 1px; background: rgba(120,80,40,.14);
+      .unit-btn:hover { transform: translateY(-2px); }
+      .unit-btn.active { border-color: #7a3e1e; }
+
+      .unit-btn-thumb-frame {
+        position: absolute; inset: 0;
+        pointer-events: none; /* clicks always go to the .unit-btn wrapper */
+        overflow: hidden;
       }
-      .unit-btn:hover { background: rgba(122,62,30,.05); }
-      .unit-btn.active { border-bottom-color: #7a3e1e; }
+      /* The iframe is rendered at a large fixed size then scaled down
+         via CSS transform, so the panorama viewer inside it lays out
+         normally (it doesn't know it's being shown small) and just
+         gets visually shrunk to thumbnail size. */
+      .unit-btn-thumb-frame iframe {
+        position: absolute; top: 0; left: 0;
+        width: 1000px; height: 625px;
+        border: none;
+        transform-origin: top left;
+        /* scale set inline per-thumbnail via JS once its box is measured */
+      }
+      .unit-btn-thumb-scrim {
+        position: absolute; inset: 0;
+        background: linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.05) 55%, transparent 100%);
+        pointer-events: none;
+      }
       .unit-btn-label {
+        position: relative; z-index: 2;
         font-family: 'Syne', sans-serif; font-size: 10.5px; font-weight: 700;
         letter-spacing: .12em; text-transform: uppercase;
-        color: rgba(80,55,30,.45); line-height: 1; white-space: nowrap;
+        color: rgba(255,255,255,.85); line-height: 1; white-space: nowrap;
+        padding: 8px 0 9px;
         transition: color .22s;
       }
-      .unit-btn.active .unit-btn-label { color: #7a3e1e; }
-      .unit-btn:hover:not(.active) .unit-btn-label { color: rgba(80,55,30,.75); }
+      .unit-btn.active .unit-btn-label { color: #f0c896; }
+
+      /* ── Mobile: vertical rail on the right edge instead of a
+         full-width bottom strip ── */
+      @media (max-width: 640px) {
+        #unit-row {
+          left: auto; right: 0; bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+          top: auto;
+          width: auto;
+          flex-direction: column;
+          gap: 8px;
+          padding: 8px calc(8px + env(safe-area-inset-right, 0px)) 8px 8px;
+          background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none;
+          border-top: none; box-shadow: none;
+          max-height: 60vh; overflow-y: auto;
+        }
+        .unit-btn {
+          max-width: 84px; min-width: 72px; aspect-ratio: 4 / 3;
+          border-radius: 8px;
+          box-shadow: 0 3px 10px rgba(0,0,0,.25);
+        }
+        .unit-btn-label { font-size: 8.5px; padding: 5px 0 6px; }
+      }
+
 
       /* ── Bottom Panel ── */
       #bottom-panel {
@@ -383,9 +452,7 @@ window.HomeModule = (function () {
         .panel-slot { padding: 0 10px; gap: 5px; }
         .panel-slot-label { font-size: 9px; letter-spacing: .08em; }
         .panel-slot.active { margin: 8px 2px; }
-        /* Unit tab strip */
-        .unit-btn { padding: 10px 12px; max-width: none; }
-        .unit-btn-label { font-size: 9.5px; }
+        /* Unit thumbnail rail sizing lives in its own @media(max-width:640px) block above */
         /* Carousel + map: slimmer frame so the image owns the screen */
         #carousel { padding: 12px; }
         #map-overlay { padding: 12px; }
@@ -438,15 +505,27 @@ window.HomeModule = (function () {
           <div id="map-body">
             <div id="map-spinner"><div id="map-spinner-ring"></div></div>
             <img id="map-img" src="" alt="Location Map" />
+            <div id="map-zoom-hint">Pinch to zoom</div>
           </div>
         </div>
       </div>
 
       <div id="unit-row">
-        <div class="unit-btn" data-unit="1"><span class="unit-btn-label">Unit 1</span></div>
-        <div class="unit-btn" data-unit="2"><span class="unit-btn-label">Unit 2</span></div>
-        <div class="unit-btn" data-unit="3"><span class="unit-btn-label">Unit 3</span></div>
-        
+        <div class="unit-btn" data-unit="1">
+          <div class="unit-btn-thumb-frame"></div>
+          <div class="unit-btn-thumb-scrim"></div>
+          <span class="unit-btn-label">Unit 1</span>
+        </div>
+        <div class="unit-btn" data-unit="2">
+          <div class="unit-btn-thumb-frame"></div>
+          <div class="unit-btn-thumb-scrim"></div>
+          <span class="unit-btn-label">Unit 2</span>
+        </div>
+        <div class="unit-btn" data-unit="3">
+          <div class="unit-btn-thumb-frame"></div>
+          <div class="unit-btn-thumb-scrim"></div>
+          <span class="unit-btn-label">Unit 3</span>
+        </div>
       </div>
 
       <div id="bottom-panel">
@@ -707,14 +786,135 @@ window.HomeModule = (function () {
     }
   }
 
-  function closeMap() {
+  function closeMap(skipHistory) {
     const overlay = document.getElementById('map-overlay');
     if (!overlay || !overlay.classList.contains('open')) return;
     overlay.classList.remove('open');
-    unwindHist('map');
+    const mapImg = document.getElementById('map-img');
+    if (mapImg) mapImg.style.transform = '';
+    const zoomHint = document.getElementById('map-zoom-hint');
+    if (zoomHint) zoomHint.classList.remove('visible');
+    unwindHist('map', skipHistory);
+  }
+
+  // ─── GENERIC ZOOM/PAN (pinch + drag + wheel) ──────────────────
+  // Same pattern used in floorplan.js — transforms `target` inside
+  // `area` via translate+scale. Reused here for the location map.
+  function bindZoomPan(area, target, opts) {
+    if (!area || !target) return () => {};
+    const { maxScale = 4, minScale = 1, hintEl = null } = opts || {};
+    let scale = 1, originX = 0, originY = 0, lastDist = null;
+    let panStartX = 0, panStartY = 0, panOriginX = 0, panOriginY = 0, lastTap = 0;
+
+    function applyTransform() {
+      target.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
+      if (hintEl) {
+        if (scale > 1.05) { hintEl.textContent = 'Double-tap to reset'; hintEl.classList.add('visible'); }
+        else hintEl.classList.remove('visible');
+      }
+    }
+    function resetZoom() {
+      scale = 1; originX = 0; originY = 0;
+      target.style.transition = 'transform 0.25s ease';
+      applyTransform();
+      setTimeout(() => { target.style.transition = ''; }, 260);
+      if (hintEl) hintEl.classList.remove('visible');
+    }
+    function dist(t) { return Math.sqrt((t[0].clientX-t[1].clientX)**2+(t[0].clientY-t[1].clientY)**2); }
+    function mid(t)  { return { x:(t[0].clientX+t[1].clientX)/2, y:(t[0].clientY+t[1].clientY)/2 }; }
+
+    function onTouchStart(e) {
+      if (e.touches.length === 2) {
+        e.preventDefault(); lastDist = dist(e.touches);
+      } else if (e.touches.length === 1) {
+        const now = Date.now();
+        if (now - lastTap < 300) { e.preventDefault(); resetZoom(); }
+        lastTap = now;
+        panStartX = e.touches[0].clientX; panStartY = e.touches[0].clientY;
+        panOriginX = originX; panOriginY = originY;
+      }
+    }
+    function onTouchMove(e) {
+      if (e.touches.length === 2) {
+        e.preventDefault();
+        const d = dist(e.touches), m = mid(e.touches), rect = area.getBoundingClientRect();
+        if (lastDist !== null) {
+          const newScale = Math.min(maxScale, Math.max(minScale, scale * (d/lastDist)));
+          const pivotX = m.x - rect.left - rect.width/2;
+          const pivotY = m.y - rect.top  - rect.height/2;
+          originX = pivotX + (originX - pivotX) * (newScale / scale);
+          originY = pivotY + (originY - pivotY) * (newScale / scale);
+          scale = newScale; applyTransform();
+        }
+        lastDist = d;
+      } else if (e.touches.length === 1 && scale > 1) {
+        e.preventDefault();
+        originX = panOriginX + (e.touches[0].clientX - panStartX);
+        originY = panOriginY + (e.touches[0].clientY - panStartY);
+        applyTransform();
+      }
+    }
+    function onTouchEnd(e) {
+      if (e.touches.length < 2) lastDist = null;
+      if (scale <= minScale + 0.05) resetZoom();
+    }
+    area.addEventListener('touchstart', onTouchStart, { passive: false });
+    area.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    area.addEventListener('touchend',   onTouchEnd,   { passive: true });
+
+    function onWheel(e) {
+      e.preventDefault();
+      const rect = area.getBoundingClientRect();
+      const newScale = Math.min(maxScale, Math.max(minScale, scale * (e.deltaY < 0 ? 1.12 : 0.89)));
+      const pivotX = e.clientX - rect.left - rect.width/2;
+      const pivotY = e.clientY - rect.top  - rect.height/2;
+      originX = pivotX + (originX - pivotX) * (newScale / scale);
+      originY = pivotY + (originY - pivotY) * (newScale / scale);
+      scale = newScale;
+      applyTransform();
+      if (scale <= minScale + 0.01) resetZoom();
+    }
+    let mDragging = false, mStartX = 0, mStartY = 0, mOriginX = 0, mOriginY = 0;
+    function onMouseDown(e) {
+      if (scale <= 1) return;
+      mDragging = true; mStartX = e.clientX; mStartY = e.clientY; mOriginX = originX; mOriginY = originY;
+    }
+    function onMouseMove(e) {
+      if (!mDragging) return;
+      originX = mOriginX + (e.clientX - mStartX);
+      originY = mOriginY + (e.clientY - mStartY);
+      applyTransform();
+    }
+    function onMouseUp() { mDragging = false; }
+    area.addEventListener('wheel', onWheel, { passive: false });
+    area.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+
+    return function unbind() {
+      area.removeEventListener('touchstart', onTouchStart);
+      area.removeEventListener('touchmove',  onTouchMove);
+      area.removeEventListener('touchend',   onTouchEnd);
+      area.removeEventListener('wheel', onWheel);
+      area.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      resetZoom();
+    };
+  }
+
+  let _mapZoomBound = false;
+  function bindMapZoom() {
+    if (_mapZoomBound) return;
+    _mapZoomBound = true;
+    const area = document.getElementById('map-body');
+    const img  = document.getElementById('map-img');
+    const hint = document.getElementById('map-zoom-hint');
+    bindZoomPan(area, img, { hintEl: hint });
   }
 
   function bindMapEvents() {
+    bindMapZoom();
     const mapBack = document.getElementById('map-back');
     function handleMapBack() {
       requestHistBack('map', closeMap);
@@ -820,6 +1020,49 @@ window.HomeModule = (function () {
   }
 
   // ─── UNIT VIEWER ─────────────────────────────────────────────────
+  // ─── UNIT THUMBNAILS — live scaled-down iframes of each unit's own
+  // 360 page, instead of a separate static image. Created lazily the
+  // first time the 360 View tab is opened (not on page load) so three
+  // extra heavy panorama pages aren't fetched before the user asks
+  // for them. The iframe is rendered at a fixed large intrinsic size
+  // then visually shrunk with a CSS scale so its internal layout
+  // behaves exactly as it would full-size — just smaller on screen.
+  const THUMB_IFRAME_W = 1000, THUMB_IFRAME_H = 625;
+  let _thumbsLoaded = false;
+
+  function syncUnitThumbScale() {
+    document.querySelectorAll('.unit-btn-thumb-frame').forEach(frame => {
+      const iframe = frame.querySelector('iframe');
+      if (!iframe) return;
+      const box = frame.getBoundingClientRect();
+      if (box.width < 2 || box.height < 2) return;
+      const scale = Math.max(box.width / THUMB_IFRAME_W, box.height / THUMB_IFRAME_H);
+      iframe.style.transform = `scale(${scale})`;
+    });
+  }
+
+  function loadUnitThumbnails() {
+    if (_thumbsLoaded) { syncUnitThumbScale(); return; }
+    _thumbsLoaded = true;
+    document.querySelectorAll('.unit-btn').forEach(btn => {
+      const unitNum = btn.dataset.unit;
+      const url = unitURLs[unitNum];
+      const frame = btn.querySelector('.unit-btn-thumb-frame');
+      if (!url || !frame) return;
+      const iframe = document.createElement('iframe');
+      iframe.src = url;
+      iframe.width = THUMB_IFRAME_W;
+      iframe.height = THUMB_IFRAME_H;
+      iframe.setAttribute('loading', 'lazy');
+      iframe.setAttribute('tabindex', '-1');
+      iframe.setAttribute('aria-hidden', 'true');
+      frame.appendChild(iframe);
+    });
+    // Scale after layout settles
+    requestAnimationFrame(syncUnitThumbScale);
+    window.addEventListener('resize', syncUnitThumbScale);
+  }
+
   function openUnitViewer(unit) {
     const overlay = document.getElementById('unit-viewer-overlay');
     const iframe  = document.getElementById('unit-iframe');
@@ -896,7 +1139,7 @@ window.HomeModule = (function () {
     }
   }
 
-  function closeUnitViewer() {
+  function closeUnitViewer(skipHistory) {
     const overlay = document.getElementById('unit-viewer-overlay');
     if (!overlay || !overlay.classList.contains('open')) return;
     reportUnitViewerDwell();
@@ -904,7 +1147,7 @@ window.HomeModule = (function () {
     activeUnitNumber = null;
     overlay.classList.remove('open');
     document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
-    unwindHist('unit');
+    unwindHist('unit', skipHistory);
   }
 
   // ─── BACK NAVIGATION (hardware back / Backspace) ─────────────────
@@ -947,21 +1190,26 @@ window.HomeModule = (function () {
   }
 
   // ─── CLOSE ALL MODULES ───────────────────────────────────────────
-  function closeAllModules() {
+  // skipHistory=true is used when we're about to immediately open a
+  // different module (tab switch) — it avoids each module's own
+  // history.go() unwind racing against the next module's pushState,
+  // which was causing a tab switch to intermittently bounce back to
+  // the home view and require a second click to actually open.
+  function closeAllModules(skipHistory) {
     // FIX #9: stop carousel auto-timer when navigating away
     stopAuto();
 
-    closeUnitViewer();
-    closeMap();
+    closeUnitViewer(skipHistory);
+    closeMap(skipHistory);
     unitRowVisible = false;
     const row = document.getElementById('unit-row');
     if (row) row.classList.remove('visible');
     document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
     const fpOverlay = document.getElementById('fp-overlay');
     if (fpOverlay) fpOverlay.style.pointerEvents = 'none';
-    if (window.FloorplanModule && typeof FloorplanModule.close === 'function') FloorplanModule.close();
+    if (window.FloorplanModule && typeof FloorplanModule.close === 'function') FloorplanModule.close(skipHistory);
     setTimeout(() => { if (fpOverlay) fpOverlay.style.pointerEvents = ''; }, 420);
-    if (window.GalleryModule && typeof GalleryModule.close === 'function') GalleryModule.close();
+    if (window.GalleryModule && typeof GalleryModule.close === 'function') GalleryModule.close(skipHistory);
 
     // Restart carousel auto-play after closing modules
     // (only matters if carousel becomes visible again)
@@ -976,7 +1224,12 @@ window.HomeModule = (function () {
         const slot     = el.dataset.slot;
         const isActive = el.classList.contains('active');
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
-        closeAllModules();
+        // Switching to a different tab (isActive===false) means a new
+        // module opens right after this — skip each module's own
+        // history.go() unwind so it can't race the new pushState.
+        // Toggling the CURRENT tab off (isActive===true) is a real
+        // close with nothing opening next, so unwind history properly.
+        closeAllModules(!isActive);
         if (isActive) return;
         el.classList.add('active');
 
@@ -990,6 +1243,7 @@ window.HomeModule = (function () {
         if (slot === '360view') {
           unitRowVisible = true;
           document.getElementById('unit-row')?.classList.add('visible');
+          loadUnitThumbnails();
           // Warm the most-clicked unit while the user picks
           const iframe = document.getElementById('unit-iframe');
           if (iframe && !iframe.dataset.targetUrl) {
