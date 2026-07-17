@@ -38,12 +38,12 @@ window.FloorplanModule = (function () {
 
   // ─── LEVEL 0 — SITEMAP ────────────────────────────────────────
   const SITEMAP = {
-    image: IK('Cluster/siteplan00.jpg'),
+    image: IK('Cluster/sitemap.png'),
     towerTiles: [
-      { id: 'tower-A', label: 'Tower A', points: '40,1.2 62,1.2 62,38 40,38' },
-      { id: 'tower-B', label: 'Tower B', points: '45.5,31 69,31 69,63 45.5,63' },
-      { id: 'tower-C', label: 'Tower C', points: '14.5,52 43.5,52 43.5,80 14.65,80' },
-      { id: 'tower-D', label: 'Tower D', points: '15,24.5 37.5,24.5 37.5,51 15,51' },
+      { id: 'tower-A', label: 'Tower A', points: '47,9 83.5,9 83.5,36 47,36' },
+      { id: 'tower-B', label: 'Tower B', points: '57,39 95,39 95,67 57,67' },
+      { id: 'tower-C', label: 'Tower C', points: '7,51 54,51 54,97.5 7,97.5' },
+      { id: 'tower-D', label: 'Tower D', points: '7,22 46,22 46,65 7,65' },
     ],
   };
 
@@ -371,12 +371,24 @@ window.FloorplanModule = (function () {
         .fp-shine { display: none; }
       }
 
-      :root { --fp-topbar-h: 56px; }
+      :root { --fp-topbar-h: 56px; --fp-vh: 1vh; }
 
+      /* Mobile-first breakpoints — 360/480/768 covers the vast majority of
+         phone widths so the layout looks the same regardless of exact
+         device model. Base styles above already target the smallest
+         (360px) screens; these widen back out progressively. */
+      @media (min-width: 481px) {
+        .fp-parity-btn, .fp-toggle-btn { padding: 7px 14px; font-size: 9px; }
+      }
       @media (max-width: 480px) {
         #fp-toggles-row { position: static; transform: none; flex: 1; justify-content: center; }
         #fp-topbar { flex-wrap: nowrap; padding: 8px; gap: 6px; }
         .fp-parity-btn, .fp-toggle-btn { padding: 6px 10px; font-size: 8px; }
+      }
+      @media (max-width: 360px) {
+        .fp-parity-btn, .fp-toggle-btn { padding: 5px 8px; font-size: 7.5px; }
+        #fp-back, #fp-back { width: 28px; min-width: 28px; }
+        #fp-back-arrow { width: 28px; height: 28px; }
       }
 
       #fp-content { flex: 1; position: relative; overflow: hidden; }
@@ -384,15 +396,18 @@ window.FloorplanModule = (function () {
       #fp-topbar {
         flex-shrink: 0; display: flex; align-items: center;
         padding: 8px 12px;
+        padding-left: calc(12px + env(safe-area-inset-left, 0px));
+        padding-right: calc(12px + env(safe-area-inset-right, 0px));
+        min-height: 48px;
         border-bottom: 1px solid rgba(122,62,30,.15);
         background: #ffffff;
-        gap: 10px; position: relative; z-index: 2;
+        gap: 10px; position: relative; z-index: 20;
       }
       #fp-back {
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; opacity: 0; pointer-events: none;
         transition: opacity 0.22s ease; flex-shrink: 0;
-        width: 32px;   /* fixed width so spacer can mirror it exactly */
+        width: 32px; min-width: 32px;   /* fixed width so spacer can mirror it exactly, never squeezed by flex */
       }
       #fp-back.visible { opacity: 1; pointer-events: all; }
       #fp-back-arrow {
@@ -460,8 +475,9 @@ window.FloorplanModule = (function () {
       #fp-panel-sitemap {
         display: flex; align-items: center; justify-content: center;
         background: #ffffff; transform: translateX(0);
+        overflow: hidden; touch-action: none;
       }
-      #fp-sitemap-wrap { position: relative; display: inline-block; max-width: 100%; max-height: 100%; }
+      #fp-sitemap-wrap { position: relative; display: inline-block; max-width: 100%; max-height: 100%; will-change: transform; }
       #fp-sitemap-img {
         display: block; max-width: 100%;
         max-height: calc(100dvh - var(--fp-topbar-h) - 62px - 48px - env(safe-area-inset-bottom, 0px));
@@ -488,6 +504,31 @@ window.FloorplanModule = (function () {
         pointer-events: none; text-anchor: middle; dominant-baseline: middle;
       }
 
+      /* GLB tile labels — HTML overlay (crisper than a WebGL text sprite,
+         and scales with normal CSS across every phone). */
+      .fp-glb-label {
+        position: absolute; transform: translate(-50%, -50%);
+        pointer-events: none; z-index: 6; text-align: center;
+        white-space: nowrap;
+      }
+      .fp-glb-label-main {
+        display: block; font-family: 'Cormorant Garamond', serif;
+        font-size: 22px; font-weight: 600; font-style: italic;
+        color: #d9a15c;
+        text-shadow: 0 1px 2px rgba(0,0,0,.65), 0 0 12px rgba(0,0,0,.45), 0 0 2px rgba(122,62,30,.9);
+        -webkit-text-stroke: 0.4px rgba(122,62,30,.6);
+      }
+      .fp-glb-label-sub {
+        display: block; font-family: 'Syne', sans-serif; font-size: 10px;
+        font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
+        color: #c9803f; text-shadow: 0 1px 2px rgba(0,0,0,.65), 0 0 8px rgba(0,0,0,.35);
+        margin-top: 2px;
+      }
+      @media (max-width: 480px) {
+        .fp-glb-label-main { font-size: 17px; }
+        .fp-glb-label-sub  { font-size: 8.5px; }
+      }
+
       #fp-sitemap-hint {
         position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
         font-family: 'Cormorant Garamond', serif; font-size: 11px; font-style: italic;
@@ -498,8 +539,9 @@ window.FloorplanModule = (function () {
       #fp-panel-cluster {
         display: flex; align-items: center; justify-content: center;
         background: #ffffff; transform: translateX(32px);
+        overflow: hidden; touch-action: none;
       }
-      #fp-cluster-wrap { position: relative; display: inline-block; max-width: 100%; max-height: 100%; }
+      #fp-cluster-wrap { position: relative; display: inline-block; max-width: 100%; max-height: 100%; will-change: transform; }
       #fp-cluster-img {
         display: block; max-width: 100%;
         max-height: calc(100dvh - var(--fp-topbar-h) - 62px - 48px - env(safe-area-inset-bottom, 0px));
@@ -674,6 +716,8 @@ window.FloorplanModule = (function () {
     disposeGltfCanvas();
     disposeSitemapCanvas();
     if (_sitemapRO) { _sitemapRO.disconnect(); _sitemapRO = null; }
+    const clusterWrap = document.getElementById('fp-cluster-wrap');
+    if (clusterWrap) clusterWrap.style.transform = '';
     level = 0; activeTower = null; activeUnit = null;
     viewMode = 'top'; floorParity = 'odd';
     const svg = document.getElementById('fp-zone-svg');
@@ -731,8 +775,11 @@ window.FloorplanModule = (function () {
     if (_sitemapAnimId)   { cancelAnimationFrame(_sitemapAnimId); _sitemapAnimId = null; }
     if (_sitemapGltfRO)   { _sitemapGltfRO.disconnect(); _sitemapGltfRO = null; }
     if (_sitemapRenderer) { _sitemapRenderer.dispose(); _sitemapRenderer = null; }
+    if (typeof stopSitemapBlink === 'function') stopSitemapBlink();
     const old = document.getElementById('fp-sitemap-canvas');
     if (old) old.remove();
+    Object.values(_sitemapLabelEls).forEach(el => el.remove());
+    _sitemapLabelEls = {};
   }
 
   function buildSitemapTiles() {
@@ -782,6 +829,35 @@ window.FloorplanModule = (function () {
   let _sitemapMeshMap   = {};
   let _sitemapCamera    = null;
   let _sitemapCanvas    = null;
+  let _sitemapLabelEls  = {}; // towerId → label DOM element
+
+  // Tower A/B/C/D → "Tower 1/2/3/4" for the customer-facing label
+  const _towerDisplayNumber = {};
+  SITEMAP.towerTiles.forEach((t, i) => { _towerDisplayNumber[t.id] = i + 1; });
+
+  function _addSitemapLabel(wrap, towerId) {
+    if (_sitemapLabelEls[towerId]) return;
+    const el = document.createElement('div');
+    el.className = 'fp-glb-label';
+    el.innerHTML = `<span class="fp-glb-label-main">Tower ${_towerDisplayNumber[towerId] || ''}</span><span class="fp-glb-label-sub">Explore</span>`;
+    wrap.appendChild(el);
+    _sitemapLabelEls[towerId] = el;
+    _positionSitemapLabels();
+  }
+
+  function _positionSitemapLabels() {
+    if (!_sitemapCanvas) return;
+    const left = parseFloat(_sitemapCanvas.style.left)  || 0;
+    const top  = parseFloat(_sitemapCanvas.style.top)   || 0;
+    const W    = parseFloat(_sitemapCanvas.style.width)  || 0;
+    const H    = parseFloat(_sitemapCanvas.style.height) || 0;
+    Object.entries(_sitemapLabelEls).forEach(([towerId, el]) => {
+      const poly = _sitemapPolyData[towerId];
+      if (!poly) return;
+      el.style.left = (left + (poly.cx / 100) * W) + 'px';
+      el.style.top  = (top  + (poly.cy / 100) * H) + 'px';
+    });
+  }
 
   function _syncSitemapToImage(wrap, img) {
     if (!_sitemapCamera || !_sitemapCanvas || !_sitemapRenderer) return;
@@ -801,6 +877,7 @@ window.FloorplanModule = (function () {
       width: W + 'px',   height: H + 'px',
     });
     _sitemapRenderer.setSize(W, H, false);
+    _positionSitemapLabels();
 
     _sitemapCamera.left   = -aspect * 0.5;
     _sitemapCamera.right  =  aspect * 0.5;
@@ -944,10 +1021,11 @@ window.FloorplanModule = (function () {
         scene.add(root);
         loaded++;
         _syncSitemapToImage(wrap, img);
+        _addSitemapLabel(wrap, towerId);
         console.log('[SITEMAP GLTF] ✔ ' + file.split('/').pop() + ' → ' + towerId);
         if (loaded + failed === total) {
           console.log('[SITEMAP GLTF] DONE — Loaded:', loaded, '| Failed:', failed);
-          pulseRevealSitemap();
+          blinkRevealSitemap();
           attachShineOnce(wrap, 'sitemap-glb', { matchRect: canvas });
         }
 
@@ -965,9 +1043,8 @@ window.FloorplanModule = (function () {
     _sitemapGltfRO = new ResizeObserver(() => _syncSitemapToImage(wrap, img));
     _sitemapGltfRO.observe(img);
 
-    // ── Hover state ──────────────────────────────────────────────
-    let hovered = null;
-
+    // ── No hover glow — tiles render at a single steady idle state.
+    // Picking is still needed purely to know which tile was tapped/clicked.
     function pick(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
       mouse.x =  ((clientX - rect.left) / rect.width)  * 2 - 1;
@@ -978,51 +1055,20 @@ window.FloorplanModule = (function () {
       return hits.length ? _sitemapMeshMap[hits[0].object.uuid] : null;
     }
 
-    // Restores a tile to its idle appearance (dark copper edges, faint fill).
-    function applyIdle(entry) {
-      entry.mesh.material.opacity = IDLE_FILL_OPACITY;
-      if (entry.e1) { entry.e1.material.color.set(COLOR_IDLE); entry.e1.material.opacity = 1.0; }
-      if (entry.e2) { entry.e2.material.color.set(COLOR_IDLE); entry.e2.material.opacity = 0.75; }
-      if (entry.e3) { entry.e3.material.color.set(COLOR_IDLE); entry.e3.material.opacity = 0.50; }
-    }
-
-    // Brightens a tile to its hover appearance (white edges, brighter fill).
-    function applyHover(entry) {
-      entry.mesh.material.opacity = 0.18;
-      if (entry.e1) { entry.e1.material.color.set(COLOR_HOVER); entry.e1.material.opacity = 1.0; }
-      if (entry.e2) { entry.e2.material.color.set(COLOR_HOVER); entry.e2.material.opacity = 0.9; }
-      if (entry.e3) { entry.e3.material.color.set(COLOR_HOVER); entry.e3.material.opacity = 0.75; }
-    }
-
-    function setHover(hit) {
-      if (hovered) {
-        applyIdle(hovered);
-        hovered = null;
-      }
-
-      if (hit) {
-        applyHover(hit);
-        hovered = hit;
-      }
-
-      canvas.style.cursor = hit ? 'pointer' : '';
-    }
-
     // ── Mouse / touch events ─────────────────────────────────────
-    canvas.addEventListener('mousemove',  e => setHover(pick(e.clientX, e.clientY)));
-    canvas.addEventListener('mouseleave', () => setHover(null));
+    canvas.addEventListener('mousemove',  e => {
+      canvas.style.cursor = pick(e.clientX, e.clientY) ? 'pointer' : '';
+    });
     canvas.addEventListener('click', e => {
       if (e.detail === 0) return;
       const hit = pick(e.clientX, e.clientY);
       if (!hit) return;
-
-      // Keep the edge color white until navigation actually occurs.
-      applyHover(hit);
       drillToCluster(hit.towerId);
     });
 
     let touchMoved = false, touchHit = null;
     canvas.addEventListener('touchstart', e => {
+      if (e.touches.length > 1) { touchHit = null; return; } // multi-touch = pinch/pan, not a tap
       touchMoved = false;
       touchHit   = pick(e.touches[0].clientX, e.touches[0].clientY);
     }, { passive: true });
@@ -1039,31 +1085,46 @@ window.FloorplanModule = (function () {
     })();
   }
 
-  // ── One-time "reveal" pulse — teaches first-time visitors that the
-  // tower tiles are interactive, without needing a tutorial overlay.
-  // Runs once per sitemap build, right after all towers finish loading.
+  // ── Continuous blink — tower tiles flash on/off every 500ms for as
+  // long as the sitemap is open, so it's always obvious they're
+  // interactive (not just a one-time reveal). Runs on an interval so
+  // it can be cleared cleanly in disposeSitemapCanvas() whenever the
+  // panel is rebuilt or the floorplan is closed.
   //
   // Note: idle fill/edge opacity values here (0.10 / 1.0 / 0.75 / 0.50)
   // intentionally mirror the IDLE_* constants and per-layer opacities
   // defined inside _buildSitemapGltf() above — they can't be referenced
   // directly since this function lives outside that closure.
-  function pulseRevealSitemap() {
-    const meshes = Object.values(_sitemapMeshMap);
-    if (!meshes.length) return;
-    const duration = 1100; // ms
-    const start = performance.now();
-    function tick(now) {
-      const t = Math.min(1, (now - start) / duration);
+  let _sitemapBlinkTimer = null;
+  const SITEMAP_BLINK_MS = 500;
+
+  function blinkRevealSitemap() {
+    if (_sitemapBlinkTimer) { clearInterval(_sitemapBlinkTimer); _sitemapBlinkTimer = null; }
+    let on = true;
+    _sitemapBlinkTimer = setInterval(() => {
+      on = !on;
+      const meshes = Object.values(_sitemapMeshMap);
       meshes.forEach(({ mesh, e1, e2, e3 }) => {
-        mesh.material.opacity = 0.10;
-        if (e1) e1.material.opacity = 1.0;
-        if (e2) e2.material.opacity = 0.75;
-        if (e3) e3.material.opacity = 0.50;
+        mesh.material.opacity = on ? 0.10 : 0.0;
+        if (e1) e1.material.opacity = on ? 1.0  : 0.08;
+        if (e2) e2.material.opacity = on ? 0.75 : 0.05;
+        if (e3) e3.material.opacity = on ? 0.50 : 0.0;
       });
-      if (t < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
+    }, SITEMAP_BLINK_MS);
   }
+
+  function stopSitemapBlink() {
+    if (_sitemapBlinkTimer) { clearInterval(_sitemapBlinkTimer); _sitemapBlinkTimer = null; }
+    // Leave tiles at steady idle appearance
+    Object.values(_sitemapMeshMap).forEach(({ mesh, e1, e2, e3 }) => {
+      if (!mesh) return;
+      mesh.material.opacity = 0.10;
+      if (e1) e1.material.opacity = 1.0;
+      if (e2) e2.material.opacity = 0.75;
+      if (e3) e3.material.opacity = 0.50;
+    });
+  }
+
 
   // ── SVG fallback (original polygon approach) ──────────────────
   function _buildSitemapSvg(wrap, img) {
@@ -1149,6 +1210,10 @@ window.FloorplanModule = (function () {
     if (unitInfo) unitInfo.classList.remove('visible');
     const planImg = document.getElementById('fp-plan-img');
     if (planImg) { planImg.removeAttribute('src'); planImg.style.transform = ''; }
+    const sitemapWrap = document.getElementById('fp-sitemap-wrap');
+    if (sitemapWrap) sitemapWrap.style.transform = '';
+    const clusterWrapReset = document.getElementById('fp-cluster-wrap');
+    if (clusterWrapReset) clusterWrapReset.style.transform = '';
     document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
     activeTower = towerId;
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
@@ -1192,6 +1257,7 @@ window.FloorplanModule = (function () {
     if (_gltfAnimId)   { cancelAnimationFrame(_gltfAnimId); _gltfAnimId = null; }
     if (_gltfRO)       { _gltfRO.disconnect(); _gltfRO = null; }
     if (_gltfRenderer) { _gltfRenderer.dispose(); _gltfRenderer = null; }
+    if (_zoneBlinkTimer) { clearInterval(_zoneBlinkTimer); _zoneBlinkTimer = null; }
     const old = document.getElementById('fp-gltf-canvas');
     if (old) old.remove();
     const dbg = document.getElementById('fp-debug-svg');
@@ -1486,7 +1552,7 @@ window.FloorplanModule = (function () {
 
         if (loaded + failed === total) {
           console.log('[GLTF] DONE — Loaded:', loaded, '| Failed:', failed, '| Total:', total);
-          pulseRevealZones(meshMap, IDLE_FILL_OPACITY, IDLE_EDGE_OPACITY);
+          blinkRevealZones(meshMap, IDLE_FILL_OPACITY, IDLE_EDGE_OPACITY);
           attachShineOnce(wrap, 'unit-zone-glb', { matchRect: canvas });
           const clusterHint = document.getElementById('fp-cluster-hint');
           if (clusterHint) clusterHint.classList.add('visible');
@@ -1508,8 +1574,6 @@ window.FloorplanModule = (function () {
     });
 
     // ── Raycast helpers ───────────────────────────────────────────
-    let hovered = null;
-
     function pick(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
       mouse.x =  ((clientX - rect.left) / rect.width)  * 2 - 1;
@@ -1519,52 +1583,21 @@ window.FloorplanModule = (function () {
       return hits.length ? meshMap[hits[0].object.uuid] : null;
     }
 
-    // Restores a zone to its idle appearance (copper edges, faint fill).
-    function applyIdle(entry) {
-      entry.mesh.material.opacity = IDLE_FILL_OPACITY;
-      if (entry.edgeLines)  { entry.edgeLines.material.color.set(COLOR_IDLE);  entry.edgeLines.material.opacity  = 1.0; }
-      if (entry.edgeLines2) { entry.edgeLines2.material.color.set(COLOR_IDLE); entry.edgeLines2.material.opacity = 0; }
-      if (entry.edgeLines3) { entry.edgeLines3.material.color.set(COLOR_IDLE); entry.edgeLines3.material.opacity = 0; }
-    }
-
-    // Brightens a zone to its hover appearance (white edges, brighter fill).
-    function applyHover(entry) {
-      entry.mesh.material.opacity = 0.18;
-      if (entry.edgeLines)  { entry.edgeLines.material.color.set(COLOR_HOVER);  entry.edgeLines.material.opacity  = 1.0; }
-      if (entry.edgeLines2) { entry.edgeLines2.material.color.set(COLOR_HOVER); entry.edgeLines2.material.opacity = 0.9; }
-      if (entry.edgeLines3) { entry.edgeLines3.material.color.set(COLOR_HOVER); entry.edgeLines3.material.opacity = 0.75; }
-    }
-
-    function setHover(hit) {
-      if (hovered) {
-        applyIdle(hovered);
-        hovered = null;
-      }
-
-      if (hit) {
-        applyHover(hit);
-        hovered = hit;
-      }
-
-      canvas.style.cursor = hit ? 'pointer' : '';
-    }
-
-    // ── Mouse events ──────────────────────────────────────────────
-    canvas.addEventListener('mousemove',  e => setHover(pick(e.clientX, e.clientY)));
-    canvas.addEventListener('mouseleave', () => setHover(null));
+    // No hover glow — zones stay at a single steady idle appearance.
+    canvas.addEventListener('mousemove', e => {
+      canvas.style.cursor = pick(e.clientX, e.clientY) ? 'pointer' : '';
+    });
     canvas.addEventListener('click', e => {
       if (e.detail === 0) return;
       const hit = pick(e.clientX, e.clientY);
       if (!hit || !hit.unitData) return;
-
-      // Keep the edge color white until navigation actually occurs.
-      applyHover(hit);
       drillToUnit(hit.unitData);
     });
 
     // ── Touch events ──────────────────────────────────────────────
     let touchMoved = false, touchHit = null;
     canvas.addEventListener('touchstart', e => {
+      if (e.touches.length > 1) { touchHit = null; return; } // multi-touch = pinch/pan, not a tap
       touchMoved = false;
       touchHit   = pick(e.touches[0].clientX, e.touches[0].clientY);
     }, { passive: true });
@@ -1584,26 +1617,36 @@ window.FloorplanModule = (function () {
     })();
   }
 
-  // ── One-time "reveal" pulse for unit zones — same idea as
-  // pulseRevealSitemap(): briefly brightens every zone together the
-  // moment a cluster's meshes finish loading, then settles back to the
-  // faint idle state. Teaches "these are tappable" without a tutorial.
-  function pulseRevealZones(meshMap, idleFill, idleEdge) {
-    const entries = Object.values(meshMap);
-    if (!entries.length) return;
-    const duration = 1100; // ms
-    const start = performance.now();
-    function tick(now) {
-      const t = Math.min(1, (now - start) / duration);
-      const curve = t < 0.35 ? (t / 0.35) : Math.max(0, 1 - (t - 0.35) / 0.65);
-      entries.forEach(({ mesh, edgeLines }) => {
-        mesh.material.opacity = idleFill + curve * 0.09;
-        if (edgeLines) edgeLines.material.opacity = idleEdge + curve * 0.55;
+  // ── Continuous blink for unit zones — same idea as blinkRevealSitemap():
+  // zones flash on/off every 500ms for as long as this cluster view is
+  // open, so they always read as tappable. Cleared in disposeGltfCanvas()
+  // whenever the cluster is rebuilt (parity swap, new tower, navigating away).
+  let _zoneBlinkTimer = null;
+  const ZONE_BLINK_MS = 500;
+
+  function blinkRevealZones(meshMap, idleFill, idleEdge) {
+    if (_zoneBlinkTimer) { clearInterval(_zoneBlinkTimer); _zoneBlinkTimer = null; }
+    let on = true;
+    _zoneBlinkTimer = setInterval(() => {
+      on = !on;
+      Object.values(meshMap).forEach(({ mesh, edgeLines }) => {
+        mesh.material.opacity = on ? idleFill : 0;
+        if (edgeLines) edgeLines.material.opacity = on ? idleEdge : 0.08;
       });
-      if (t < 1) requestAnimationFrame(tick);
-    }
-    requestAnimationFrame(tick);
+    }, ZONE_BLINK_MS);
   }
+
+  function stopZoneBlink(meshMap, idleFill, idleEdge) {
+    if (_zoneBlinkTimer) { clearInterval(_zoneBlinkTimer); _zoneBlinkTimer = null; }
+    if (meshMap) {
+      Object.values(meshMap).forEach(({ mesh, edgeLines }) => {
+        if (!mesh) return;
+        mesh.material.opacity = idleFill;
+        if (edgeLines) edgeLines.material.opacity = idleEdge;
+      });
+    }
+  }
+
 
   // ─── BUILD ZONES (SVG fallback) ──────────────────────────────
   function buildZones(towerId, parity) {
@@ -1756,31 +1799,38 @@ window.FloorplanModule = (function () {
   }
 
   // ─── PINCH-ZOOM ──────────────────────────────────────────────
-  function bindPinchZoom() {
-    const area = document.getElementById('fp-plan-area');
-    const img  = document.getElementById('fp-plan-img');
-    if (!area || !img) return;
+  // ─── GENERIC ZOOM/PAN (pinch + drag + wheel) ──────────────────
+  // Reusable across Level 0 (sitemap), Level 1 (cluster), Level 2 (unit).
+  // Transforms `target` (translate+scale) inside `area`. Because CSS
+  // transforms are reflected in getBoundingClientRect(), the existing
+  // Three.js raycast pick() functions keep working correctly against
+  // the transformed canvas without any changes to the hit-testing code.
+  function bindZoomPan(area, target, opts) {
+    if (!area || !target) return () => {};
+    const { maxScale = 4, minScale = 1, hintEl = null, onScaleChange = null } = opts || {};
     let scale = 1, originX = 0, originY = 0, lastDist = null;
     let panStartX = 0, panStartY = 0, panOriginX = 0, panOriginY = 0, lastTap = 0;
-    const MAX_SCALE = 4, MIN_SCALE = 1;
-    const zoomHint = document.getElementById('fp-zoom-hint');
+
     function applyTransform() {
-      img.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
-      if (zoomHint) {
-        if (scale > 1.05) { zoomHint.textContent = 'Double-tap to reset'; zoomHint.classList.add('visible'); }
-        else zoomHint.classList.remove('visible');
+      target.style.transform = `translate(${originX}px, ${originY}px) scale(${scale})`;
+      target.style.transformOrigin = 'center center';
+      if (hintEl) {
+        if (scale > 1.05) { hintEl.textContent = 'Double-tap to reset'; hintEl.classList.add('visible'); }
+        else hintEl.classList.remove('visible');
       }
+      if (onScaleChange) onScaleChange(scale);
     }
     function resetZoom() {
       scale = 1; originX = 0; originY = 0;
-      img.style.transition = 'transform 0.25s ease';
+      target.style.transition = 'transform 0.25s ease';
       applyTransform();
-      setTimeout(() => { img.style.transition = ''; }, 260);
-      if (zoomHint) zoomHint.classList.remove('visible');
+      setTimeout(() => { target.style.transition = ''; }, 260);
+      if (hintEl) hintEl.classList.remove('visible');
     }
     function dist(t) { return Math.sqrt((t[0].clientX-t[1].clientX)**2+(t[0].clientY-t[1].clientY)**2); }
     function mid(t)  { return { x:(t[0].clientX+t[1].clientX)/2, y:(t[0].clientY+t[1].clientY)/2 }; }
-    area.addEventListener('touchstart', (e) => {
+
+    function onTouchStart(e) {
       if (e.touches.length === 2) {
         e.preventDefault(); lastDist = dist(e.touches);
       } else if (e.touches.length === 1) {
@@ -1790,13 +1840,13 @@ window.FloorplanModule = (function () {
         panStartX = e.touches[0].clientX; panStartY = e.touches[0].clientY;
         panOriginX = originX; panOriginY = originY;
       }
-    }, { passive: false });
-    area.addEventListener('touchmove', (e) => {
+    }
+    function onTouchMove(e) {
       if (e.touches.length === 2) {
         e.preventDefault();
         const d = dist(e.touches), m = mid(e.touches), rect = area.getBoundingClientRect();
         if (lastDist !== null) {
-          const newScale = Math.min(MAX_SCALE, Math.max(MIN_SCALE, scale * (d/lastDist)));
+          const newScale = Math.min(maxScale, Math.max(minScale, scale * (d/lastDist)));
           const pivotX = m.x - rect.left - rect.width/2;
           const pivotY = m.y - rect.top  - rect.height/2;
           originX = pivotX + (originX - pivotX) * (newScale / scale);
@@ -1810,11 +1860,83 @@ window.FloorplanModule = (function () {
         originY = panOriginY + (e.touches[0].clientY - panStartY);
         applyTransform();
       }
-    }, { passive: false });
-    area.addEventListener('touchend', (e) => {
+    }
+    function onTouchEnd(e) {
       if (e.touches.length < 2) lastDist = null;
-      if (scale <= MIN_SCALE + 0.05) resetZoom();
-    }, { passive: true });
+      if (scale <= minScale + 0.05) resetZoom();
+    }
+    area.addEventListener('touchstart', onTouchStart, { passive: false });
+    area.addEventListener('touchmove',  onTouchMove,  { passive: false });
+    area.addEventListener('touchend',   onTouchEnd,   { passive: true });
+
+    // ── Desktop: mouse wheel to zoom, drag-to-pan when zoomed in ──
+    function onWheel(e) {
+      e.preventDefault();
+      const rect = area.getBoundingClientRect();
+      const newScale = Math.min(maxScale, Math.max(minScale, scale * (e.deltaY < 0 ? 1.12 : 0.89)));
+      const pivotX = e.clientX - rect.left - rect.width/2;
+      const pivotY = e.clientY - rect.top  - rect.height/2;
+      originX = pivotX + (originX - pivotX) * (newScale / scale);
+      originY = pivotY + (originY - pivotY) * (newScale / scale);
+      scale = newScale;
+      applyTransform();
+      if (scale <= minScale + 0.01) resetZoom();
+    }
+    let mDragging = false, mStartX = 0, mStartY = 0, mOriginX = 0, mOriginY = 0;
+    function onMouseDown(e) {
+      if (scale <= 1) return;
+      mDragging = true; mStartX = e.clientX; mStartY = e.clientY; mOriginX = originX; mOriginY = originY;
+    }
+    function onMouseMove(e) {
+      if (!mDragging) return;
+      originX = mOriginX + (e.clientX - mStartX);
+      originY = mOriginY + (e.clientY - mStartY);
+      applyTransform();
+    }
+    function onMouseUp() { mDragging = false; }
+    area.addEventListener('wheel', onWheel, { passive: false });
+    area.addEventListener('mousedown', onMouseDown);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+
+    // Returns a teardown fn so callers can unbind when a panel is rebuilt
+    return function unbind() {
+      area.removeEventListener('touchstart', onTouchStart);
+      area.removeEventListener('touchmove',  onTouchMove);
+      area.removeEventListener('touchend',   onTouchEnd);
+      area.removeEventListener('wheel', onWheel);
+      area.removeEventListener('mousedown', onMouseDown);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+      resetZoom();
+    };
+  }
+
+  function bindPinchZoom() {
+    const area = document.getElementById('fp-plan-area');
+    const img  = document.getElementById('fp-plan-img');
+    const zoomHint = document.getElementById('fp-zoom-hint');
+    bindZoomPan(area, img, { hintEl: zoomHint });
+  }
+
+  // Level 0 / Level 1 zoom-pan: transform the *wrap* element (image +
+  // GLB canvas + labels move together, and canvas rect stays accurate
+  // for raycasting since transforms are reflected in getBoundingClientRect).
+  let _unbindSitemapZoom = null;
+  let _unbindClusterZoom = null;
+
+  function bindSitemapZoomPan() {
+    if (_unbindSitemapZoom) { _unbindSitemapZoom(); _unbindSitemapZoom = null; }
+    const area = document.getElementById('fp-panel-sitemap');
+    const wrap = document.getElementById('fp-sitemap-wrap');
+    _unbindSitemapZoom = bindZoomPan(area, wrap, { maxScale: 4 });
+  }
+
+  function bindClusterZoomPan() {
+    if (_unbindClusterZoom) { _unbindClusterZoom(); _unbindClusterZoom = null; }
+    const area = document.getElementById('fp-panel-cluster');
+    const wrap = document.getElementById('fp-cluster-wrap');
+    _unbindClusterZoom = bindZoomPan(area, wrap, { maxScale: 4 });
   }
 
   // ─── SWIPE-BACK ──────────────────────────────────────────────
@@ -2053,6 +2175,8 @@ window.FloorplanModule = (function () {
       });
     });
     bindPinchZoom();
+    bindSitemapZoomPan();
+    bindClusterZoomPan();
     bindSwipeBack();
     bindHistoryNav();
     watchTopbarHeight();

@@ -364,8 +364,11 @@ window.HomeModule = (function () {
 
       /* Floating back button over the unit 360 viewer (mobile + desktop) */
       #unit-back {
-        position: absolute; top: 14px; left: 14px; z-index: 5;
-        width: 36px; height: 36px; border-radius: 10px;
+        position: absolute;
+        top: calc(14px + env(safe-area-inset-top, 0px));
+        left: calc(14px + env(safe-area-inset-left, 0px));
+        z-index: 15;
+        width: 36px; height: 36px; min-width: 36px; min-height: 36px; border-radius: 10px;
         border: 1px solid rgba(200,185,165,.25); background: rgba(20,16,12,.55);
         backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
         display: flex; align-items: center; justify-content: center;
@@ -1071,6 +1074,16 @@ window.HomeModule = (function () {
       bindBackNav();
       bindOrientationCheck();
       if (window.App && typeof window.App.finishLoad === 'function') App.finishLoad();
+
+      // Default view: open straight into the Floor Plan instead of the
+      // carousel, since most customers land here first.
+      stopAuto();
+      const fpSlot = document.querySelector('.panel-slot[data-slot="floorplan"]');
+      if (fpSlot && window.FloorplanModule && typeof FloorplanModule.open === 'function') {
+        fpSlot.classList.add('active');
+        if (typeof gtag === 'function') gtag('event', 'view_change', { view_name: 'floorplan' });
+        FloorplanModule.open();
+      }
     }
   };
 
