@@ -572,16 +572,19 @@ window.FloorplanModule = (function () {
 
       /* Cluster badge — shows which tower + odd/even floor set is active */
       #fp-cluster-badge {
-        position: absolute; top: 10px; left: 10px; z-index: 7;
-        font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+        position: absolute;
+        top: clamp(-40px, -8vw, -30px);
+        left: clamp(8px, 2vw, 12px);
+        z-index: 7;
+        font-family: 'Syne', sans-serif;
+        font-size: clamp(11px, 2.6vw, 14px);
+        font-weight: 700;
         letter-spacing: .10em; text-transform: uppercase;
         color: #f5f0e8; background: rgba(122,62,30,.88);
-        padding: 5px 12px; border-radius: 999px;
+        padding: clamp(6px, 1.4vw, 8px) clamp(14px, 3.4vw, 18px);
+        border-radius: 999px;
         box-shadow: 0 2px 8px rgba(0,0,0,.20);
         pointer-events: none; white-space: nowrap;
-      }
-      @media (max-width: 480px) {
-        #fp-cluster-badge { font-size: 8.5px; padding: 4px 10px; top: 8px; left: 8px; }
       }
 
       #fp-sitemap-hint {
