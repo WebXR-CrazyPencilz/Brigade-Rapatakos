@@ -21,12 +21,22 @@ window.HomeModule = (function () {
   // when opened, so the phone's back button (and PC Backspace) closes
   // them instead of leaving the page. Each overlay tracks its own
   // depth; popstate closes whichever of ours is open.
-  const _hist = { map: 0, unit: 0, lb: 0 };
+  const _hist = { map: 0, unit: 0, lb: 0, threeSixty: 0 };
   let _popping = false;
 
-  function pushHist(key) {
-    history.pushState({ home: key }, '');
-    _hist[key]++;
+  // replace=true is used for TAB SWITCHES: another tab (Floor Plan /
+  // Gallery / Map / 360) already owns the overlay system's one history
+  // entry, so we relabel it via replaceState instead of pushing a new
+  // one on top. Without this, every tab switch left the previous tab's
+  // entry orphaned in the real browser history stack (its depth counter
+  // gets zeroed by unwindHist(skipGo=true), but the entry itself was
+  // never popped) — the counters and the real stack drift apart, and
+  // that drift is what caused switching tabs to intermittently bounce
+  // back to Home and need a second click.
+  function pushHist(key, replace) {
+    if (replace) history.replaceState({ home: key }, '');
+    else history.pushState({ home: key }, '');
+    _hist[key] = 1;
   }
   function unwindHist(key, skipGo) {
     // Overlay closed via UI while it still owns a history entry —
@@ -770,11 +780,11 @@ window.HomeModule = (function () {
   // ─── LOCATION MAP ────────────────────────────────────────────────
   let _mapLoaded = false;
 
-  function openMap() {
+  function openMap(replaceHistory) {
     const overlay = document.getElementById('map-overlay');
     if (!overlay) return;
     overlay.classList.add('open');
-    if (!_popping) pushHist('map');
+    if (!_popping) pushHist('map', replaceHistory);
     if (!_mapLoaded) {
       _mapLoaded = true;
       const img     = document.getElementById('map-img');
@@ -1197,6 +1207,13 @@ window.HomeModule = (function () {
       } else if (mapOvl && mapOvl.classList.contains('open') && _hist.map > 0) {
         _hist.map--; closeMap();
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+      } else if (unitRowVisible && _hist.threeSixty > 0) {
+        _hist.threeSixty--;
+        unitRowVisible = false;
+        document.getElementById('unit-row')?.classList.remove('visible');
+        document.getElementById('carousel').style.display = '';
+        document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
       }
       _popping = false;
     });
@@ -1215,6 +1232,7 @@ window.HomeModule = (function () {
 
     closeUnitViewer(skipHistory);
     closeMap(skipHistory);
+    if (unitRowVisible) unwindHist('threeSixty', skipHistory);
     unitRowVisible = false;
     const row = document.getElementById('unit-row');
     if (row) row.classList.remove('visible');
@@ -1237,6 +1255,11 @@ window.HomeModule = (function () {
         e.stopPropagation();
         const slot     = el.dataset.slot;
         const isActive = el.classList.contains('active');
+        // Was some OTHER tab already open? If so this click is a TAB
+        // SWITCH, not a fresh open from the closed/home state — the
+        // module we're about to open should replaceState the existing
+        // history entry rather than push a new one (see pushHist above).
+        const switching = !isActive && document.querySelector('.panel-slot.active') !== null;
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
         // Switching to a different tab (isActive===false) means a new
         // module opens right after this — skip each module's own
@@ -1259,6 +1282,7 @@ window.HomeModule = (function () {
           document.getElementById('carousel').style.display = 'none';   // hide hero image
           document.getElementById('unit-row')?.classList.add('visible');
           loadUnitThumbnails();
+          if (!_popping) pushHist('threeSixty', switching);
           // Warm the most-clicked unit while the user picks
           const iframe = document.getElementById('unit-iframe');
           if (iframe && !iframe.dataset.targetUrl) {
@@ -1267,9 +1291,9 @@ window.HomeModule = (function () {
           }
           return;
         }
-        if (slot === 'floorplan') { if (window.FloorplanModule) FloorplanModule.open(); return; }
-        if (slot === 'gallery')   { if (window.GalleryModule)   GalleryModule.open();   return; }
-        if (slot === 'map')       { openMap(); return; }
+        if (slot === 'floorplan') { if (window.FloorplanModule) FloorplanModule.open(undefined, switching); return; }
+        if (slot === 'gallery')   { if (window.GalleryModule)   GalleryModule.open(0, switching);   return; }
+        if (slot === 'map')       { openMap(switching); return; }
       });
     });
 

@@ -2159,9 +2159,22 @@ window.FloorplanModule = (function () {
   let _poppingState = false;
   let _fpHistoryDepth = 0; // how many history entries the viewer currently owns
 
-  function pushFpState() {
-    history.pushState({ fp: true, level }, '');
-    _fpHistoryDepth++;
+  // replace=true is only passed by open() when it's being used as a
+  // TAB SWITCH (another module — Gallery/Map/360 — already owned the
+  // one history entry the overlay system uses). We relabel that entry
+  // via replaceState instead of pushing a new one, so entries never pile
+  // up as the user bounces between tabs. Drill-down navigation
+  // (drillToCluster / drillToUnit) never passes replace — those are real
+  // pushes so the on-screen back arrow / hardware back can step out one
+  // level at a time.
+  function pushFpState(replace) {
+    if (replace) {
+      history.replaceState({ fp: true, level }, '');
+      _fpHistoryDepth = 1;
+    } else {
+      history.pushState({ fp: true, level }, '');
+      _fpHistoryDepth++;
+    }
   }
 
   function requestBack() {
@@ -2294,7 +2307,7 @@ window.FloorplanModule = (function () {
     setTimeout(() => shine.remove(), 2200);
   }
 
-  function open(floorNum) {
+  function open(floorNum, replaceHistory) {
     if (overlayOpen) return;
     overlayOpen = true;
     const fpOverlay = document.getElementById('fp-overlay');
@@ -2316,7 +2329,7 @@ window.FloorplanModule = (function () {
     updateTopbar(); updateTitle();
     fpOverlay.classList.add('open');
     buildSitemapTiles();
-    if (!_poppingState) pushFpState();
+    if (!_poppingState) pushFpState(replaceHistory);
   }
 
   let _closeResetTimer = null;

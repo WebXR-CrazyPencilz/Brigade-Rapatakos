@@ -31,9 +31,19 @@ window.GalleryModule = (function () {
   let _historyDepth = 0;
   let _popping      = false;
 
-  function pushGlState() {
-    history.pushState({ gl: true }, '');
-    _historyDepth++;
+  // replace=true is used for tab switches: instead of adding a NEW
+  // history entry on top of the one the previous tab (Floor Plan / Map /
+  // etc.) already owned, we relabel that single entry as ours via
+  // replaceState. This is what stops entries from piling up when the
+  // user bounces between tabs — a pushState-only version leaves orphaned
+  // entries behind every time (see the matching note in home.js /
+  // floorplan.js), which desyncs the depth counters from the real
+  // browser history stack and is what caused tab switches to
+  // intermittently bounce back to Home and need a second click.
+  function pushGlState(replace) {
+    if (replace) history.replaceState({ gl: true }, '');
+    else history.pushState({ gl: true }, '');
+    _historyDepth = 1;
   }
 
   function requestBack() {
@@ -572,7 +582,7 @@ window.GalleryModule = (function () {
   }
 
   // ─── PUBLIC API ──────────────────────────────────────────────────
-  function open(startIndex = 0) {
+  function open(startIndex = 0, replaceHistory) {
     inject();
     const overlay = document.getElementById('gallery-overlay');
     if (!overlay) return;
@@ -608,7 +618,7 @@ window.GalleryModule = (function () {
     updateUI();
 
     requestAnimationFrame(() => overlay.classList.add('open'));
-    if (!_popping) pushGlState();
+    if (!_popping) pushGlState(replaceHistory);
   }
 
   function close(skipHistory) {
