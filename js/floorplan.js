@@ -37,6 +37,14 @@ window.FloorplanModule = (function () {
   function IK(path) { return `${IK_BASE}/${path}`; }
 
   // ─── LEVEL 0 — SITEMAP ────────────────────────────────────────
+  // Compass + "Site Plan" label overlays — loaded locally from assets/png.
+  // NOTE: these two files were cropped to remove large transparent
+  // padding around the artwork (originals were 873x960 canvases with
+  // only a small logo/text in the middle) — replace the files at
+  // these paths with the cropped versions provided.
+  const SITEMAP_COMPASS_IMAGE = './assets/png/sitemapdirection.png';
+  const SITEMAP_LABEL_IMAGE   = './assets/png/sitemaptext.png';
+
   const SITEMAP = {
     image: IK('Cluster/sitemap.png'),
     towerTiles: [
@@ -582,6 +590,33 @@ window.FloorplanModule = (function () {
         color: rgba(80,50,30,.40); pointer-events: none; white-space: nowrap;
       }
 
+      /* ── Sitemap floating overlays — compass (top-right) and
+         "SITE PLAN" label (top-left), positioned relative to the
+         sitemap image itself so they track it through zoom/pan and
+         scale down together on mobile. ── */
+      #fp-sitemap-compass {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(calc(-50% + 90px), -50%);
+        height: 46px; width: auto;
+        z-index: 25; pointer-events: none;
+        filter: drop-shadow(0 1px 3px rgba(0,0,0,.20));
+      }
+      #fp-sitemap-label {
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(calc(-50% - 70px), -50%);
+        height: 34px; width: auto;
+        z-index: 25; pointer-events: none;
+        filter: drop-shadow(0 1px 3px rgba(0,0,0,.15));
+      }
+      @media (max-width: 640px) {
+        #fp-sitemap-compass { height: 36px; transform: translate(calc(-50% + 66px), -50%); }
+        #fp-sitemap-label   { height: 26px; transform: translate(calc(-50% - 54px), -50%); }
+      }
+      @media (max-width: 400px) {
+        #fp-sitemap-compass { height: 30px; }
+        #fp-sitemap-label   { height: 22px; }
+      }
+
       /* ── CLUSTER ── */
       #fp-panel-cluster {
         display: flex; align-items: center; justify-content: center;
@@ -681,6 +716,7 @@ window.FloorplanModule = (function () {
                 <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
               </div>
             </div>
+            <img id="fp-sitemap-label" src="" alt="Site Plan" />
             <div id="fp-toggles-row">
               <div id="fp-parity-toggle">
                 <button class="fp-parity-btn active" data-parity="odd">Odd</button>
@@ -691,6 +727,7 @@ window.FloorplanModule = (function () {
                 <button class="fp-toggle-btn"        data-view="iso">ISO</button>
               </div>
             </div>
+            <img id="fp-sitemap-compass" src="" alt="North direction" />
             <div id="fp-topbar-spacer"></div>
           </div>
           <div id="fp-content">
@@ -731,6 +768,18 @@ window.FloorplanModule = (function () {
 
     const sitemapImg = document.getElementById('fp-sitemap-img');
     if (sitemapImg) sitemapImg.src = SITEMAP.image;
+
+    const sitemapCompass = document.getElementById('fp-sitemap-compass');
+    if (sitemapCompass) {
+      sitemapCompass.src = SITEMAP_COMPASS_IMAGE;
+      sitemapCompass.onerror = () => console.warn('Sitemap compass image failed to load:', SITEMAP_COMPASS_IMAGE);
+    }
+
+    const sitemapLabel = document.getElementById('fp-sitemap-label');
+    if (sitemapLabel) {
+      sitemapLabel.src = SITEMAP_LABEL_IMAGE;
+      sitemapLabel.onerror = () => console.warn('Sitemap label image failed to load:', SITEMAP_LABEL_IMAGE);
+    }
   }
 
   // ─── TOPBAR HEIGHT TRACKER ────────────────────────────────────

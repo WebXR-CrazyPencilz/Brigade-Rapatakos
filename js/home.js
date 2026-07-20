@@ -249,62 +249,81 @@ window.HomeModule = (function () {
       @keyframes spinMap { to { transform: rotate(360deg); } }
 
       /* ── Unit Row — thumbnail strip ──
-         Each thumbnail is a tiny, non-interactive live iframe of that
-         unit's own 360 tour page (unitURLs[n]) scaled way down — so the
+         Each thumbnail is a live iframe of that unit's own 360 tour
+         page (unitURLs[n]), filling its card at natural size — so the
          "thumbnail" is always the real scene, no separate image asset
-         needed. Desktop: horizontal strip above the bottom nav, same as
-         before. Mobile: a vertical rail docked to the right edge, since
-         a full-width horizontal strip eats too much vertical space on
-         a phone screen and a side rail stays out of the way of the
-         360 viewer itself. */
+         needed. Full-screen edge-to-edge strip on ALL screen sizes
+         (desktop, landscape, and mobile) — no separate mobile rail. */
       #unit-row {
-        position: fixed; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); left: 0; right: 0;
-        width: 100%;
+        position: fixed; top: 0; left: 0; right: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px));
         z-index: 98;
         display: flex; flex-direction: row;
-        align-items: stretch; justify-content: center;
-        gap: 10px; padding: 10px 14px;
+        align-items: stretch; justify-content: stretch;
+        gap: 8px; padding: 8px;
         opacity: 0; pointer-events: none;
-        transform: translateY(6px);
-        transition: opacity .28s ease, transform .28s cubic-bezier(0.22,1,0.36,1);
+        transition: opacity .28s ease;
         box-sizing: border-box;
-        background: rgba(245,242,235,0.97);
-        backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
-        border-top: 1px solid rgba(180,160,120,.22);
-        box-shadow: 0 -2px 16px rgba(0,0,0,.07);
+        background: #0d0d0d;
       }
-      #unit-row.visible { opacity: 1; pointer-events: all; transform: translateY(0); }
+      #unit-row.visible { opacity: 1; pointer-events: all; }
 
       .unit-btn {
         position: relative;
         display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
         cursor: pointer;
-        border-radius: 10px; overflow: hidden;
         border: 2px solid transparent;
-        transition: border-color .22s, transform .22s;
+        border-radius: 14px;
+        overflow: hidden;
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 4px 18px rgba(0,0,0,.35);
+        transition: border-color .22s, box-shadow .22s, transform .18s ease;
         -webkit-tap-highlight-color: transparent;
-        flex: 1; max-width: 220px; min-width: 90px;
-        aspect-ratio: 16 / 10;
+        flex: 1 1 0;
+        height: 100%;
         background: #0d0d0d;
+        z-index: 1;
       }
-      .unit-btn:hover { transform: translateY(-2px); }
-      .unit-btn.active { border-color: #7a3e1e; }
+      .unit-btn:hover {
+        transform: translateY(-2px) scale(1.005);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.10), 0 10px 34px rgba(0,0,0,.55);
+        z-index: 2;
+      }
+      .unit-btn:active {
+        transform: translateY(0) scale(0.995);
+        box-shadow: inset 0 0 0 1px rgba(255,255,255,.10), 0 4px 14px rgba(0,0,0,.45);
+      }
+      .unit-btn.active {
+        border-color: #7a3e1e;
+        box-shadow: inset 0 0 0 1px rgba(122,62,30,.35), 0 0 0 3px rgba(122,62,30,.18), 0 10px 34px rgba(0,0,0,.55);
+      }
+
+      /* ── Selection overlay — a color wash over the thumbnail on
+         hover and when selected, instead of only a border ── */
+      .unit-btn-overlay {
+        position: absolute; inset: 0;
+        z-index: 3;
+        pointer-events: none;
+        background: rgba(122,62,30,0);
+        transition: background .22s ease;
+      }
+      .unit-btn:hover .unit-btn-overlay {
+        background: rgba(20,14,8,.12);
+      }
+      .unit-btn.active .unit-btn-overlay {
+        background: rgba(122,62,30,.16);
+      }
 
       .unit-btn-thumb-frame {
         position: absolute; inset: 0;
         pointer-events: none; /* clicks always go to the .unit-btn wrapper */
         overflow: hidden;
       }
-      /* The iframe is rendered at a large fixed size then scaled down
-         via CSS transform, so the panorama viewer inside it lays out
-         normally (it doesn't know it's being shown small) and just
-         gets visually shrunk to thumbnail size. */
+      /* The iframe simply fills its card at natural size — no more
+         fixed-intrinsic-size + scale-down trick, which was blowing
+         the image up and cropping it once cards became full-screen. */
       .unit-btn-thumb-frame iframe {
         position: absolute; top: 0; left: 0;
-        width: 1000px; height: 625px;
+        width: 100%; height: 100%;
         border: none;
-        transform-origin: top left;
-        /* scale set inline per-thumbnail via JS once its box is measured */
       }
       .unit-btn-thumb-scrim {
         position: absolute; inset: 0;
@@ -312,37 +331,14 @@ window.HomeModule = (function () {
         pointer-events: none;
       }
       .unit-btn-label {
-        position: relative; z-index: 2;
-        font-family: 'Syne', sans-serif; font-size: 10.5px; font-weight: 700;
-        letter-spacing: .12em; text-transform: uppercase;
-        color: rgba(255,255,255,.85); line-height: 1; white-space: nowrap;
-        padding: 8px 0 9px;
+        position: relative; z-index: 4;
+        font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
+        letter-spacing: .11em; text-transform: uppercase;
+        color: #c98a4b; line-height: 1; white-space: nowrap;
+        padding: 12px 0 14px;
         transition: color .22s;
       }
       .unit-btn.active .unit-btn-label { color: #f0c896; }
-
-      /* ── Mobile: vertical rail on the right edge instead of a
-         full-width bottom strip ── */
-      @media (max-width: 640px) {
-        #unit-row {
-          left: auto; right: 0; bottom: calc(74px + env(safe-area-inset-bottom, 0px));
-          top: auto;
-          width: auto;
-          flex-direction: column;
-          gap: 8px;
-          padding: 8px calc(8px + env(safe-area-inset-right, 0px)) 8px 8px;
-          background: transparent; backdrop-filter: none; -webkit-backdrop-filter: none;
-          border-top: none; box-shadow: none;
-          max-height: 60vh; overflow-y: auto;
-        }
-        .unit-btn {
-          max-width: 84px; min-width: 72px; aspect-ratio: 4 / 3;
-          border-radius: 8px;
-          box-shadow: 0 3px 10px rgba(0,0,0,.25);
-        }
-        .unit-btn-label { font-size: 8.5px; padding: 5px 0 6px; }
-      }
-
 
       /* ── Bottom Panel ── */
       #bottom-panel {
@@ -447,18 +443,27 @@ window.HomeModule = (function () {
       #unit-back svg { width: 15px; height: 15px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
       /* ── Portrait / small-screen refinements ── */
-      @media (max-width: 520px) {
+      @media (max-width: 640px) {
         /* Bottom nav: compress so all four tabs fit a narrow screen */
         .panel-slot { padding: 0 10px; gap: 5px; }
         .panel-slot-label { font-size: 9px; letter-spacing: .08em; }
         .panel-slot.active { margin: 8px 2px; }
-        /* Unit thumbnail rail sizing lives in its own @media(max-width:640px) block above */
         /* Carousel + map: slimmer frame so the image owns the screen */
         #carousel { padding: 12px; }
         #map-overlay { padding: 12px; }
         #map-title { font-size: 13px; }
         /* Lightbox close within thumb reach */
         #lb-close { top: 12px; right: 12px; }
+
+        /* Unit row: stack full-width cards vertically instead of
+           squeezing 3 side-by-side — each card gets equal height so
+           its floor plan is actually readable on a narrow screen. */
+        #unit-row {
+          flex-direction: column;
+        }
+        .unit-btn {
+          width: 100%;
+        }
       }
       @media (max-width: 360px) {
         .panel-slot { padding: 0 7px; gap: 4px; }
@@ -514,16 +519,19 @@ window.HomeModule = (function () {
         <div class="unit-btn" data-unit="1">
           <div class="unit-btn-thumb-frame"></div>
           <div class="unit-btn-thumb-scrim"></div>
+          <div class="unit-btn-overlay"></div>
           <span class="unit-btn-label">Unit 1</span>
         </div>
         <div class="unit-btn" data-unit="2">
           <div class="unit-btn-thumb-frame"></div>
           <div class="unit-btn-thumb-scrim"></div>
+          <div class="unit-btn-overlay"></div>
           <span class="unit-btn-label">Unit 2</span>
         </div>
         <div class="unit-btn" data-unit="3">
           <div class="unit-btn-thumb-frame"></div>
           <div class="unit-btn-thumb-scrim"></div>
+          <div class="unit-btn-overlay"></div>
           <span class="unit-btn-label">Unit 3</span>
         </div>
       </div>
@@ -1019,30 +1027,36 @@ window.HomeModule = (function () {
     }
   }
 
-  // ─── UNIT VIEWER ─────────────────────────────────────────────────
-  // ─── UNIT THUMBNAILS — live scaled-down iframes of each unit's own
-  // 360 page, instead of a separate static image. Created lazily the
-  // first time the 360 View tab is opened (not on page load) so three
-  // extra heavy panorama pages aren't fetched before the user asks
-  // for them. The iframe is rendered at a fixed large intrinsic size
-  // then visually shrunk with a CSS scale so its internal layout
-  // behaves exactly as it would full-size — just smaller on screen.
-  const THUMB_IFRAME_W = 1000, THUMB_IFRAME_H = 625;
+  // ─── UNIT THUMBNAILS — live iframes of each unit's own 360 page,
+  // filling their card at natural size. Created lazily the first time
+  // the 360 View tab is opened (not on page load) so three extra
+  // heavy panorama pages aren't fetched before the user asks for them.
   let _thumbsLoaded = false;
 
-  function syncUnitThumbScale() {
-    document.querySelectorAll('.unit-btn-thumb-frame').forEach(frame => {
-      const iframe = frame.querySelector('iframe');
-      if (!iframe) return;
-      const box = frame.getBoundingClientRect();
-      if (box.width < 2 || box.height < 2) return;
-      const scale = Math.max(box.width / THUMB_IFRAME_W, box.height / THUMB_IFRAME_H);
-      iframe.style.transform = `scale(${scale})`;
-    });
+  // Hides the unit page's own Floor Plan / 360 View pill toggle when
+  // it's shown as a small thumbnail — it's not needed there since our
+  // own bottom nav bar already provides that switch. Wrapped in
+  // try/catch since same-origin access can still throw in some setups.
+  function hideThumbToggleBar(iframe) {
+    try {
+      const doc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!doc) return;
+      if (doc.getElementById('stellaris-thumb-toggle-hide')) return;
+      const style = doc.createElement('style');
+      style.id = 'stellaris-thumb-toggle-hide';
+      // #view-switch is the exact id used by each unit page's own
+      // Floor Plan / 360° View pill toggle (confirmed from source).
+      style.textContent = `
+        #view-switch { display: none !important; }
+      `;
+      (doc.head || doc.documentElement).appendChild(style);
+    } catch (e) {
+      // cross-origin iframe — skip silently
+    }
   }
 
   function loadUnitThumbnails() {
-    if (_thumbsLoaded) { syncUnitThumbScale(); return; }
+    if (_thumbsLoaded) return;
     _thumbsLoaded = true;
     document.querySelectorAll('.unit-btn').forEach(btn => {
       const unitNum = btn.dataset.unit;
@@ -1051,16 +1065,15 @@ window.HomeModule = (function () {
       if (!url || !frame) return;
       const iframe = document.createElement('iframe');
       iframe.src = url;
-      iframe.width = THUMB_IFRAME_W;
-      iframe.height = THUMB_IFRAME_H;
       iframe.setAttribute('loading', 'lazy');
       iframe.setAttribute('tabindex', '-1');
       iframe.setAttribute('aria-hidden', 'true');
+      // Hide that unit page's own Floor Plan / 360 View toggle bar
+      // inside the thumbnail — it's redundant here since our own
+      // bottom-panel already has that navigation.
+      iframe.addEventListener('load', () => hideThumbToggleBar(iframe));
       frame.appendChild(iframe);
     });
-    // Scale after layout settles
-    requestAnimationFrame(syncUnitThumbScale);
-    window.addEventListener('resize', syncUnitThumbScale);
   }
 
   function openUnitViewer(unit) {
@@ -1198,6 +1211,7 @@ window.HomeModule = (function () {
   function closeAllModules(skipHistory) {
     // FIX #9: stop carousel auto-timer when navigating away
     stopAuto();
+    document.getElementById('carousel').style.display = '';   // show hero again
 
     closeUnitViewer(skipHistory);
     closeMap(skipHistory);
@@ -1242,6 +1256,7 @@ window.HomeModule = (function () {
 
         if (slot === '360view') {
           unitRowVisible = true;
+          document.getElementById('carousel').style.display = 'none';   // hide hero image
           document.getElementById('unit-row')?.classList.add('visible');
           loadUnitThumbnails();
           // Warm the most-clicked unit while the user picks
