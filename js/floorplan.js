@@ -565,6 +565,13 @@ window.FloorplanModule = (function () {
         font-size: 13px; font-weight: 600; font-style: italic;
         color: #c9803f;
         text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 0 2px rgba(122,62,30,.7);
+        transition: color 0.15s ease, text-shadow 0.15s ease;
+      }
+      /* Blink "flash" state — toggled every 500ms by blinkRevealZones(),
+         same white-alternating treatment as the tower labels. */
+      .fp-unit-label--flash .fp-unit-label-text {
+        color: #ffffff;
+        text-shadow: 0 0 4px rgba(255,255,255,.85), 0 1px 2px rgba(0,0,0,.5);
       }
       @media (max-width: 480px) {
         .fp-unit-label-text { font-size: 10px; }
@@ -1808,6 +1815,8 @@ window.FloorplanModule = (function () {
         if (edgeLines3) { edgeLines3.material.color.set(c); edgeLines3.material.opacity = on ? 0.75 : 0; }
       });
       if (canvas) canvas.style.filter = on ? GLOW_FILTER : IDLE_FILTER;
+      // Blink the copper BHK labels (e.g. "4BHK-A") in sync with the mesh glow.
+      Object.values(_clusterLabelEls).forEach(el => el.classList.toggle('fp-unit-label--flash', on));
     }, ZONE_BLINK_MS);
   }
 
@@ -1823,6 +1832,7 @@ window.FloorplanModule = (function () {
       });
     }
     if (canvas) canvas.style.filter = IDLE_FILTER;
+    Object.values(_clusterLabelEls).forEach(el => el.classList.remove('fp-unit-label--flash'));
   }
 
 
