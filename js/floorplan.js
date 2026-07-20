@@ -593,7 +593,16 @@ window.FloorplanModule = (function () {
       /* ── Sitemap floating overlays — compass (top-right) and
          "SITE PLAN" label (top-left), positioned relative to the
          sitemap image itself so they track it through zoom/pan and
-         scale down together on mobile. ── */
+         scale down together on mobile. Hidden by default, shown only
+         while the sitemap panel is active (see fp-topbar--sitemap). ── */
+      #fp-sitemap-compass,
+      #fp-sitemap-label {
+        display: none;
+      }
+      #fp-topbar.fp-topbar--sitemap #fp-sitemap-compass,
+      #fp-topbar.fp-topbar--sitemap #fp-sitemap-label {
+        display: block;
+      }
       #fp-sitemap-compass {
         position: absolute; top: 50%; left: 50%;
         transform: translate(calc(-50% + 90px), -50%);
@@ -805,6 +814,10 @@ window.FloorplanModule = (function () {
       el.classList.remove('enter','exit-l','exit-r');
       el.classList.add(pid === id ? 'enter' : direction === 'forward' ? 'exit-l' : 'exit-r');
     });
+    // Compass/label overlays only make sense on the sitemap panel —
+    // hide them on cluster/unit panels via a class on the topbar.
+    const topbar = document.getElementById('fp-topbar');
+    if (topbar) topbar.classList.toggle('fp-topbar--sitemap', id === 'fp-panel-sitemap');
   }
 
   function updateTitle() { /* fp-title removed — toggle row is centred via spacer */ }
