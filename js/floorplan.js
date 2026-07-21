@@ -48,10 +48,14 @@ window.FloorplanModule = (function () {
   const SITEMAP = {
     image: IK('Cluster/sitemap.png'),
     towerTiles: [
-      { id: 'tower-A', label: 'Tower A', points: '47,9 83.5,9 83.5,36 47,36' },
-      { id: 'tower-B', label: 'Tower B', points: '57,39 95,39 95,67 57,67' },
+      // labelX/labelY (optional): moves just the TAG, independent of the
+      // clickable polygon above — use this to nudge a tag into open
+      // ground (a courtyard, walkway) instead of wherever the polygon's
+      // centroid happens to fall. Same 0–100 coordinate space as points.
+      { id: 'tower-A', label: 'Tower A', points: '47,9 83.5,9 83.5,36 47,36', labelX: 60, labelY: 11 },
+      { id: 'tower-B', label: 'Tower B', points: '57,39 95,39 95,67 57,67', labelX: 90, labelY: 70 },
       { id: 'tower-C', label: 'Tower C', points: '7,51 54,51 54,97.5 7,97.5' },
-      { id: 'tower-D', label: 'Tower D', points: '7,22 46,22 46,65 7,65' },
+      { id: 'tower-D', label: 'Tower D', points: '7,22 46,22 46,65 7,65', labelX: 13, labelY: 33 },
     ],
   };
 
@@ -587,21 +591,27 @@ window.FloorplanModule = (function () {
         .fp-unit-label-text { font-size: 10px; }
       }
 
-      /* Cluster badge — shows which tower + odd/even floor set is active */
+      /* Cluster badge — shows which tower + odd/even floor set is active.
+         Lives in the topbar's normal flex flow now (not absolutely
+         positioned above the cluster image) — it reserves its own space
+         automatically like any other flex item, and can't get clipped by
+         an ancestor's overflow:hidden the way a floated overlay can.
+         Shown only on the cluster/unit panels via .fp-topbar--cluster
+         (see showPanel below), same pattern as the sitemap compass/label. */
       #fp-cluster-badge {
-        position: absolute;
-        top: clamp(-40px, -8vw, -30px);
-        left: clamp(8px, 2vw, 12px);
-        z-index: 7;
+        display: none; align-items: center; justify-content: center;
         font-family: 'Syne', sans-serif;
-        font-size: clamp(11px, 2.6vw, 14px);
+        font-size: clamp(9.5px, 2.2vw, 13px);
         font-weight: 700;
-        letter-spacing: .10em; text-transform: uppercase;
+        letter-spacing: .07em; text-transform: uppercase;
         color: #f5f0e8; background: rgba(122,62,30,.88);
-        padding: clamp(6px, 1.4vw, 8px) clamp(14px, 3.4vw, 18px);
+        padding: clamp(5px, 1.1vw, 8px) clamp(10px, 2.4vw, 16px);
         border-radius: 999px;
-        box-shadow: 0 2px 8px rgba(0,0,0,.20);
-        pointer-events: none; white-space: nowrap;
+        white-space: nowrap; flex-shrink: 0;
+      }
+      #fp-topbar.fp-topbar--cluster #fp-cluster-badge { display: flex; }
+      @media (max-width: 360px) {
+        #fp-cluster-badge { font-size: 8.5px; padding: 5px 9px; }
       }
 
       #fp-sitemap-hint {
@@ -757,6 +767,7 @@ window.FloorplanModule = (function () {
               </div>
             </div>
             <img id="fp-sitemap-compass" src="" alt="North direction" />
+            <div id="fp-cluster-badge"></div>
             <div id="fp-topbar-spacer"></div>
           </div>
           <div id="fp-content">
@@ -771,7 +782,6 @@ window.FloorplanModule = (function () {
               <div id="fp-cluster-wrap">
                 <img id="fp-cluster-img" src="" alt="Cluster Plan" />
                 <svg id="fp-zone-svg" viewBox="0 0 100 100"></svg>
-                <div id="fp-cluster-badge"></div>
                 <div id="fp-zone-tip">
                   <span id="fp-zone-tip-name"></span>
                   <span id="fp-zone-tip-type"></span>
@@ -836,8 +846,12 @@ window.FloorplanModule = (function () {
     });
     // Compass/label overlays only make sense on the sitemap panel —
     // hide them on cluster/unit panels via a class on the topbar.
+    // The cluster badge is the mirror image: shown only on cluster/unit.
     const topbar = document.getElementById('fp-topbar');
-    if (topbar) topbar.classList.toggle('fp-topbar--sitemap', id === 'fp-panel-sitemap');
+    if (topbar) {
+      topbar.classList.toggle('fp-topbar--sitemap', id === 'fp-panel-sitemap');
+      topbar.classList.toggle('fp-topbar--cluster', id === 'fp-panel-cluster' || id === 'fp-panel-unit');
+    }
   }
 
   function updateTitle() { /* fp-title removed — toggle row is centred via spacer */ }
@@ -895,6 +909,8 @@ window.FloorplanModule = (function () {
     towerId: t.id,
     label:   t.label,
     points:  t.points,
+    labelX:  t.labelX,
+    labelY:  t.labelY,
   }));
 
   let _sitemapRO        = null;
@@ -953,7 +969,11 @@ window.FloorplanModule = (function () {
     const pts        = parsePoints(m.points);
     const { cx, cy } = polyCentroid(pts);
     const bbox       = polyBBox(pts);
-    _sitemapPolyData[m.towerId] = { cx, cy, bbox };
+    // Falls back to the polygon centroid when a tower has no manual
+    // labelX/labelY override set in SITEMAP.towerTiles.
+    const labelX = (m.labelX !== undefined) ? m.labelX : cx;
+    const labelY = (m.labelY !== undefined) ? m.labelY : cy;
+    _sitemapPolyData[m.towerId] = { cx, cy, bbox, labelX, labelY };
   });
 
   // Shared resize sync — same maths as syncToImage in buildGltfZones
@@ -986,15 +1006,17 @@ window.FloorplanModule = (function () {
     Object.entries(_sitemapLabelEls).forEach(([towerId, el]) => {
       const poly = _sitemapPolyData[towerId];
       if (!poly) return;
-      // Anchor at the tower's centroid — the polygon itself is a hit-test
-      // zone that extends well past the visible roof (walkways, pool
-      // decks, etc.), so its bounding-box top edge lands far from the
-      // actual building. The centroid sits on the real building; the tag
-      // is lifted clear of it via the leader line's height instead (see
-      // .fp-glb-leader below).
-      const anchorY = poly.cy;
-      el.style.left = (left + (poly.cx     / 100) * W) + 'px';
-      el.style.top  = (top  + (anchorY     / 100) * H) + 'px';
+      // Anchor at the tower's label point — labelX/labelY if the tower
+      // has a manual override set (see SITEMAP.towerTiles), otherwise
+      // the centroid. The polygon itself is a hit-test zone that extends
+      // well past the visible roof (walkways, pool decks, etc.), so its
+      // bounding-box top edge lands far from the actual building — the
+      // tag is lifted clear of the roof via the leader line's height
+      // instead (see .fp-glb-leader below), not by moving this anchor.
+      const anchorX = poly.labelX;
+      const anchorY = poly.labelY;
+      el.style.left = (left + (anchorX / 100) * W) + 'px';
+      el.style.top  = (top  + (anchorY / 100) * H) + 'px';
     });
   }
 
