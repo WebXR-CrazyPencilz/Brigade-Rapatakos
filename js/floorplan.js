@@ -52,10 +52,10 @@ window.FloorplanModule = (function () {
       // clickable polygon above — use this to nudge a tag into open
       // ground (a courtyard, walkway) instead of wherever the polygon's
       // centroid happens to fall. Same 0–100 coordinate space as points.
-      { id: 'tower-A', label: 'Tower A', points: '47,9 83.5,9 83.5,36 47,36', labelX: 60, labelY: 11 },
-      { id: 'tower-B', label: 'Tower B', points: '57,39 95,39 95,67 57,67', labelX: 90, labelY: 70 },
+      { id: 'tower-A', label: 'Tower A', points: '47,9 83.5,9 83.5,36 47,36', labelX: 57, labelY: 18 },
+      { id: 'tower-B', label: 'Tower B', points: '57,39 95,39 95,67 57,67', labelX: 90, labelY: 75 },
       { id: 'tower-C', label: 'Tower C', points: '7,51 54,51 54,97.5 7,97.5' },
-      { id: 'tower-D', label: 'Tower D', points: '7,22 46,22 46,65 7,65', labelX: 13, labelY: 33 },
+      { id: 'tower-D', label: 'Tower D', points: '7,22 46,22 46,65 7,65', labelX: 13, labelY: 39 },
     ],
   };
 
@@ -662,12 +662,13 @@ window.FloorplanModule = (function () {
         background: #ffffff; transform: translateX(32px);
         overflow: hidden; touch-action: none;
       }
-      #fp-cluster-wrap { position: relative; display: inline-block; max-width: 100%; max-height: 100%; will-change: transform; }
+      #fp-cluster-wrap { position: relative; display: inline-block; max-width: 100%; max-height: 100%; will-change: transform; perspective: 1400px; }
       #fp-cluster-img {
         display: block; max-width: 100%;
         max-height: calc(100dvh - var(--fp-topbar-h) - 62px - 48px - env(safe-area-inset-bottom, 0px));
         object-fit: contain; border: 1px solid rgba(122,62,30,.12);
         transition: opacity 0.28s; pointer-events: none;
+        backface-visibility: hidden; will-change: transform, opacity;
       }
       #fp-cluster-img.fading { opacity: 0; }
 
@@ -857,6 +858,7 @@ window.FloorplanModule = (function () {
   function updateTitle() { /* fp-title removed — toggle row is centred via spacer */ }
 
   function resetToSitemap() {
+    _flipToken++; // cancels any in-flight Odd/Even flip — see swapParity
     disposeGltfCanvas();
     disposeSitemapCanvas();
     if (_sitemapRO) { _sitemapRO.disconnect(); _sitemapRO = null; }
@@ -869,7 +871,16 @@ window.FloorplanModule = (function () {
     const svg = document.getElementById('fp-zone-svg');
     if (svg) svg.innerHTML = '';
     const clusterImg = document.getElementById('fp-cluster-img');
-    if (clusterImg) { clusterImg.classList.remove('fading'); clusterImg.removeAttribute('src'); }
+    if (clusterImg) {
+      clusterImg.classList.remove('fading');
+      clusterImg.removeAttribute('src');
+      // Clear any in-flight flip transform (see swapParity) — without
+      // this, navigating away mid-flip left the image permanently
+      // stuck edge-on (rotateY 90°) the next time this element was reused.
+      clusterImg.style.transition = '';
+      clusterImg.style.transform  = '';
+      clusterImg.style.opacity    = '';
+    }
     const planImg = document.getElementById('fp-plan-img');
     if (planImg) { planImg.classList.remove('fading'); planImg.removeAttribute('src'); planImg.style.transform = ''; }
     const unitInfo = document.getElementById('fp-unit-info');
@@ -1251,7 +1262,7 @@ window.FloorplanModule = (function () {
   const COPPER_HEX  = 0x8a5a30; // matches label CSS copper tone
   const FLASH_HEX    = 0xf3ead6; // soft warm cream instead of pure white — less harsh flash
   let _sitemapBlinkTimer = null;
-  const SITEMAP_BLINK_MS = 500;
+  const SITEMAP_BLINK_MS = 900; // was 500 — slower pulse
   const GLOW_FILTER  = 'drop-shadow(0 0 0.8px rgba(255,255,255,0.45))'; // toned down from 1.2px/0.85
   const IDLE_FILTER  = 'drop-shadow(0 0 0.6px rgba(0,0,0,0.5))';
 
@@ -1375,6 +1386,15 @@ window.FloorplanModule = (function () {
     badge.textContent = `Tower ${num} · ${parityLabel}`;
   }
 
+  // Card-flip transition for the Odd/Even toggle — the current plan
+  // rotates away to edge-on (invisible at 90°), the source swaps at
+  // that exact instant with the transition briefly disabled (so the
+  // jump to the mirrored edge-on angle is imperceptible), then it
+  // rotates back to flat with the new plan. Reads as one continuous
+  // 180° flip even though it's really two 90° halves.
+  const FLIP_HALF_MS = 180;
+  let _flipToken = 0; // bumped on every call — lets a newer flip cancel a stale one cleanly
+
   function swapParity(newParity) {
     if (!activeTower || newParity === floorParity || level !== 1) return;
     activeUnit  = null;
@@ -1388,26 +1408,100 @@ window.FloorplanModule = (function () {
     if (!img || !svg) return;
     document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
     svg.innerHTML = '';
-    img.classList.add('fading');
+
+    // Supersedes any flip already in flight — the stale one's callbacks
+    // check this token and become no-ops instead of fighting this one
+    // for control of the element's transform.
+    const myToken  = ++_flipToken;
     const reqTower = activeTower, reqParity = floorParity;
+
+    img.style.transition = `transform ${FLIP_HALF_MS}ms ease-in, opacity ${FLIP_HALF_MS}ms ease-in`;
+    img.style.transform  = 'rotateY(90deg)';
+    img.style.opacity    = '0.35';
+
+    function resetFlip() {
+      img.style.transition = 'none';
+      img.style.transform  = 'rotateY(-90deg)';
+      void img.offsetWidth; // force reflow so the jump registers before re-enabling the transition
+      img.style.transition = `transform ${FLIP_HALF_MS}ms ease-out, opacity ${FLIP_HALF_MS}ms ease-out`;
+      img.style.transform  = 'rotateY(0deg)';
+      img.style.opacity    = '1';
+    }
+
     setTimeout(() => {
+      // A newer flip already took over — it owns the element's reset now.
+      if (myToken !== _flipToken) return;
       let done = false;
+      let hardTimer = null;
       function finish() {
         if (done) return; done = true;
-        if (activeTower !== reqTower || floorParity !== reqParity) return;
-        img.classList.remove('fading');
-        buildGltfZones(reqTower, reqParity);
+        clearTimeout(hardTimer);
+        // Superseded while the new image was loading — the newer flip is
+        // already mid-animation on this element; don't fight it.
+        if (myToken !== _flipToken) return;
+        resetFlip();
+        // Wait for the rotate-back-to-flat transition to ACTUALLY finish
+        // before measuring the image for the zone canvas — don't guess
+        // with a fixed timer. getBoundingClientRect() reflects the LIVE
+        // transform; measuring even a fraction of a degree before
+        // rotateY(0deg) is reached returns a box skewed by the wrap's
+        // CSS `perspective`, and since a transform never changes layout
+        // size, no ResizeObserver fires afterward to correct it — the
+        // skew (meshes shifted right) sticks permanently. A fixed
+        // setTimeout matching the CSS duration is a race: browser paint/
+        // transition timing doesn't line up exactly with JS timer timing.
+        let rebuilt = false;
+        function rebuildZones() {
+          if (rebuilt) return; rebuilt = true;
+          img.removeEventListener('transitionend', onTransitionEnd);
+          if (myToken !== _flipToken) return;
+          // Double rAF: wait one frame for the transitionend paint to be
+          // committed, then a second to be safe against any layout
+          // rounding — before reading getBoundingClientRect().
+          requestAnimationFrame(() => requestAnimationFrame(() => {
+            if (myToken !== _flipToken) return;
+            buildGltfZones(reqTower, reqParity);
+          }));
+        }
+        function onTransitionEnd(e) {
+          if (e.target !== img || e.propertyName !== 'transform') return;
+          rebuildZones();
+        }
+        img.addEventListener('transitionend', onTransitionEnd);
+        // Fallback in case transitionend never fires (e.g. tab backgrounded,
+        // reduced-motion disabling the transition) — same duration as before.
+        setTimeout(rebuildZones, FLIP_HALF_MS + 60);
       }
-      img.addEventListener('load',  finish, { once: true });
-      img.addEventListener('error', () => img.classList.remove('fading'), { once: true });
-      img.src = getClusterImage(activeTower, floorParity);
-      if (img.complete && img.naturalWidth > 0) finish();
-    }, 220);
+      img.addEventListener('load', finish, { once: true });
+      img.addEventListener('error', finish, { once: true });
+      // Uses this flip's own captured tower/parity, not the live globals —
+      // if a second tap changed floorParity again before this fired, the
+      // wrong plan could otherwise load here.
+      const newSrc = getClusterImage(reqTower, reqParity);
+      img.src = newSrc;
+      // Guard against the img.complete/naturalWidth race: right after
+      // reassigning .src, some browsers don't synchronously reset
+      // `complete` to false, so checking it immediately here can resolve
+      // against the PREVIOUS image's loaded state and fire finish() before
+      // the new image has actually decoded — corrupting the flip reset and
+      // zone-rebuild timing. This bites asymmetrically depending on which
+      // parity's image happens to already be cached, which is why the bug
+      // looked direction-specific (Odd→Even vs Even→Odd) rather than a
+      // real logic bug. Only take the fast path when currentSrc already
+      // matches the src we just requested.
+      if (img.currentSrc && img.currentSrc.endsWith(newSrc.split('/').pop()) && img.complete && img.naturalWidth > 0) {
+        finish();
+      }
+      // Last-resort safety net: if for any reason neither load nor error
+      // ever fires, this guarantees the image can't stay invisible forever.
+      hardTimer = setTimeout(finish, 4000);
+    }, FLIP_HALF_MS);
   }
 
   // ─── DRILL TO CLUSTER ────────────────────────────────────────
   function drillToCluster(towerId) {
     if (_transitioning) return;
+    _flipToken++; // cancels any in-flight Odd/Even flip — see swapParity
     activeUnit = null; viewMode = 'top'; floorParity = 'odd';
     const unitInfo = document.getElementById('fp-unit-info');
     if (unitInfo) unitInfo.classList.remove('visible');
@@ -1426,6 +1520,11 @@ window.FloorplanModule = (function () {
     const img = document.getElementById('fp-cluster-img');
     const svg = document.getElementById('fp-zone-svg');
     if (!img || !svg) return;
+    // Clear any in-flight flip transform left over from swapParity — see
+    // the matching note in resetToSitemap.
+    img.style.transition = '';
+    img.style.transform  = '';
+    img.style.opacity    = '';
     svg.innerHTML = '';
     img.classList.add('fading');
     const reqTower = towerId, reqParity = floorParity;
@@ -1442,8 +1541,13 @@ window.FloorplanModule = (function () {
       }
       img.addEventListener('load',  finish, { once: true });
       img.addEventListener('error', () => img.classList.remove('fading'), { once: true });
-      img.src = getClusterImage(towerId, floorParity);
-      if (img.complete && img.naturalWidth > 0) finish();
+      const newSrc = getClusterImage(towerId, floorParity);
+      img.src = newSrc;
+      // Same currentSrc guard as swapParity — avoids finishing early off
+      // a stale img.complete/naturalWidth reading from the PREVIOUS image.
+      if (img.currentSrc && img.currentSrc.endsWith(newSrc.split('/').pop()) && img.complete && img.naturalWidth > 0) {
+        finish();
+      }
     }, 220);
     level = 1;
     showPanel('fp-panel-cluster', 'forward');
@@ -1456,6 +1560,7 @@ window.FloorplanModule = (function () {
   let _gltfRenderer = null;
   let _gltfAnimId   = null;
   let _gltfRO       = null;
+  let _gltfBuildGen = 0; // bumped on every buildGltfZones() call — GLB loads can't be cancelled mid-flight, so late callbacks from a superseded odd/even (or tower) build check this and no-op instead of adding stale meshes/labels on top of the current one
 
   function disposeGltfCanvas() {
     if (_gltfAnimId)   { cancelAnimationFrame(_gltfAnimId); _gltfAnimId = null; }
@@ -1501,6 +1606,7 @@ window.FloorplanModule = (function () {
 
   function buildGltfZones(towerId, parity) {
     disposeGltfCanvas();
+    const myGen = ++_gltfBuildGen;
 
     const wrap = document.getElementById('fp-cluster-wrap');
     const img  = document.getElementById('fp-cluster-img');
@@ -1734,6 +1840,7 @@ window.FloorplanModule = (function () {
       const unitData = unitById[unitId] || null;
 
       loader.load(file, (gltf) => {
+        if (myGen !== _gltfBuildGen) return; // a newer build (tower switch or Odd/Even flip) has superseded this one
         const root = gltf.scene;
 
         root.rotation.set(0, 0, 0);
@@ -1809,6 +1916,7 @@ window.FloorplanModule = (function () {
           console.log('[GLTF] ' + file.split('/').pop() + ' ' + pct + '%');
         }
       }, (err) => {
+        if (myGen !== _gltfBuildGen) return; // stale — see note above
         failed++;
         console.error('[GLTF] LOAD ERROR:', file, err);
         if (loaded + failed === total && loaded === 0) {

@@ -273,7 +273,7 @@ window.HomeModule = (function () {
         opacity: 0; pointer-events: none;
         transition: opacity .28s ease;
         box-sizing: border-box;
-        background: #0d0d0d;
+        background: transparent;
       }
       #unit-row.visible { opacity: 1; pointer-events: all; }
 
@@ -451,6 +451,18 @@ window.HomeModule = (function () {
       }
       #unit-back svg { width: 15px; height: 15px; stroke: rgba(230,220,205,.9); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
       #unit-back svg { width: 15px; height: 15px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+      /* ── Desktop refinement ──
+         On phones, full-height cards make sense (there's little vertical
+         space to spare). On desktop the same full-height stretch leaves
+         each thumbnail looking marooned in a tall column of empty
+         gradient. Cap the card height and vertically center the row
+         instead, so the cards read as a deliberate strip rather than
+         stretched-to-fit panels. */
+      @media (min-width: 641px) {
+        #unit-row { align-items: center; }
+        .unit-btn { height: 58vh; max-height: 480px; min-height: 320px; }
+      }
 
       /* ── Portrait / small-screen refinements ── */
       @media (max-width: 640px) {
@@ -1279,7 +1291,9 @@ window.HomeModule = (function () {
 
         if (slot === '360view') {
           unitRowVisible = true;
-          document.getElementById('carousel').style.display = 'none';   // hide hero image
+          // Carousel stays visible (not hidden) — unit-row is transparent
+          // now, so the hero image shows through the space around the
+          // shorter desktop cards instead of a flat black backdrop.
           document.getElementById('unit-row')?.classList.add('visible');
           loadUnitThumbnails();
           if (!_popping) pushHist('threeSixty', switching);

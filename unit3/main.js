@@ -3,23 +3,10 @@ function cloudThumb(url) {
 }
 
 // ─── CLOUDINARY FULL-PANO OPTIMIZATION ─────────────────────────────
-// Every room image here ships with a baked-in `f_auto,q_auto` transform
-// and NO width cap — meaning every visitor, phone or desktop, was
-// downloading the full original-resolution upload for every panorama.
-// This replaces that fixed transform with a device/connection-aware
-// one: desktop gets a sensible width cap (still full detail for a
-// sphere projection), mobile gets a meaningfully smaller, more
-// compressed version of the SAME image, and slow/metered mobile
-// connections get a further step down. No new uploads needed — it's
-// all done via the Cloudinary URL.
 function isMobileViewport() {
   return window.innerWidth <= 768
 }
 
-// Network Information API — Chrome/Android only, not universally
-// supported. Only ever used to go MORE conservative on data usage;
-// never assumed present, and desktop/unsupported browsers are
-// completely unaffected by this check.
 function isSlowConnection() {
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection
   if (!conn) return false
@@ -32,31 +19,16 @@ function cloudOptimized(url) {
   let quality = 'q_auto:good'
 
   if (isMobileViewport()) {
-    // w_1200 is applied to EVERY mobile visitor by default, not just
-    // ones detected as being on a slow connection — the Network
-    // Information API below doesn't exist at all on iOS Safari, so
-    // gating the aggressive tier behind "isSlowConnection()" alone
-    // would leave a large share of real phone traffic (including
-    // every iPhone) on a bigger download than necessary. q_auto:eco
-    // compresses harder than q_auto:good; the combination is a large
-    // cut in download size, prioritizing load speed on a small screen
-    // where the difference is hard to see anyway.
     width   = 1200
     quality = 'q_auto:eco'
 
     if (isSlowConnection()) {
-      // A further step down specifically for visitors CONFIRMED to be
-      // on metered or 2g/3g connections (Chrome/Android only), where
-      // every extra KB has a real cost.
       width = 900
     }
   }
 
   const transform = `w_${width},${quality},f_auto`
 
-  // These URLs already ship with a baked-in `f_auto,q_auto` transform
-  // segment — replace it outright rather than stacking a second
-  // transform on top of it (Cloudinary would apply both, wastefully).
   if (url.includes('/upload/f_auto,q_auto/')) {
     return url.replace('/upload/f_auto,q_auto/', `/upload/${transform}/`)
   }
@@ -189,7 +161,7 @@ scene.add(new THREE.Mesh(sGeo, panoMaterial))
 
 // ─── STATE ─────────────────────────────────────────────────────
 let currentRoom   = 'lobby'
-let roomEnteredAt = 0; // timestamp when currentRoom became visible — used for dwell-time tracking
+let roomEnteredAt = 0
 let hotspotMeshes = []
 let labelSprites  = []
 let camRX = 0, camRY = 0
@@ -252,7 +224,6 @@ function makeLabelSprite(text) {
   const PAD_L     = 20
   const PAD_R     = 24
 
-  // measure text width first
   const tmp = document.createElement('canvas').getContext('2d')
   tmp.font  = `500 ${FONT_SIZE}px Arial`
   const textW = tmp.measureText(text).width
@@ -263,7 +234,6 @@ function makeLabelSprite(text) {
   canvas.height = H
   const ctx = canvas.getContext('2d')
 
-  // pill background
   const pillR = H / 2
   ctx.clearRect(0, 0, W, H)
   ctx.beginPath()
@@ -277,23 +247,22 @@ function makeLabelSprite(text) {
   ctx.lineTo(0, pillR)
   ctx.quadraticCurveTo(0, 0,   pillR, 0)
   ctx.closePath()
-  ctx.fillStyle = 'rgba(10, 8, 5, 0.82)'
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.92)'
   ctx.fill()
 
-  // gold border
-  ctx.strokeStyle = 'rgba(201, 162, 58, 0.9)'
+  // copper border
+  ctx.strokeStyle = 'rgba(184, 115, 51, 0.95)'
   ctx.lineWidth   = 4
   ctx.stroke()
 
   // arrow icon
-  ctx.fillStyle    = '#c9a23a'
+  ctx.fillStyle    = '#b87333'
   ctx.font         = `bold ${FONT_SIZE + 4}px Arial`
   ctx.textAlign    = 'left'
   ctx.textBaseline = 'middle'
   ctx.fillText('↑', PAD_L, H / 2)
 
-  // room name
-  ctx.fillStyle    = '#f0ebe0'
+  ctx.fillStyle    = '#2a1a0f'
   ctx.font         = `500 ${FONT_SIZE}px Arial`
   ctx.textAlign    = 'left'
   ctx.textBaseline = 'middle'
@@ -306,7 +275,7 @@ function makeLabelSprite(text) {
   const mat    = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false })
   const sprite = new THREE.Sprite(mat)
 
-  const worldH = 0.55
+  const worldH = 0.20
   const worldW = worldH * (W / H)
   sprite.scale.set(worldW, worldH, 1)
   return sprite
@@ -352,7 +321,7 @@ function loadRoom(key) {
   if (isTransitioning) return
   isTransitioning = true
 
-  reportRoomDwell(currentRoom); // report dwell for the room we're leaving
+  reportRoomDwell(currentRoom);
 
   if (typeof gtag === 'function') {
     gtag('event', 'room_view', {
@@ -364,7 +333,7 @@ function loadRoom(key) {
 
   fadeOut(() => {
     currentRoom = key
-    roomEnteredAt = Date.now(); // start the clock on the new room
+    roomEnteredAt = Date.now();
     camRX = rooms[key].startPitch ?? 0
     camRY = rooms[key].startYaw  ?? 0
 
@@ -413,13 +382,24 @@ function createHotspots(roomKey) {
   const data = hotspots[roomKey]
   if (!data) return
 
+  // The label text box needs to look the SAME size on screen no matter
+  // how far its hotspot actually is — a fixed world-space sprite size
+  // alone can't do that, because perspective still makes a far sprite
+  // look smaller and a close one look bigger. To counter that, each
+  // label's scale is multiplied by (distance from camera / REF_DISTANCE)
+  // — REF_DISTANCE is the distance at which the label renders at its
+  // natural (worldH) size; anything closer/farther is grown/shrunk to
+  // compensate, so the apparent on-screen size stays constant.
+  const REF_DISTANCE = 4.5
+  const camPos = camera.position
+
   data.forEach(h => {
     const [hx, hy, hz] = h.position
 
     // Ring
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(0.25, 0.42, 32),
-      new THREE.MeshBasicMaterial({ color: 0xc9a23a, side: THREE.DoubleSide, transparent: true, opacity: 0.92 })
+      new THREE.MeshBasicMaterial({ color: 0xb87333, side: THREE.DoubleSide, transparent: true, opacity: 1.0 })
     )
     ring.position.set(hx, hy, hz)
     ring.rotation.x      = -Math.PI / 2
@@ -441,10 +421,18 @@ function createHotspots(roomKey) {
     // Label sprite
     const label  = rooms[h.target] ? rooms[h.target].label : h.target
     const sprite = makeLabelSprite(label)
-    const baseY  = hy + 0.95
+    // Gap between the ring and the label — same distance-compensation
+    // factor as the label's size scale, so the apparent (on-screen) gap
+    // stays visually consistent instead of a fixed world-space offset
+    // looking cramped when the label itself has shrunk for a close hotspot.
+    const distToRing = Math.hypot(hx - camPos.x, hy - camPos.y, hz - camPos.z)
+    const gapScale   = distToRing / REF_DISTANCE
+    const BASE_GAP   = 1.46
+    const baseY  = hy + BASE_GAP * gapScale
     sprite.position.set(hx, baseY, hz)
     sprite.userData.target = h.target
     sprite.userData.baseY  = baseY
+    sprite.scale.multiplyScalar(gapScale)
     scene.add(sprite)
     labelSprites.push(sprite)
   })
@@ -610,7 +598,7 @@ function animate(ts) {
       if (h.geometry.type === 'RingGeometry') {
         const s = 1 + Math.sin(t * 2) * 0.07
         h.scale.set(s, s, s)
-        h.material.opacity = 0.7 + Math.sin(t * 2) * 0.25
+        h.material.opacity = 0.875 + Math.sin(t * 2) * 0.125
       }
     })
 

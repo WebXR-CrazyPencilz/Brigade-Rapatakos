@@ -6,22 +6,10 @@ function cloudThumb(url) {
 }
 
 // ─── CLOUDINARY FULL-PANO OPTIMIZATION ─────────────────────────────
-// Panoramas are equirectangular and displayed on a sphere, so lossless
-// full-res detail is wasted — and it's wasted even more on a phone
-// screen than on a desktop monitor. This is device/connection-aware:
-// desktop keeps the original w_2600/q_auto:good sizing, while mobile
-// gets a meaningfully smaller, more compressed version of the SAME
-// image (no separate uploads needed — it's just a different Cloudinary
-// URL transform). f_auto (serves WebP/AVIF where supported) applies
-// to every tier.
 function isMobileViewport() {
   return window.innerWidth <= 768;
 }
 
-// Network Information API — Chrome/Android only, not universally
-// supported. Only ever used to go MORE conservative on data usage;
-// never assumed present, and desktop/unsupported browsers are
-// completely unaffected by this check.
 function isSlowConnection() {
   const conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
   if (!conn) return false;
@@ -34,22 +22,10 @@ function cloudOptimized(url) {
   let quality = 'q_auto:good';
 
   if (isMobileViewport()) {
-    // w_1200 is applied to EVERY mobile visitor by default, not just
-    // ones detected as being on a slow connection — the Network
-    // Information API below doesn't exist at all on iOS Safari, so
-    // gating the aggressive tier behind "isSlowConnection()" alone
-    // would leave a large share of real phone traffic (including
-    // every iPhone) on a bigger download than necessary. q_auto:eco
-    // compresses harder than q_auto:good; the combination is a large
-    // cut in download size, prioritizing load speed on a small screen
-    // where the difference is hard to see anyway.
     width   = 1200;
     quality = 'q_auto:eco';
 
     if (isSlowConnection()) {
-      // A further step down specifically for visitors CONFIRMED to be
-      // on metered or 2g/3g connections (Chrome/Android only), where
-      // every extra KB has a real cost.
       width = 900;
     }
   }
@@ -175,9 +151,6 @@ const hotspots = {
 };
 
 // ─── THREE.JS SCENE ────────────────────────────────────────────────
-// DOM elements (#toggle, #side-panel, #fade-overlay, #room-label)
-// are all in index.html — NOT recreated here.
-
 const scene = new THREE.Scene();
 scene.add(new THREE.AmbientLight(0xffffff, 1.2));
 
@@ -187,7 +160,6 @@ camera.position.set(0, 0, 0.1);
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-// Insert canvas as FIRST child so it sits behind all UI elements
 document.body.insertBefore(renderer.domElement, document.body.firstChild);
 
 // ─── SPHERE ────────────────────────────────────────────────────────
@@ -235,16 +207,9 @@ function loadTexture(key, onDone) {
 }
 
 function preloadInitial() {
-  // Everything here is a "nice to have" for smoother navigation later —
-  // none of it should compete for bandwidth with the very first room
-  // the visitor is actually looking at. So we wait until that texture
-  // is cached before kicking off the rest, staggered, in the background.
   const priority = ['foyertoliving1', 'foyertoliving2', 'living', 'livingtobedroom', 'masterbedroomcorridor'];
   function startBackgroundPreload() {
     priority.forEach((k, i) => setTimeout(() => loadTexture(k), 600 + i * 400));
-    // Once the priority set is queued, keep going through everything
-    // else in the unit during idle time, one at a time, so the whole
-    // tour ends up cached even before the visitor reaches those rooms.
     const remaining = Object.keys(rooms).filter(k => k !== 'foyer' && !priority.includes(k));
     const delayBase = 600 + priority.length * 400 + 500;
     scheduleIdlePreload(remaining, delayBase);
@@ -312,27 +277,26 @@ function makeLabelSprite(text) {
   ctx.quadraticCurveTo(W, H, W - r, H); ctx.lineTo(r, H);
   ctx.quadraticCurveTo(0, H, 0, H - r); ctx.lineTo(0, r);
   ctx.quadraticCurveTo(0, 0, r, 0); ctx.closePath();
-  ctx.fillStyle = 'rgba(7,6,10,0.88)'; ctx.fill();
-  ctx.strokeStyle = 'rgba(201,162,58,0.80)'; ctx.lineWidth = 4; ctx.stroke();
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.92)'; ctx.fill();
+  ctx.strokeStyle = 'rgba(184,115,51,0.95)'; ctx.lineWidth = 4; ctx.stroke();
 
-  ctx.fillStyle = '#c9a23a'; ctx.font = `bold ${FONT_SIZE + 4}px Arial`;
+  ctx.fillStyle = '#b87333'; ctx.font = `bold ${FONT_SIZE + 4}px Arial`;
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillText('\u2191', PAD_L, H / 2);
 
-  ctx.fillStyle = '#f0ebe0'; ctx.font = `600 ${FONT_SIZE}px Arial`;
+  ctx.fillStyle = '#2a1a0f'; ctx.font = `600 ${FONT_SIZE}px Arial`;
   ctx.fillText(text, PAD_L + ICON_W, H / 2 + 1);
 
   const tex = new THREE.CanvasTexture(canvas);
   tex.minFilter = THREE.LinearFilter; tex.generateMipmaps = false;
   const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
   const sprite = new THREE.Sprite(mat);
-  const worldH = 0.55;
+  const worldH = 0.20;
   sprite.scale.set(worldH * (W / H), worldH, 1);
   return sprite;
 }
 
 // ─── FADE ──────────────────────────────────────────────────────────
-// index.html's #fade-overlay uses a .fading class to trigger opacity
 function fadeOut(cb) {
   const ov = document.getElementById('fade-overlay');
   if (ov) { ov.classList.add('fading'); setTimeout(cb, 220); }
@@ -385,12 +349,22 @@ function createHotspots(roomKey) {
   const data = hotspots[roomKey];
   if (!data) return;
 
+  // Ring/dot stay a FIXED, constant world-space size — no distance
+  // scaling. The label text box IS distance-compensated: its scale (and
+  // the gap between it and the ring) is multiplied by
+  // (distance from camera / REF_DISTANCE), so it reads as the SAME
+  // apparent size on screen no matter how far the hotspot actually is,
+  // instead of shrinking/growing with perspective like a plain
+  // fixed-size sprite would.
+  const REF_DISTANCE = 4.5;
+  const camPos = camera.position;
+
   data.forEach(h => {
     const [hx, hy, hz] = h.position;
 
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(0.25, 0.42, 32),
-      new THREE.MeshBasicMaterial({ color: 0xc9a23a, side: THREE.DoubleSide, transparent: true, opacity: 0.92 })
+      new THREE.MeshBasicMaterial({ color: 0xb87333, side: THREE.DoubleSide, transparent: true, opacity: 1.0 })
     );
     ring.position.set(hx, hy, hz); ring.rotation.x = -Math.PI / 2; ring.userData.target = h.target;
     scene.add(ring); hotspotMeshes.push(ring);
@@ -404,8 +378,17 @@ function createHotspots(roomKey) {
 
     const label  = rooms[h.target] ? rooms[h.target].label : h.target;
     const sprite = makeLabelSprite(label);
-    const baseY  = hy + 0.95;
+    // Gap between the ring and the label also scales with the same
+    // distance-compensation factor as the label's size, so the apparent
+    // (on-screen) gap stays visually consistent instead of a fixed
+    // world-space offset looking cramped when the label itself has
+    // shrunk for a close hotspot.
+    const distToRing = Math.hypot(hx - camPos.x, hy - camPos.y, hz - camPos.z);
+    const gapScale    = distToRing / REF_DISTANCE;
+    const BASE_GAP    = 1.46;
+    const baseY  = hy + BASE_GAP * gapScale;
     sprite.position.set(hx, baseY, hz); sprite.userData.target = h.target; sprite.userData.baseY = baseY;
+    sprite.scale.multiplyScalar(gapScale);
     scene.add(sprite); labelSprites.push(sprite);
   });
 }
@@ -455,7 +438,6 @@ function bindPanelToggle() {
   _panel  = document.getElementById('side-panel');
   if (!_toggle || !_panel) return;
 
-  // Desktop click
   _toggle.addEventListener('click', (e) => {
     e.stopPropagation();
     const isOpen = _panel.classList.toggle('open');
@@ -463,7 +445,6 @@ function bindPanelToggle() {
     _toggle.innerHTML = isOpen ? '❮' : '❯';
   });
 
-  // Mobile touch — suppresses the synthetic click that follows touchend
   let _lastTouch = 0;
   _toggle.addEventListener('touchend', (e) => {
     e.preventDefault(); e.stopPropagation();
@@ -473,7 +454,6 @@ function bindPanelToggle() {
     _toggle.innerHTML = isOpen ? '❮' : '❯';
   });
 
-  // Close on outside click
   document.addEventListener('click', (e) => {
     if (Date.now() - _lastTouch < 400) return;
     if (!_panel || !_toggle) return;
@@ -587,9 +567,10 @@ function animate(ts) {
     const t = ts * 0.001;
     hotspotMeshes.forEach(h => {
       if (h.geometry.type === 'RingGeometry') {
-        const s = 1 + Math.sin(t * 2) * 0.07;
+        const base = h.userData.baseScale ?? 1;
+        const s = base * (1 + Math.sin(t * 2) * 0.07);
         h.scale.set(s, s, s);
-        h.material.opacity = 0.7 + Math.sin(t * 2) * 0.25;
+        h.material.opacity = 0.875 + Math.sin(t * 2) * 0.125;
       }
     });
     labelSprites.forEach((s, i) => {

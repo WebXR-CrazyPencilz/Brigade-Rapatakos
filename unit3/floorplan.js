@@ -14,6 +14,40 @@
     { room: 'kitchen',         label: 'KITCHEN',           points: '505,332 668,332 668,505 505,505' },
   ]
 
+  // Returns the actual on-screen rect the IMAGE CONTENT occupies inside
+  // the <img> element's box, accounting for object-fit: contain
+  // letterboxing. The element's own box (width: 96%, max-height: 92%,
+  // height: auto) does not always match the image's natural aspect
+  // ratio — when max-height clips the box, contain letterboxes the
+  // picture inside it, leaving empty space the img's own
+  // getBoundingClientRect() still includes. Syncing the hotspot SVG to
+  // the outer box (instead of this corrected rect) makes zones drift
+  // and read as undersized once that letterboxing kicks in, worse the
+  // larger the image renders (e.g. maximized window). Shared by both
+  // syncSVG() and show() so they never fall out of sync with each other.
+  function getContainedImageRect(el) {
+    const box = el.getBoundingClientRect()
+    const nw = el.naturalWidth, nh = el.naturalHeight
+    if (!nw || !nh) return box
+
+    const boxRatio = box.width / box.height
+    const imgRatio = nw / nh
+
+    let w, h
+    if (imgRatio > boxRatio) {
+      // Image is relatively wider than the box — letterboxed top/bottom.
+      w = box.width
+      h = w / imgRatio
+    } else {
+      // Image is relatively taller than the box — letterboxed left/right.
+      h = box.height
+      w = h * imgRatio
+    }
+    const left = box.left + (box.width  - w) / 2
+    const top  = box.top  + (box.height - h) / 2
+    return { left, top, width: w, height: h }
+  }
+
   function injectLayer() {
     if (document.getElementById('fp-layer')) return
 
@@ -88,7 +122,7 @@
     document.body.appendChild(layer)
 
     function syncSVG() {
-      const rect = img.getBoundingClientRect()
+      const rect = getContainedImageRect(img)
       const lr   = layer.getBoundingClientRect()
       svg.style.left   = (rect.left - lr.left) + 'px'
       svg.style.top    = (rect.top  - lr.top)  + 'px'
@@ -218,7 +252,7 @@
       const svg = document.getElementById('fp-svg')
       const l   = document.getElementById('fp-layer')
       if (!img || !svg || !l || !img.naturalWidth) return
-      const rect = img.getBoundingClientRect()
+      const rect = getContainedImageRect(img)
       const lr   = l.getBoundingClientRect()
       svg.style.left   = (rect.left - lr.left) + 'px'
       svg.style.top    = (rect.top  - lr.top)  + 'px'

@@ -56,8 +56,9 @@
     img.src = FP_IMAGE_URL
     img.style.cssText = `
       display: block;
-      width: 100vw;
+      max-width: 100vw;
       max-height: 100vh;
+      width: auto;
       height: auto;
       user-select: none;
       -webkit-user-drag: none;
@@ -154,7 +155,7 @@
      
     })
 
-    // ── Hover effect
+    // ── Hover effect (desktop)
     svg.addEventListener('mouseover', e => {
       const z = e.target.closest('.fpz')
       if (!z) return
@@ -172,12 +173,26 @@
       hideTip()
     })
 
-    // ── Click → go to 360 viewer
+    // ── Click → go to 360 viewer (desktop / synthetic click)
     svg.addEventListener('click', e => {
       const z = e.target.closest('.fpz')
       if (!z) return
       goTo360(z.dataset.room)
     })
+
+    // ── Touch → go to 360 viewer (mobile). Mirrors the desktop click
+    // path but uses touchend directly instead of relying on the browser
+    // to fire a synthetic click afterward — that synthetic-click timing
+    // is inconsistent across mobile browsers, especially through a
+    // pointer-events layering like this SVG-over-image setup, and was
+    // missing here entirely (present in the other unit's floor plan file).
+    svg.addEventListener('touchend', e => {
+      const t = e.changedTouches[0]
+      const z = document.elementFromPoint(t.clientX, t.clientY)?.closest('.fpz')
+      if (!z) return
+      e.preventDefault()
+      goTo360(z.dataset.room)
+    }, { passive: false })
   }
 
   // ─── TOOLTIP ────────────────────────────────────────────────────
