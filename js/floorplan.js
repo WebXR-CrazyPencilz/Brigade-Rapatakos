@@ -501,54 +501,64 @@ window.FloorplanModule = (function () {
       .fp-tower-poly:hover, .fp-tower-poly.tapped {
         fill: rgba(122,62,30,.28); stroke: rgba(122,62,30,.95);
       }
-      .fp-tower-label {
-        font-family: 'Cormorant Garamond', serif; font-size: 3px; font-weight: 500;
-        fill: rgba(245,242,235,.90); pointer-events: none; text-anchor: middle;
-        dominant-baseline: middle;
+      .fp-tower-tag { cursor: pointer; }
+      .fp-tower-tag-leader {
+        stroke: rgba(122,62,30,.55); stroke-width: .3;
+        fill: none; pointer-events: none;
       }
-      .fp-tower-sub {
-        font-family: 'Syne', sans-serif; font-size: 1.8px; font-weight: 700;
-        letter-spacing: 0.08em; fill: rgba(200,185,165,.60);
-        pointer-events: none; text-anchor: middle; dominant-baseline: middle;
+      .fp-tower-tag-bg {
+        fill: rgba(255,253,250,.94); stroke: rgba(122,62,30,.55);
+        stroke-width: .3; transition: fill 0.22s, stroke 0.22s;
+      }
+      .fp-tower-tag:hover .fp-tower-tag-bg,
+      .fp-tower-tag.tapped .fp-tower-tag-bg {
+        fill: rgba(122,62,30,.92); stroke: rgba(122,62,30,1);
+      }
+      .fp-tower-tag-text {
+        font-family: 'Syne', sans-serif; font-size: 2.6px; font-weight: 700;
+        letter-spacing: 0.02em; fill: #4a2a14; pointer-events: none;
+        text-anchor: middle; dominant-baseline: middle;
+        transition: fill 0.22s;
+      }
+      .fp-tower-tag:hover .fp-tower-tag-text,
+      .fp-tower-tag.tapped .fp-tower-tag-text {
+        fill: #f5f0e8;
       }
 
       /* GLB tile labels — HTML overlay (crisper than a WebGL text sprite,
-         and scales with normal CSS across every phone). */
+         and scales with normal CSS across every phone). Pill tag +
+         leader line, anchored at the tower's centroid: the tag floats
+         above the roof, the leader connects it down to the building. */
       .fp-glb-label {
-        position: absolute; transform: translate(-50%, -50%);
+        position: absolute; transform: translate(-50%, -100%);
         pointer-events: none; z-index: 6; text-align: center;
-        white-space: nowrap;
+        white-space: nowrap; display: flex; flex-direction: column;
+        align-items: center;
       }
-      .fp-glb-label-main {
-        display: block; font-family: 'Cormorant Garamond', serif;
-        font-size: 30px; font-weight: 600; font-style: italic;
-        color: #d9a15c;
-        text-shadow: 0 1px 2px rgba(0,0,0,.65), 0 0 2px rgba(122,62,30,.9);
-        -webkit-text-stroke: 0.4px rgba(122,62,30,.6);
-        transition: color 0.15s ease, text-shadow 0.15s ease, -webkit-text-stroke-color 0.15s ease;
+      .fp-glb-tag {
+        display: inline-flex; align-items: center; justify-content: center;
+        padding: 6px 16px; border-radius: 999px;
+        background: rgba(255,253,250,.95);
+        border: 1px solid rgba(122,62,30,.55);
+        box-shadow: 0 2px 10px rgba(0,0,0,.20);
+        font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700;
+        letter-spacing: .04em; color: #4a2a14;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
       }
-      .fp-glb-label-sub {
-        display: block; font-family: 'Syne', sans-serif; font-size: 13px;
-        font-weight: 700; letter-spacing: .14em; text-transform: uppercase;
-        color: #c9803f; text-shadow: 0 1px 2px rgba(0,0,0,.65);
-        margin-top: 2px;
-        transition: color 0.15s ease, text-shadow 0.15s ease;
+      .fp-glb-leader {
+        width: 1px; height: 44px;
+        background: rgba(122,62,30,.55);
       }
       /* Blink "flash" state — toggled every 500ms by blinkRevealSitemap().
-         White, alternating with the steady copper state above. Light
-         shadow only, no heavy glow. */
-      .fp-glb-label--flash .fp-glb-label-main {
-        color: #ffffff;
-        text-shadow: 0 0 3px rgba(255,255,255,.7), 0 1px 2px rgba(0,0,0,.5);
-        -webkit-text-stroke-color: rgba(255,255,255,.7);
-      }
-      .fp-glb-label--flash .fp-glb-label-sub {
-        color: #ffffff;
-        text-shadow: 0 0 3px rgba(255,255,255,.7), 0 1px 2px rgba(0,0,0,.5);
+         Same copper→white alternation as before, applied to the tag now. */
+      .fp-glb-label--flash .fp-glb-tag {
+        background: rgba(122,62,30,.92);
+        color: #f5f0e8;
+        border-color: rgba(122,62,30,1);
       }
       @media (max-width: 480px) {
-        .fp-glb-label-main { font-size: 22px; }
-        .fp-glb-label-sub  { font-size: 11px; }
+        .fp-glb-tag    { padding: 5px 12px; font-size: 11px; }
+        .fp-glb-leader { height: 30px; }
       }
 
       /* Per-unit BHK labels at cluster level — e.g. "4BHK-C", "3BHK(L)-D",
@@ -961,7 +971,7 @@ window.FloorplanModule = (function () {
     if (_sitemapLabelEls[towerId]) return;
     const el = document.createElement('div');
     el.className = 'fp-glb-label';
-    el.innerHTML = `<span class="fp-glb-label-main">Tower ${_towerDisplayNumber[towerId] || ''}</span><span class="fp-glb-label-sub">Explore</span>`;
+    el.innerHTML = `<div class="fp-glb-tag">Tower ${_towerDisplayNumber[towerId] || ''}</div><div class="fp-glb-leader"></div>`;
     wrap.appendChild(el);
     _sitemapLabelEls[towerId] = el;
     _positionSitemapLabels();
@@ -976,8 +986,15 @@ window.FloorplanModule = (function () {
     Object.entries(_sitemapLabelEls).forEach(([towerId, el]) => {
       const poly = _sitemapPolyData[towerId];
       if (!poly) return;
-      el.style.left = (left + (poly.cx / 100) * W) + 'px';
-      el.style.top  = (top  + (poly.cy / 100) * H) + 'px';
+      // Anchor at the tower's centroid — the polygon itself is a hit-test
+      // zone that extends well past the visible roof (walkways, pool
+      // decks, etc.), so its bounding-box top edge lands far from the
+      // actual building. The centroid sits on the real building; the tag
+      // is lifted clear of it via the leader line's height instead (see
+      // .fp-glb-leader below).
+      const anchorY = poly.cy;
+      el.style.left = (left + (poly.cx     / 100) * W) + 'px';
+      el.style.top  = (top  + (anchorY     / 100) * H) + 'px';
     });
   }
 
@@ -1210,9 +1227,10 @@ window.FloorplanModule = (function () {
   // white "flash" half of each cycle, applied here directly. Cleared in
   // disposeSitemapCanvas() whenever the panel is rebuilt/closed.
   const COPPER_HEX  = 0x8a5a30; // matches label CSS copper tone
+  const FLASH_HEX    = 0xf3ead6; // soft warm cream instead of pure white — less harsh flash
   let _sitemapBlinkTimer = null;
   const SITEMAP_BLINK_MS = 500;
-  const GLOW_FILTER  = 'drop-shadow(0 0 1.2px rgba(255,255,255,0.85))';
+  const GLOW_FILTER  = 'drop-shadow(0 0 0.8px rgba(255,255,255,0.45))'; // toned down from 1.2px/0.85
   const IDLE_FILTER  = 'drop-shadow(0 0 0.6px rgba(0,0,0,0.5))';
 
   function blinkRevealSitemap() {
@@ -1223,10 +1241,13 @@ window.FloorplanModule = (function () {
       const meshes = Object.values(_sitemapMeshMap);
       meshes.forEach(({ mesh, e1, e2, e3 }) => {
         mesh.material.opacity = 0.10;
-        const c = on ? 0xffffff : COPPER_HEX;
-        if (e1) { e1.material.color.set(c); e1.material.opacity = 1.0; }
-        if (e2) { e2.material.color.set(c); e2.material.opacity = 0.85; }
-        if (e3) { e3.material.color.set(c); e3.material.opacity = 0.60; }
+        const c = on ? FLASH_HEX : COPPER_HEX;
+        // Flash-phase opacities are pulled down a notch from the idle
+        // ones so the "on" pulse reads as a gentle highlight rather than
+        // a hard white flash.
+        if (e1) { e1.material.color.set(c); e1.material.opacity = on ? 0.75 : 1.0; }
+        if (e2) { e2.material.color.set(c); e2.material.opacity = on ? 0.55 : 0.85; }
+        if (e3) { e3.material.color.set(c); e3.material.opacity = on ? 0.40 : 0.60; }
       });
       if (_sitemapCanvas) _sitemapCanvas.style.filter = on ? GLOW_FILTER : IDLE_FILTER;
       Object.values(_sitemapLabelEls).forEach(el => el.classList.toggle('fp-glb-label--flash', on));
@@ -1259,7 +1280,7 @@ window.FloorplanModule = (function () {
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;';
 
-    SITEMAP.towerTiles.forEach(tile => {
+    SITEMAP.towerTiles.forEach((tile, i) => {
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       g.style.pointerEvents = 'all';
 
@@ -1269,26 +1290,51 @@ window.FloorplanModule = (function () {
 
       const pts = parsePoints(tile.points);
       const { cx, cy } = polyCentroid(pts);
+      const { minY }   = polyBBox(pts);
 
-      const labelEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      labelEl.setAttribute('class', 'fp-tower-label');
-      labelEl.setAttribute('x', cx); labelEl.setAttribute('y', cy - 1.5);
-      labelEl.textContent = tile.label;
+      // ── TAG ── small pill anchored just above the tower, joined to its
+      // centroid by a short leader line — replaces the old cursive
+      // "Tower X / Explore" text that used to sit inside the polygon.
+      const tagLabel   = `Tower ${i + 1}`;
+      const tagW       = 6 + tagLabel.length * 1.7; // rough width-per-char at this font size
+      const tagH       = 4.6;
+      const tagX       = cx;
+      const tagY       = Math.max(minY - 7, tagH / 2 + 1); // clamp so it doesn't run off the top edge
+      const leaderTopY = tagY + tagH / 2;
 
-      const subEl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-      subEl.setAttribute('class', 'fp-tower-sub');
-      subEl.setAttribute('x', cx); subEl.setAttribute('y', cy + 2);
-      subEl.textContent = 'Explore';
+      const tagGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      tagGroup.setAttribute('class', 'fp-tower-tag');
 
-      poly.addEventListener('mouseenter', () => { poly.setAttribute('fill','rgba(212,175,55,.35)'); poly.setAttribute('stroke','rgba(212,175,55,1)'); });
-      poly.addEventListener('mouseleave', () => { poly.setAttribute('fill','rgba(212,175,55,0.08)'); poly.setAttribute('stroke','rgba(212,175,55,0.50)'); });
+      const leader = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      leader.setAttribute('class', 'fp-tower-tag-leader');
+      leader.setAttribute('x1', tagX); leader.setAttribute('y1', leaderTopY);
+      leader.setAttribute('x2', cx);   leader.setAttribute('y2', cy);
+
+      const tagBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      tagBg.setAttribute('class', 'fp-tower-tag-bg');
+      tagBg.setAttribute('x', tagX - tagW / 2);
+      tagBg.setAttribute('y', tagY - tagH / 2);
+      tagBg.setAttribute('width', tagW);
+      tagBg.setAttribute('height', tagH);
+      tagBg.setAttribute('rx', tagH / 2);
+
+      const tagText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      tagText.setAttribute('class', 'fp-tower-tag-text');
+      tagText.setAttribute('x', tagX); tagText.setAttribute('y', tagY + 0.15);
+      tagText.textContent = tagLabel;
+
+      tagGroup.appendChild(tagBg);
+      tagGroup.appendChild(tagText);
+
+      poly.addEventListener('mouseenter', () => { poly.setAttribute('fill','rgba(212,175,55,.35)'); poly.setAttribute('stroke','rgba(212,175,55,1)'); tagGroup.classList.add('tapped'); });
+      poly.addEventListener('mouseleave', () => { poly.setAttribute('fill','rgba(212,175,55,0.08)'); poly.setAttribute('stroke','rgba(212,175,55,0.50)'); tagGroup.classList.remove('tapped'); });
       let tMoved = false;
-      g.addEventListener('touchstart', () => { tMoved = false; poly.setAttribute('fill','rgba(212,175,55,.25)'); }, { passive: true });
-      g.addEventListener('touchmove',  () => { tMoved = true;  poly.setAttribute('fill','rgba(212,175,55,0.08)'); }, { passive: true });
-      g.addEventListener('touchend', e => { poly.setAttribute('fill','rgba(212,175,55,0.08)'); if (!tMoved) { e.preventDefault(); drillToCluster(tile.id); } });
+      g.addEventListener('touchstart', () => { tMoved = false; poly.setAttribute('fill','rgba(212,175,55,.25)'); tagGroup.classList.add('tapped'); }, { passive: true });
+      g.addEventListener('touchmove',  () => { tMoved = true;  poly.setAttribute('fill','rgba(212,175,55,0.08)'); tagGroup.classList.remove('tapped'); }, { passive: true });
+      g.addEventListener('touchend', e => { poly.setAttribute('fill','rgba(212,175,55,0.08)'); tagGroup.classList.remove('tapped'); if (!tMoved) { e.preventDefault(); drillToCluster(tile.id); } });
       g.addEventListener('click', e => { if (e.detail === 0) return; drillToCluster(tile.id); });
 
-      g.appendChild(poly); g.appendChild(labelEl); g.appendChild(subEl);
+      g.appendChild(poly); g.appendChild(leader); g.appendChild(tagGroup);
       svg.appendChild(g);
     });
     wrap.appendChild(svg);
