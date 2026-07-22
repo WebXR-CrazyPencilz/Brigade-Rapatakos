@@ -23,6 +23,11 @@ window.GalleryModule = (function () {
   let imageEnteredAt = 0; // timestamp when the current image became visible — used for dwell-time tracking
   let glImgScale  = 1; // current pinch-zoom scale of the stage — read by the swipe handler to block navigation while zoomed in
 
+  // ─── AUTOPLAY ──────────────────────────────────────────────────
+  const AUTOPLAY_MS = 3000;
+  let autoplayTimer  = null;
+  let autoplayHoverPaused = false; // true while pointer is over the stage or thumb strip
+
   // ─── BROWSER/HARDWARE BACK SUPPORT ────────────────────────────────
   // Opening the gallery pushes a history entry so the phone's back
   // button (or PC Backspace) closes the gallery instead of leaving
@@ -204,8 +209,27 @@ window.GalleryModule = (function () {
       }
       #gl-thumbs-track::-webkit-scrollbar { display: none; }
 
+      /* ── Thumbnail strip nav — wraps the track with its own small
+         scroll arrows, separate from the main image's prev/next arrows.
+         Only shown once the track actually overflows (toggled in JS). ── */
+      #gl-thumbs-wrap {
+        display: flex; align-items: center; gap: 6px; max-width: 100%;
+      }
+      .gl-thumb-nav {
+        flex-shrink: 0; width: 28px; height: 28px;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        background: rgba(20,16,12,.55); border: 1px solid rgba(200,185,165,.25);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        cursor: pointer; transition: background .2s, border-color .2s, opacity .2s;
+        -webkit-tap-highlight-color: transparent;
+        opacity: 0; pointer-events: none;
+      }
+      .gl-thumb-nav.visible { opacity: 1; pointer-events: all; }
+      .gl-thumb-nav:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); }
+      .gl-thumb-nav svg { width: 13px; height: 13px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+
       .gl-thumb {
-        flex-shrink: 0; width: 60px; height: 42px;
+        flex-shrink: 0; width: 84px; height: 58px;
         border-radius: 8px; overflow: hidden;
         border: 2px solid transparent;
         cursor: pointer; opacity: .75;
@@ -230,7 +254,7 @@ window.GalleryModule = (function () {
         .gl-arrow { width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
         #gl-arrow-prev { left: calc(8px + env(safe-area-inset-left, 0px)); }
         #gl-arrow-next { right: calc(8px + env(safe-area-inset-right, 0px)); }
-        .gl-thumb { width: 44px; height: 31px; }
+        .gl-thumb { width: 62px; height: 43px; }
         #gl-footer {
           padding: 36px calc(12px + env(safe-area-inset-right, 0px)) calc(18px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px));
           background: linear-gradient(to top, rgba(8,6,4,.35) 0%, transparent 100%);
@@ -295,7 +319,15 @@ window.GalleryModule = (function () {
 
         <div id="gl-footer">
           <div id="gl-counter">01 / ${String(IMAGES.length).padStart(2,'0')}</div>
-          <div id="gl-thumbs-track">${thumbsHTML}</div>
+          <div id="gl-thumbs-wrap">
+            <div class="gl-thumb-nav" id="gl-thumb-nav-prev">
+              <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+            </div>
+            <div id="gl-thumbs-track">${thumbsHTML}</div>
+            <div class="gl-thumb-nav" id="gl-thumb-nav-next">
+              <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
+            </div>
+          </div>
         </div>
 
       </div>
@@ -405,6 +437,27 @@ window.GalleryModule = (function () {
     }, { passive: false });
   }
 
+  function stopAutoplay() {
+    if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
+  }
+
+  function startAutoplay() {
+    stopAutoplay();
+    if (autoplayHoverPaused) return;
+    autoplayTimer = setInterval(() => {
+      if (isAnimating || glImgScale > 1.05 || autoplayHoverPaused) return; // mid-transition or zoomed in — skip this tick
+      cardTo((current + 1) % IMAGES.length, 'next');
+    }, AUTOPLAY_MS);
+  }
+
+  // Called after every navigation (auto or manual) so a manual swipe/
+  // click/arrow-press always gets a full AUTOPLAY_MS of breathing room
+  // before autoplay would advance again, instead of firing right on
+  // its heels.
+  function restartAutoplay() {
+    startAutoplay();
+  }
+
   function cardTo(targetIdx, direction) {
     if (isAnimating || targetIdx === current) return;
     isAnimating = true;
@@ -489,7 +542,18 @@ window.GalleryModule = (function () {
       imageEnteredAt = Date.now(); // start the clock on the new image
       updateUI();
       isAnimating = false;
+      restartAutoplay();
     }, DURATION + 30);
+  }
+
+  function updateThumbNavVisibility() {
+    const track = document.getElementById('gl-thumbs-track');
+    const prev  = document.getElementById('gl-thumb-nav-prev');
+    const next  = document.getElementById('gl-thumb-nav-next');
+    if (!track || !prev || !next) return;
+    const canScroll = track.scrollWidth > track.clientWidth + 2;
+    prev.classList.toggle('visible', canScroll && track.scrollLeft > 4);
+    next.classList.toggle('visible', canScroll && track.scrollLeft < track.scrollWidth - track.clientWidth - 4);
   }
 
   function updateUI() {
@@ -499,6 +563,7 @@ window.GalleryModule = (function () {
     document.querySelectorAll('.gl-thumb').forEach((t, i) => t.classList.toggle('active', i === current));
     const active = document.querySelector('.gl-thumb.active');
     if (active) active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    setTimeout(updateThumbNavVisibility, 260); // after the scrollIntoView settles
   }
 
   // ─── EVENTS ──────────────────────────────────────────────────────
@@ -534,6 +599,21 @@ window.GalleryModule = (function () {
       if (idx !== current) cardTo(idx, idx > current ? 'next' : 'prev');
     });
 
+    // Thumbnail strip's own scroll arrows — separate from the main
+    // image's prev/next arrows. Scrolls the track by roughly one
+    // "page" worth of thumbnails at a time.
+    const thumbTrack = document.getElementById('gl-thumbs-track');
+    document.getElementById('gl-thumb-nav-prev').addEventListener('click', (e) => {
+      e.stopPropagation();
+      thumbTrack.scrollBy({ left: -thumbTrack.clientWidth * 0.8, behavior: 'smooth' });
+    });
+    document.getElementById('gl-thumb-nav-next').addEventListener('click', (e) => {
+      e.stopPropagation();
+      thumbTrack.scrollBy({ left: thumbTrack.clientWidth * 0.8, behavior: 'smooth' });
+    });
+    thumbTrack.addEventListener('scroll', updateThumbNavVisibility);
+    window.addEventListener('resize', updateThumbNavVisibility);
+
     // Swipe
     const stage = document.getElementById('gl-stage');
     stage.addEventListener('touchstart', e => {
@@ -553,6 +633,15 @@ window.GalleryModule = (function () {
     }, { passive: true });
 
     bindGalleryZoom(stage);
+
+    // Pause autoplay while the pointer is over the image or the
+    // thumbnail strip (desktop) — resumes with a fresh interval once
+    // the pointer leaves either area.
+    const footerEl = document.getElementById('gl-footer');
+    [stage, footerEl].forEach(el => {
+      el.addEventListener('mouseenter', () => { autoplayHoverPaused = true; stopAutoplay(); });
+      el.addEventListener('mouseleave', () => { autoplayHoverPaused = false; startAutoplay(); });
+    });
 
     // Mouse drag
     let mStart = 0, mDrag = false;
@@ -619,9 +708,12 @@ window.GalleryModule = (function () {
 
     requestAnimationFrame(() => overlay.classList.add('open'));
     if (!_popping) pushGlState(replaceHistory);
+    startAutoplay();
+    setTimeout(updateThumbNavVisibility, 300);
   }
 
   function close(skipHistory) {
+    stopAutoplay();
     reportDwell(current); // capture dwell time for whichever image was showing when closed
     imageEnteredAt = 0;
     const overlay = document.getElementById('gallery-overlay');

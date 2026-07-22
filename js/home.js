@@ -253,6 +253,37 @@ window.HomeModule = (function () {
         background: rgba(0,0,0,.35); padding: 5px 12px; border-radius: 999px;
       }
       #map-zoom-hint.visible { opacity: 1; }
+
+      /* ── "View on Google Maps" — bottom-right floating link button ── */
+      #map-gmaps-btn {
+        position: absolute; bottom: 8px; right: 0; z-index: 10;
+        display: flex; align-items: center; gap: 8px;
+        font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
+        letter-spacing: .07em; text-transform: uppercase;
+        color: #ffffff; text-decoration: none;
+        background: #7a3e1e; border: 1px solid #9a5327;
+        border-bottom: none; border-right: none;
+        padding: 12px 18px;
+        /* Rounded ONLY on the exposed top-left corner — the other three
+           sides sit flush against the card's own bottom-right corner
+           and edges, so this reads as a tab built into the card rather
+           than a separate floating pill (matches both the landscape
+           and portrait layout sketches). */
+        border-radius: 10px 0 8px 0;
+        box-shadow: 0 -2px 10px rgba(0,0,0,.25);
+        transition: background .2s, border-color .2s, box-shadow .2s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      #map-gmaps-btn:hover {
+        background: #8f4a24; border-color: #b56530;
+      }
+      #map-gmaps-btn:active {
+        background: #6b3618;
+      }
+      #map-gmaps-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
+      @media (max-width: 520px) {
+        #map-gmaps-btn { padding: 10px 14px; font-size: 10px; }
+      }
       #map-spinner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.22s; }
       #map-spinner.visible { opacity: 1; }
       #map-spinner-ring { width: 32px; height: 32px; border: 2px solid rgba(122,62,30,.20); border-top-color: rgba(122,62,30,.85); border-radius: 50%; animation: spinMap 0.72s linear infinite; }
@@ -269,13 +300,59 @@ window.HomeModule = (function () {
         z-index: 98;
         display: flex; flex-direction: row;
         align-items: stretch; justify-content: stretch;
-        gap: 8px; padding: 8px;
+        gap: 10px;
+        overflow-x: hidden; overflow-y: hidden;
+        /* Larger inset padding + its own background/border turns this
+           into one framed, contained panel instead of three cards
+           floating loose against the raw photo — previously the
+           transparent background let the photo run right up to (and
+           visually past) the group's edges, which read as "out of the
+           box" rather than a bounded panel. */
+        padding: 22px;
+        margin: 16px;
+        border-radius: 22px;
+        border: 1px solid rgba(255,255,255,.14);
+        background: rgba(10,8,6,.28);
+        backdrop-filter: blur(6px);
+        -webkit-backdrop-filter: blur(6px);
         opacity: 0; pointer-events: none;
         transition: opacity .28s ease;
         box-sizing: border-box;
-        background: transparent;
       }
       #unit-row.visible { opacity: 1; pointer-events: all; }
+      #unit-row::-webkit-scrollbar { height: 6px; }
+      #unit-row::-webkit-scrollbar-track { background: transparent; }
+      #unit-row::-webkit-scrollbar-thumb { background: rgba(122,62,30,.55); border-radius: 3px; }
+
+      /* ── Scroll mode — only once there are MORE THAN 3 units ──
+         With 3 or fewer cards, #unit-row keeps its default
+         justify-content:stretch + flex:1 1 0 behavior above (cards
+         evenly fill the row/column, no scroll). The instant a 4th
+         .unit-btn is present, this switches to a scrollable strip with
+         bounded card sizes instead of squeezing every card thinner. */
+      #unit-row:has(.unit-btn:nth-child(4)) {
+        justify-content: flex-start;
+        overflow-x: auto; overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin; scrollbar-color: rgba(122,62,30,.55) transparent;
+      }
+      #unit-row:has(.unit-btn:nth-child(4)) .unit-btn {
+        flex: 1 1 260px;
+        min-width: 220px;
+        max-width: 420px;
+      }
+      @media (max-width: 640px) {
+        /* Same logic, but for the stacked column layout — vertical
+           scroll instead of each card shrinking shorter. */
+        #unit-row:has(.unit-btn:nth-child(4)) {
+          overflow-x: hidden; overflow-y: auto;
+        }
+        #unit-row:has(.unit-btn:nth-child(4)) .unit-btn {
+          width: 100%;
+          flex: 0 0 auto;
+          min-width: 0; max-width: none;
+        }
+      }
 
       .unit-btn {
         position: relative;
@@ -284,6 +361,24 @@ window.HomeModule = (function () {
         border: 2px solid transparent;
         border-radius: 14px;
         overflow: hidden;
+        /* iframes are notorious for not respecting a parent's
+           overflow:hidden + border-radius clip (a long-standing Safari/
+           iOS bug, since an iframe gets promoted to its own compositing
+           layer) — the building photo behind the card was bleeding
+           through the rounded corner as a hard rectangular notch.
+           clip-path forces an actual hard clip that isn't subject to
+           that compositing-layer escape the way overflow:hidden is. */
+        clip-path: inset(0 round 14px);
+        -webkit-clip-path: inset(0 round 14px);
+        /* Forces Safari (and sometimes Chrome) to properly recomposite
+           the rounded-corner clip against the hover transform below —
+           without this, transforming (scale/translateY) an element that
+           ALSO clips its content via border-radius leaves a thin
+           anti-aliasing seam right at the curve, letting whatever sits
+           behind the card (the building photo) show through as a sliver.
+           This is the actual fix for the corner bleed that persisted
+           after adding clip-path/border-radius alone. */
+        -webkit-mask-image: -webkit-radial-gradient(white, black);
         box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 4px 18px rgba(0,0,0,.35);
         transition: border-color .22s, box-shadow .22s, transform .18s ease;
         -webkit-tap-highlight-color: transparent;
@@ -293,12 +388,12 @@ window.HomeModule = (function () {
         z-index: 1;
       }
       .unit-btn:hover {
-        transform: translateY(-2px) scale(1.005);
+        transform: translateY(-2px);
         box-shadow: inset 0 0 0 1px rgba(255,255,255,.10), 0 10px 34px rgba(0,0,0,.55);
         z-index: 2;
       }
       .unit-btn:active {
-        transform: translateY(0) scale(0.995);
+        transform: translateY(0);
         box-shadow: inset 0 0 0 1px rgba(255,255,255,.10), 0 4px 14px rgba(0,0,0,.45);
       }
       .unit-btn.active {
@@ -326,14 +421,20 @@ window.HomeModule = (function () {
         position: absolute; inset: 0;
         pointer-events: none; /* clicks always go to the .unit-btn wrapper */
         overflow: hidden;
+        border-radius: 14px;
+        clip-path: inset(0 round 14px);
+        -webkit-clip-path: inset(0 round 14px);
       }
       /* The iframe simply fills its card at natural size — no more
          fixed-intrinsic-size + scale-down trick, which was blowing
-         the image up and cropping it once cards became full-screen. */
+         the image up and cropping it once cards became full-screen.
+         border-radius here (in addition to the containers above) is
+         the actual fix for the corner bleed — see .unit-btn note. */
       .unit-btn-thumb-frame iframe {
         position: absolute; top: 0; left: 0;
         width: 100%; height: 100%;
         border: none;
+        border-radius: 14px;
       }
       .unit-btn-thumb-scrim {
         position: absolute; inset: 0;
@@ -482,6 +583,9 @@ window.HomeModule = (function () {
            its floor plan is actually readable on a narrow screen. */
         #unit-row {
           flex-direction: column;
+          padding: 14px;
+          margin: 10px;
+          border-radius: 18px;
         }
         .unit-btn {
           width: 100%;
@@ -533,6 +637,13 @@ window.HomeModule = (function () {
             <div id="map-spinner"><div id="map-spinner-ring"></div></div>
             <img id="map-img" src="" alt="Location Map" />
             <div id="map-zoom-hint">Pinch to zoom</div>
+            <a id="map-gmaps-btn" href="https://maps.app.goo.gl/bGqemhaDgw2wjQtv9" target="_blank" rel="noopener noreferrer">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/>
+                <circle cx="12" cy="10" r="3"/>
+              </svg>
+              View on Google Maps
+            </a>
           </div>
         </div>
       </div>
@@ -952,6 +1063,14 @@ window.HomeModule = (function () {
     }
     mapBack.addEventListener('click', handleMapBack);
     mapBack.addEventListener('touchend', (e) => { e.preventDefault(); handleMapBack(); });
+    const gmapsBtn = document.getElementById('map-gmaps-btn');
+    if (gmapsBtn) {
+      gmapsBtn.addEventListener('click', () => {
+        if (typeof gtag === 'function') {
+          gtag('event', 'view_on_google_maps', { unit_number: window.UNIT_NUMBER || null });
+        }
+      });
+    }
     document.addEventListener('keydown', (e) => {
       if (!document.getElementById('map-overlay').classList.contains('open')) return;
       const t = e.target;
