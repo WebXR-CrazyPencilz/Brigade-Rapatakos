@@ -17,11 +17,11 @@ window.HomeModule = (function () {
   let unitLoadTimeout        = null; // safety net so the unit-viewer spinner never spins forever
 
   // ─── BROWSER/HARDWARE BACK SUPPORT ────────────────────────────────
-  // Map overlay, unit viewer and lightbox each push a history entry
-  // when opened, so the phone's back button (and PC Backspace) closes
-  // them instead of leaving the page. Each overlay tracks its own
-  // depth; popstate closes whichever of ours is open.
-  const _hist = { map: 0, unit: 0, lb: 0, threeSixty: 0 };
+  // Map overlay, unit viewer, embedded-gmap overlay and lightbox each
+  // push a history entry when opened, so the phone's back button (and
+  // PC Backspace) closes them instead of leaving the page. Each overlay
+  // tracks its own depth; popstate closes whichever of ours is open.
+  const _hist = { map: 0, unit: 0, lb: 0, threeSixty: 0, gmap: 0 };
   let _popping = false;
 
   // replace=true is used for TAB SWITCHES: another tab (Floor Plan /
@@ -72,6 +72,20 @@ window.HomeModule = (function () {
 
   // ─── LOCATION MAP IMAGE ──────────────────────────────────────────
   const MAP_IMAGE_SRC = 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781162438/locationmap_cvfs0z.jpg';
+
+  // ─── GOOGLE MAPS LINK / EMBED ─────────────────────────────────────
+  // GMAPS_LINK is the plain share link — used for the "Open in Google
+  // Maps" external fallback link inside the embedded overlay.
+  // GMAPS_EMBED_SRC is what actually loads inside the <iframe> — Google
+  // blocks framing of the regular maps.app.goo.gl / google.com/maps
+  // share links (X-Frame-Options), so a plain share link can NOT be
+  // used as an iframe src directly. This must be either:
+  //   (a) a "https://www.google.com/maps?q=LAT,LNG&output=embed" URL, or
+  //   (b) the src copied from Google Maps → Share → "Embed a map" tab.
+  // PLACEHOLDER below — replace with the real coordinates/place or the
+  // official embed src before shipping.
+  const GMAPS_LINK       = 'https://maps.app.goo.gl/kHTxw1SK2QpXku2KA';
+  const GMAPS_EMBED_SRC  = 'https://www.google.com/maps?q=12.9920591,80.2189587&z=17&output=embed';
 
   // ─── SVG ICONS ───────────────────────────────────────────────────
   const ICON_FLOORPLAN = `<svg class="panel-slot-icon" width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -143,8 +157,7 @@ window.HomeModule = (function () {
       }
       #carousel-img.fading { opacity: 0; }
       #hc-vignette {
-        position: absolute; inset: 0; z-index: 2; pointer-events: none;
-        background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 45%, rgba(4,3,2,.55) 100%);
+        display: none;
       }
       #hc-dots {
         position: absolute; bottom: 10px; left: 50%;
@@ -254,40 +267,149 @@ window.HomeModule = (function () {
       }
       #map-zoom-hint.visible { opacity: 1; }
 
-      /* ── "View on Google Maps" — bottom-right floating link button ── */
+      /* ── "View on Google Maps" — bottom-right tab button ──
+         Clicking it opens the in-app embedded map overlay below
+         (#gmap-embed-overlay) rather than leaving the app. ── */
       #map-gmaps-btn {
         position: absolute; bottom: 8px; right: 0; z-index: 10;
-        display: flex; align-items: center; gap: 8px;
-        font-family: 'Syne', sans-serif; font-size: 11px; font-weight: 700;
-        letter-spacing: .07em; text-transform: uppercase;
-        color: #ffffff; text-decoration: none;
-        background: #7a3e1e; border: 1px solid #9a5327;
+        width: 148px; height: 92px;
+        display: flex; align-items: flex-end;
+        border: 1px solid #9a5327;
         border-bottom: none; border-right: none;
-        padding: 12px 18px;
-        /* Rounded ONLY on the exposed top-left corner — the other three
-           sides sit flush against the card's own bottom-right corner
-           and edges, so this reads as a tab built into the card rather
-           than a separate floating pill (matches both the landscape
-           and portrait layout sketches). */
         border-radius: 10px 0 8px 0;
+        overflow: hidden;
         box-shadow: 0 -2px 10px rgba(0,0,0,.25);
-        transition: background .2s, border-color .2s, box-shadow .2s;
+        transition: box-shadow .2s, transform .2s;
         -webkit-tap-highlight-color: transparent;
+        cursor: pointer;
+        background: #1a1410;
       }
+      /* The live Google Map itself, shrunk to fit the thumbnail card.
+         pointer-events:none so it's purely a visual preview — all
+         clicks land on the outer #map-gmaps-btn wrapper instead of
+         getting eaten by the embedded map's own drag/zoom controls. */
+      #map-gmaps-btn-preview {
+        position: absolute; inset: 0; z-index: 0;
+        width: 100%; height: 100%;
+        border: none; pointer-events: none;
+      }
+      /* Darkening scrim under the label so it stays readable regardless
+         of what the map thumbnail image looks like underneath. */
+      #map-gmaps-btn::before {
+        content: '';
+        position: absolute; inset: 0; z-index: 1;
+        background: linear-gradient(to top, rgba(10,8,6,.85) 0%, rgba(10,8,6,.15) 55%, transparent 100%);
+      }
+      #map-gmaps-btn-label {
+        position: relative; z-index: 2;
+        display: flex; align-items: center; gap: 6px;
+        font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
+        letter-spacing: .06em; text-transform: uppercase;
+        color: #ffffff; padding: 8px 10px; width: 100%; box-sizing: border-box;
+      }
+      #map-gmaps-btn-label svg { width: 12px; height: 12px; flex-shrink: 0; color: #d99a5e; }
       #map-gmaps-btn:hover {
-        background: #8f4a24; border-color: #b56530;
+        box-shadow: 0 -4px 16px rgba(0,0,0,.35);
       }
       #map-gmaps-btn:active {
-        background: #6b3618;
+        transform: scale(0.98);
       }
-      #map-gmaps-btn svg { width: 14px; height: 14px; flex-shrink: 0; }
       @media (max-width: 520px) {
-        #map-gmaps-btn { padding: 10px 14px; font-size: 10px; }
+        #map-gmaps-btn { width: 112px; height: 74px; }
+        #map-gmaps-btn-label { font-size: 9px; padding: 6px 8px; }
       }
       #map-spinner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.22s; }
       #map-spinner.visible { opacity: 1; }
       #map-spinner-ring { width: 32px; height: 32px; border: 2px solid rgba(122,62,30,.20); border-top-color: rgba(122,62,30,.85); border-radius: 50%; animation: spinMap 0.72s linear infinite; }
       @keyframes spinMap { to { transform: rotate(360deg); } }
+
+      /* ── Embedded Google Maps Overlay ──
+         Opens ON TOP of the location map overlay when the "View on
+         Google Maps" button is clicked — a real interactive Google Map
+         loaded in an iframe, so the person never has to leave the app. */
+      #gmap-embed-overlay {
+        position: fixed; inset: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); z-index: 320;
+        background: #e8e4dd;
+        display: flex; flex-direction: column; padding: 24px; box-sizing: border-box;
+        opacity: 0; pointer-events: none;
+        transform: translateY(8px);
+        transition: opacity 0.35s ease, transform 0.35s cubic-bezier(0.22,1,0.36,1);
+      }
+      #gmap-embed-overlay.open { opacity: 1; pointer-events: all; transform: translateY(0); }
+      #gmap-embed-card {
+        flex: 1; border-radius: 12px; overflow: hidden;
+        box-shadow: 0 8px 40px rgba(0,0,0,.18);
+        background: #0d1a24;
+        display: flex; flex-direction: column; position: relative;
+      }
+      #gmap-embed-topbar {
+        flex-shrink: 0;
+        display: flex; align-items: center; gap: 12px;
+        padding: 10px 14px;
+        background: rgba(10,25,36,.95);
+        border-bottom: 1px solid rgba(122,62,30,.20);
+        backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+        position: relative; z-index: 2;
+      }
+      #gmap-embed-back {
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent;
+      }
+      #gmap-embed-back-btn {
+        width: 32px; height: 32px; border-radius: 8px;
+        border: 1px solid rgba(122,62,30,.35); background: rgba(122,62,30,.08);
+        display: flex; align-items: center; justify-content: center;
+        transition: background 0.2s, border-color 0.2s;
+      }
+      #gmap-embed-back:hover #gmap-embed-back-btn, #gmap-embed-back:active #gmap-embed-back-btn {
+        background: rgba(122,62,30,.20); border-color: rgba(122,62,30,.65);
+      }
+      #gmap-embed-back-btn svg {
+        width: 13px; height: 13px; stroke: rgba(200,185,165,.80);
+        fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+      }
+      #gmap-embed-title {
+        font-family: 'Cormorant Garamond', serif;
+        font-size: 15px; font-weight: 400; color: rgba(245,242,235,.85);
+        letter-spacing: 0.04em; flex: 1;
+      }
+      #gmap-embed-open-external {
+        display: flex; align-items: center; gap: 6px;
+        font-family: 'Syne', sans-serif; font-size: 9.5px; font-weight: 700;
+        letter-spacing: .07em; text-transform: uppercase;
+        color: rgba(200,185,165,.80); text-decoration: none;
+        border: 1px solid rgba(122,62,30,.35); background: rgba(122,62,30,.08);
+        padding: 7px 12px; border-radius: 7px;
+        transition: background .2s, border-color .2s, color .2s;
+        flex-shrink: 0; white-space: nowrap;
+      }
+      #gmap-embed-open-external:hover {
+        background: rgba(122,62,30,.22); border-color: rgba(122,62,30,.65); color: #f5f0e8;
+      }
+      #gmap-embed-open-external svg { width: 12px; height: 12px; flex-shrink: 0; }
+      #gmap-embed-body {
+        flex: 1; position: relative; background: #0d1a24;
+      }
+      #gmap-embed-iframe {
+        width: 100%; height: 100%; border: none; display: block;
+        opacity: 0; transition: opacity 0.3s ease;
+      }
+      #gmap-embed-iframe.loaded { opacity: 1; }
+      #gmap-embed-spinner {
+        position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+        opacity: 1; pointer-events: none; transition: opacity 0.22s;
+      }
+      #gmap-embed-spinner.hidden { opacity: 0; }
+      #gmap-embed-spinner-ring {
+        width: 32px; height: 32px; border: 2px solid rgba(122,62,30,.20);
+        border-top-color: rgba(122,62,30,.85); border-radius: 50%;
+        animation: spinMap 0.72s linear infinite;
+      }
+      @media (max-width: 640px) {
+        #gmap-embed-overlay { padding: 12px; }
+        #gmap-embed-title { font-size: 13px; }
+        #gmap-embed-open-external span { display: none; } /* icon-only on very small screens */
+      }
 
       /* ── Unit Row — thumbnail strip ──
          Each thumbnail is a live iframe of that unit's own 360 tour
@@ -637,13 +759,41 @@ window.HomeModule = (function () {
             <div id="map-spinner"><div id="map-spinner-ring"></div></div>
             <img id="map-img" src="" alt="Location Map" />
             <div id="map-zoom-hint">Pinch to zoom</div>
-            <a id="map-gmaps-btn" href="https://maps.app.goo.gl/bGqemhaDgw2wjQtv9" target="_blank" rel="noopener noreferrer">
+            <div id="map-gmaps-btn">
+              <iframe id="map-gmaps-btn-preview" src="${GMAPS_EMBED_SRC}" tabindex="-1" aria-hidden="true" loading="lazy"></iframe>
+              <div id="map-gmaps-btn-label">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/>
+                  <circle cx="12" cy="10" r="3"/>
+                </svg>
+                View on Maps
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="gmap-embed-overlay">
+        <div id="gmap-embed-card">
+          <div id="gmap-embed-topbar">
+            <div id="gmap-embed-back">
+              <div id="gmap-embed-back-btn">
+                <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
+              </div>
+            </div>
+            <div id="gmap-embed-title">Google Maps</div>
+            <a id="gmap-embed-open-external" href="${GMAPS_LINK}" target="_blank" rel="noopener noreferrer">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0Z"/>
-                <circle cx="12" cy="10" r="3"/>
+                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
+                <polyline points="15 3 21 3 21 9"/>
+                <line x1="10" y1="14" x2="21" y2="3"/>
               </svg>
-              View on Google Maps
+              <span>Open in App</span>
             </a>
+          </div>
+          <div id="gmap-embed-body">
+            <div id="gmap-embed-spinner"><div id="gmap-embed-spinner-ring"></div></div>
+            <iframe id="gmap-embed-iframe" src="" loading="lazy" referrerpolicy="no-referrer-when-downgrade" allowfullscreen></iframe>
           </div>
         </div>
       </div>
@@ -753,7 +903,7 @@ window.HomeModule = (function () {
     if (IMAGES.length <= 1) return;
     autoTimer = setInterval(() => {
       if (!isAnimating) goTo((current + 1) % IMAGES.length);
-    }, 3800);
+    }, 3000);
   }
 
   // FIX #9: stop carousel timer cleanly
@@ -938,6 +1088,38 @@ window.HomeModule = (function () {
     unwindHist('map', skipHistory);
   }
 
+  // ─── EMBEDDED GOOGLE MAPS OVERLAY ──────────────────────────────────
+  // Opens ON TOP of the location map overlay (not a tab switch) — so
+  // going back from it returns to the location map, not the home view.
+  let _gmapEmbedLoaded = false;
+
+  function openGmapEmbed() {
+    const overlay = document.getElementById('gmap-embed-overlay');
+    if (!overlay) return;
+    if (typeof gtag === 'function') {
+      gtag('event', 'view_on_google_maps', { unit_number: window.UNIT_NUMBER || null });
+    }
+    overlay.classList.add('open');
+    if (!_popping) pushHist('gmap');
+    if (!_gmapEmbedLoaded) {
+      _gmapEmbedLoaded = true;
+      const iframe  = document.getElementById('gmap-embed-iframe');
+      const spinner = document.getElementById('gmap-embed-spinner');
+      iframe.addEventListener('load', () => {
+        spinner.classList.add('hidden');
+        iframe.classList.add('loaded');
+      }, { once: true });
+      iframe.src = GMAPS_EMBED_SRC;
+    }
+  }
+
+  function closeGmapEmbed(skipHistory) {
+    const overlay = document.getElementById('gmap-embed-overlay');
+    if (!overlay || !overlay.classList.contains('open')) return;
+    overlay.classList.remove('open');
+    unwindHist('gmap', skipHistory);
+  }
+
   // ─── GENERIC ZOOM/PAN (pinch + drag + wheel) ──────────────────
   // Same pattern used in floorplan.js — transforms `target` inside
   // `area` via translate+scale. Reused here for the location map.
@@ -1008,7 +1190,7 @@ window.HomeModule = (function () {
       const rect = area.getBoundingClientRect();
       const newScale = Math.min(maxScale, Math.max(minScale, scale * (e.deltaY < 0 ? 1.12 : 0.89)));
       const pivotX = e.clientX - rect.left - rect.width/2;
-      const pivotY = e.clientY - rect.top  - rect.height/2;
+      const pivotY = e.clientY - rect.top - rect.height/2;
       originX = pivotX + (originX - pivotX) * (newScale / scale);
       originY = pivotY + (originY - pivotY) * (newScale / scale);
       scale = newScale;
@@ -1063,19 +1245,31 @@ window.HomeModule = (function () {
     }
     mapBack.addEventListener('click', handleMapBack);
     mapBack.addEventListener('touchend', (e) => { e.preventDefault(); handleMapBack(); });
+
+    // "View on Google Maps" now opens the in-app embedded map overlay
+    // instead of navigating away from the page.
     const gmapsBtn = document.getElementById('map-gmaps-btn');
     if (gmapsBtn) {
-      gmapsBtn.addEventListener('click', () => {
-        if (typeof gtag === 'function') {
-          gtag('event', 'view_on_google_maps', { unit_number: window.UNIT_NUMBER || null });
-        }
-      });
+      gmapsBtn.addEventListener('click', () => openGmapEmbed());
     }
+
+    // Embedded Google Maps overlay's own back button — returns to the
+    // location map (not home), since it opened on top of it.
+    const gmapBack = document.getElementById('gmap-embed-back');
+    function handleGmapEmbedBack() { requestHistBack('gmap', closeGmapEmbed); }
+    if (gmapBack) {
+      gmapBack.addEventListener('click', handleGmapEmbedBack);
+      gmapBack.addEventListener('touchend', (e) => { e.preventDefault(); handleGmapEmbedBack(); });
+    }
+
     document.addEventListener('keydown', (e) => {
-      if (!document.getElementById('map-overlay').classList.contains('open')) return;
+      const gmapOverlay = document.getElementById('gmap-embed-overlay');
+      const mapOverlay  = document.getElementById('map-overlay');
       const t = e.target;
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-      if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); handleMapBack(); }
+      if (e.key !== 'Escape' && e.key !== 'Backspace') return;
+      if (gmapOverlay && gmapOverlay.classList.contains('open')) { e.preventDefault(); handleGmapEmbedBack(); return; }
+      if (mapOverlay && mapOverlay.classList.contains('open')) { e.preventDefault(); handleMapBack(); }
     });
   }
 
@@ -1324,15 +1518,19 @@ window.HomeModule = (function () {
     });
 
     // Hardware/browser back button — closes whichever of our overlays
-    // is open, most-recent first (lightbox > unit viewer > map).
+    // is open, most-recent first (lightbox > embedded gmap > unit
+    // viewer > map).
     window.addEventListener('popstate', () => {
       _popping = true;
-      const lb      = document.getElementById('lightbox');
-      const unitOvl = document.getElementById('unit-viewer-overlay');
-      const mapOvl  = document.getElementById('map-overlay');
+      const lb        = document.getElementById('lightbox');
+      const gmapOvl    = document.getElementById('gmap-embed-overlay');
+      const unitOvl    = document.getElementById('unit-viewer-overlay');
+      const mapOvl     = document.getElementById('map-overlay');
 
       if (lb && lb.classList.contains('open') && _hist.lb > 0) {
         _hist.lb--; closeLightbox();
+      } else if (gmapOvl && gmapOvl.classList.contains('open') && _hist.gmap > 0) {
+        _hist.gmap--; closeGmapEmbed();
       } else if (unitOvl && unitOvl.classList.contains('open') && _hist.unit > 0) {
         _hist.unit--; closeUnitViewer();
       } else if (mapOvl && mapOvl.classList.contains('open') && _hist.map > 0) {
@@ -1361,6 +1559,7 @@ window.HomeModule = (function () {
     stopAuto();
     document.getElementById('carousel').style.display = '';   // show hero again
 
+    closeGmapEmbed(skipHistory);
     closeUnitViewer(skipHistory);
     closeMap(skipHistory);
     if (unitRowVisible) unwindHist('threeSixty', skipHistory);
@@ -1453,12 +1652,14 @@ window.HomeModule = (function () {
       const fpOvl      = document.getElementById('fp-overlay');
       const lb         = document.getElementById('lightbox');
       const mapOvl     = document.getElementById('map-overlay');
+      const gmapOvl    = document.getElementById('gmap-embed-overlay');
       const sidePanel  = document.getElementById('side-panel');
       const sideToggle = document.getElementById('toggle');
 
-      if (lb     && lb.classList.contains('open'))                                     return;
-      if (mapOvl && mapOvl.classList.contains('open') && mapOvl.contains(e.target))   return;
-      if (overlay && overlay.classList.contains('open') && overlay.contains(e.target)) return;
+      if (lb      && lb.classList.contains('open'))                                    return;
+      if (gmapOvl && gmapOvl.classList.contains('open') && gmapOvl.contains(e.target))  return;
+      if (mapOvl  && mapOvl.classList.contains('open')  && mapOvl.contains(e.target))   return;
+      if (overlay && overlay.classList.contains('open') && overlay.contains(e.target))  return;
 
       const clickedOutside =
         bar && row &&
