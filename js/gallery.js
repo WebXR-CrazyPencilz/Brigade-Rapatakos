@@ -3,15 +3,16 @@ window.GalleryModule = (function () {
 
   const IMAGES = [
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157232/05_w03okg.jpg', caption: '01' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158354/14_nwgerk.jpg', caption: '02' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/11_si2bfi.jpg', caption: '03' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/04_guuouq.jpg', caption: '04' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/06_nz4s5w.jpg', caption: '05' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/12_sv6p4o.jpg', caption: '06' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/08_y7htgv.jpg', caption: '07' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/10_mj07h8.jpg', caption: '08' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158364/13_mv0mfy.jpg', caption: '09' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158355/16_kx2kfd.jpg', caption: '10' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/09_gytlb3.jpg', caption: '02' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158354/14_nwgerk.jpg', caption: '03' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/11_si2bfi.jpg', caption: '04' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/04_guuouq.jpg', caption: '05' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/06_nz4s5w.jpg', caption: '06' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/12_sv6p4o.jpg', caption: '07' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/08_y7htgv.jpg', caption: '08' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/10_mj07h8.jpg', caption: '09' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158364/13_mv0mfy.jpg', caption: '10' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158355/16_kx2kfd.jpg', caption: '11' },
   ];
 
   let current     = 0;
@@ -63,6 +64,15 @@ window.GalleryModule = (function () {
     const style = document.createElement('style');
     style.textContent = `
       /* ── Overlay — full bleed, no padding, no card ── */
+      /* Chrome/Edge's trackpad two-finger horizontal swipe triggers
+         built-in browser back/forward navigation based on the
+         DOCUMENT BODY's own rubber-band scroll boundary — a
+         position:fixed overlay (like #gallery-overlay below) doesn't
+         participate in that boundary at all, so overscroll-behavior set
+         only on the overlay never actually stopped it. This is the real
+         fix for "a drag closes the gallery and goes back to home". */
+      html, body { overscroll-behavior-x: none; }
+
       #gallery-overlay {
         position: fixed; top: 0; left: 0; right: 0;
         bottom: calc(62px + env(safe-area-inset-bottom, 0px));
@@ -70,6 +80,7 @@ window.GalleryModule = (function () {
         opacity: 0; pointer-events: none;
         transition: opacity .38s cubic-bezier(0.22,1,0.36,1);
         overflow: hidden;
+        overscroll-behavior: none;
       }
       #gallery-overlay.open { opacity: 1; pointer-events: all; }
 
@@ -126,7 +137,8 @@ window.GalleryModule = (function () {
         position: absolute; inset: 0; z-index: 1;
         overflow: hidden;
         perspective: 1400px;
-        touch-action: pan-y;
+        touch-action: none;
+        overscroll-behavior: none;
       }
 
       .gl-card {
@@ -137,7 +149,7 @@ window.GalleryModule = (function () {
       }
       .gl-card:active { cursor: grabbing; }
       .gl-card img {
-        width: 100%; height: 100%; object-fit: cover;
+        width: 100%; height: 100%; object-fit: contain;
         display: block; pointer-events: none;
         user-select: none; -webkit-user-drag: none;
       }
@@ -181,6 +193,30 @@ window.GalleryModule = (function () {
       #gl-arrow-prev { left: calc(18px + env(safe-area-inset-left, 0px)); }
       #gl-arrow-next { right: calc(18px + env(safe-area-inset-right, 0px)); }
       .gl-arrow svg { width: 17px; height: 17px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+      /* ── Zoom controls — explicit +/- buttons, since pinch-to-zoom
+         alone isn't discoverable on desktop without a trackpad ── */
+      #gl-zoom-controls {
+        position: absolute; left: calc(18px + env(safe-area-inset-left, 0px)); top: 50%;
+        transform: translateY(-50%);
+        z-index: 20; display: flex; flex-direction: column; gap: 8px;
+      }
+      .gl-zoom-btn {
+        width: 40px; height: 40px; min-width: 40px; min-height: 40px;
+        background: rgba(15,12,9,.45); border: 1px solid rgba(200,185,165,.20);
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        border-radius: 10px; display: flex; align-items: center; justify-content: center;
+        cursor: pointer; transition: background .2s, border-color .2s, opacity .2s;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .gl-zoom-btn:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); }
+      .gl-zoom-btn:active { background: rgba(122,62,30,.5); }
+      .gl-zoom-btn.disabled { opacity: .35; pointer-events: none; }
+      .gl-zoom-btn svg { width: 16px; height: 16px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+      @media (max-width: 520px) {
+        #gl-zoom-controls { left: calc(10px + env(safe-area-inset-left, 0px)); gap: 6px; }
+        .gl-zoom-btn { width: 34px; height: 34px; min-width: 34px; min-height: 34px; }
+      }
 
       /* ── FOOTER — floating thumbnail strip OVER the image ── */
       #gl-footer {
@@ -261,11 +297,11 @@ window.GalleryModule = (function () {
         }
       }
 
-      /* Portrait phones — keep full-bleed image (cover) but move the
-         arrows down out of the image centre and tighten chrome so the
-         photo owns the vertical screen */
+      /* Portrait phones — arrows moved down out of the image centre and
+         chrome tightened so the photo owns the vertical screen. Image
+         itself stays object-fit:contain (see .gl-card img above) —
+         never cropped, same as every other breakpoint. */
       @media (orientation: portrait) and (max-width: 520px) {
-        .gl-card img { object-fit: cover; }
         .gl-arrow { top: auto; bottom: 118px; transform: none; }
         .gl-arrow:hover { transform: scale(1.06); }
         #gl-counter {
@@ -317,6 +353,15 @@ window.GalleryModule = (function () {
           <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
         </div>
 
+        <div id="gl-zoom-controls">
+          <div class="gl-zoom-btn" id="gl-zoom-in">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </div>
+          <div class="gl-zoom-btn disabled" id="gl-zoom-out">
+            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+          </div>
+        </div>
+
         <div id="gl-footer">
           <div id="gl-counter">01 / ${String(IMAGES.length).padStart(2,'0')}</div>
           <div id="gl-thumbs-wrap">
@@ -360,6 +405,7 @@ window.GalleryModule = (function () {
   // top of this since CSS transforms are relative to the parent.
   let _glZoomOrigin = { x: 0, y: 0 };
   let _glStageEl = null;
+  const GL_ZOOM_MAX = 4, GL_ZOOM_MIN = 1;
 
   function resetGalleryZoom() {
     glImgScale = 1;
@@ -369,6 +415,35 @@ window.GalleryModule = (function () {
       _glStageEl.style.transform = 'translate(0px, 0px) scale(1)';
       setTimeout(() => { if (_glStageEl) _glStageEl.style.transition = ''; }, 260);
     }
+    updateZoomBtnState();
+  }
+
+  // Explicit +/- zoom buttons — shares the same underlying zoom state
+  // (_glZoomOrigin, glImgScale, _glStageEl) that pinch/wheel already
+  // use in bindGalleryZoom, so all three stay perfectly in sync.
+  // Zooms toward the stage's own center (pivot 0,0 in local zoom-space)
+  // since there's no cursor/touch position driving a button click.
+  function zoomStep(factor) {
+    if (!_glStageEl) return;
+    const newScale = Math.min(GL_ZOOM_MAX, Math.max(GL_ZOOM_MIN, glImgScale * factor));
+    if (newScale === glImgScale) return;
+    const ratio = newScale / glImgScale;
+    _glZoomOrigin.x *= ratio;
+    _glZoomOrigin.y *= ratio;
+    glImgScale = newScale;
+    _glStageEl.style.transition = 'transform 0.22s ease';
+    _glStageEl.style.transform = `translate(${_glZoomOrigin.x}px, ${_glZoomOrigin.y}px) scale(${glImgScale})`;
+    clearTimeout(zoomStep._t);
+    zoomStep._t = setTimeout(() => { if (_glStageEl) _glStageEl.style.transition = ''; }, 230);
+    if (glImgScale <= GL_ZOOM_MIN + 0.01) { glImgScale = 1; _glZoomOrigin = { x: 0, y: 0 }; }
+    updateZoomBtnState();
+  }
+
+  function updateZoomBtnState() {
+    const zin  = document.getElementById('gl-zoom-in');
+    const zout = document.getElementById('gl-zoom-out');
+    if (zin)  zin.classList.toggle('disabled', glImgScale >= GL_ZOOM_MAX - 0.01);
+    if (zout) zout.classList.toggle('disabled', glImgScale <= GL_ZOOM_MIN + 0.01);
   }
 
   function bindGalleryZoom(stage) {
@@ -379,6 +454,7 @@ window.GalleryModule = (function () {
 
     function apply() {
       stage.style.transform = `translate(${_glZoomOrigin.x}px, ${_glZoomOrigin.y}px) scale(${glImgScale})`;
+      updateZoomBtnState();
     }
     function dist(t) { return Math.sqrt((t[0].clientX-t[1].clientX)**2+(t[0].clientY-t[1].clientY)**2); }
     function mid(t)  { return { x:(t[0].clientX+t[1].clientX)/2, y:(t[0].clientY+t[1].clientY)/2 }; }
@@ -620,6 +696,21 @@ window.GalleryModule = (function () {
       if (e.touches.length > 1) return; // multi-touch = pinch-zoom, not a swipe
       startX = e.touches[0].clientX; startY = e.touches[0].clientY;
     }, { passive: true });
+    stage.addEventListener('touchmove', e => {
+      if (e.touches.length > 1) return; // pinch-zoom handled separately in bindGalleryZoom
+      if (glImgScale > 1.05) return; // zoomed in — let bindGalleryZoom's pan handle this
+      const dx = e.touches[0].clientX - startX;
+      const dy = e.touches[0].clientY - startY;
+      // Only claim the gesture once horizontal movement clearly dominates
+      // (avoids fighting a genuine vertical scroll attempt), but as soon
+      // as it does, preventDefault so the browser can't hand this drag
+      // off to its own edge-swipe-back navigation gesture mid-motion —
+      // that hijack is what was closing the gallery and revealing the
+      // page underneath (touchend-only detection was too late to stop it).
+      if (Math.abs(dx) > 10 && Math.abs(dx) > Math.abs(dy)) {
+        e.preventDefault();
+      }
+    }, { passive: false });
     stage.addEventListener('touchend', e => {
       if (e.touches.length > 0) return; // still mid-pinch
       const dx = e.changedTouches[0].clientX - startX;
@@ -633,6 +724,15 @@ window.GalleryModule = (function () {
     }, { passive: true });
 
     bindGalleryZoom(stage);
+
+    document.getElementById('gl-zoom-in').addEventListener('click', (e) => {
+      e.stopPropagation();
+      zoomStep(1.4);
+    });
+    document.getElementById('gl-zoom-out').addEventListener('click', (e) => {
+      e.stopPropagation();
+      zoomStep(1 / 1.4);
+    });
 
     // Pause autoplay while the pointer is over the image or the
     // thumbnail strip (desktop) — resumes with a fresh interval once
