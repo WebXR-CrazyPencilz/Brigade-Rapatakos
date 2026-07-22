@@ -399,8 +399,9 @@ window.FloorplanModule = (function () {
       }
       @media (max-width: 360px) {
         .fp-parity-btn, .fp-toggle-btn { padding: 5px 8px; font-size: 7.5px; }
-        #fp-back, #fp-back { width: 28px; min-width: 28px; }
-        #fp-back-arrow { width: 28px; height: 28px; }
+        #fp-back, #fp-back { width: 48px; min-width: 48px; }
+        #fp-back-arrow { width: 48px; height: 30px; }
+        #fp-topbar-spacer { width: 48px; }
       }
 
       #fp-content { flex: 1; position: relative; overflow: hidden; }
@@ -419,23 +420,23 @@ window.FloorplanModule = (function () {
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; opacity: 0; pointer-events: none;
         transition: opacity 0.22s ease; flex-shrink: 0;
-        width: 32px; min-width: 32px;   /* fixed width so spacer can mirror it exactly, never squeezed by flex */
+        width: 56px; min-width: 56px;   /* fixed width so spacer can mirror it exactly, never squeezed by flex */
       }
       #fp-back.visible { opacity: 1; pointer-events: all; }
       #fp-back-arrow {
-        width: 32px; height: 32px; border-radius: 8px;
-        border: 1px solid rgba(122,62,30,.30);
-        background: rgba(122,62,30,.06);
+        width: 56px; height: 34px; border-radius: 8px;
+        border: 1px solid #7a3e1e;
+        background: #7a3e1e;
         display: flex; align-items: center; justify-content: center;
         transition: background 0.2s, border-color 0.2s;
         -webkit-tap-highlight-color: transparent;
       }
       #fp-back:active #fp-back-arrow, #fp-back:hover #fp-back-arrow {
-        background: rgba(122,62,30,.14); border-color: rgba(122,62,30,.60);
+        background: #9a5327; border-color: #b56530;
       }
       #fp-back-arrow svg {
-        width:13px; height:13px; stroke: #7a3e1e;
-        fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round;
+        width:16px; height:16px; stroke: #ffffff;
+        fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
       }
 
       /* #fp-title removed */
@@ -473,7 +474,7 @@ window.FloorplanModule = (function () {
       }
 
       /* Right spacer mirrors back button width so toggles stay perfectly centred */
-      #fp-topbar-spacer { width: 32px; flex-shrink: 0; }
+      #fp-topbar-spacer { width: 56px; flex-shrink: 0; }
 
       .fp-panel {
         position: absolute; inset: 0; opacity: 0; pointer-events: none;

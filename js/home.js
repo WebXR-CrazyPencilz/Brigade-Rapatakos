@@ -230,17 +230,17 @@ window.HomeModule = (function () {
         cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent;
       }
       #map-back-btn {
-        width: 32px; height: 32px; border-radius: 8px;
-        border: 1px solid rgba(122,62,30,.35); background: rgba(122,62,30,.08);
+        width: 56px; height: 34px; border-radius: 8px;
+        border: 1px solid #7a3e1e; background: #7a3e1e;
         display: flex; align-items: center; justify-content: center;
         transition: background 0.2s, border-color 0.2s;
       }
       #map-back:hover #map-back-btn, #map-back:active #map-back-btn {
-        background: rgba(122,62,30,.20); border-color: rgba(122,62,30,.65);
+        background: #9a5327; border-color: #b56530;
       }
       #map-back-btn svg {
-        width: 13px; height: 13px; stroke: rgba(200,185,165,.80);
-        fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+        width: 16px; height: 16px; stroke: #ffffff;
+        fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
       }
       #map-title {
         font-family: 'Cormorant Garamond', serif;
@@ -356,17 +356,17 @@ window.HomeModule = (function () {
         cursor: pointer; flex-shrink: 0; -webkit-tap-highlight-color: transparent;
       }
       #gmap-embed-back-btn {
-        width: 32px; height: 32px; border-radius: 8px;
-        border: 1px solid rgba(122,62,30,.35); background: rgba(122,62,30,.08);
+        width: 56px; height: 34px; border-radius: 8px;
+        border: 1px solid #7a3e1e; background: #7a3e1e;
         display: flex; align-items: center; justify-content: center;
         transition: background 0.2s, border-color 0.2s;
       }
       #gmap-embed-back:hover #gmap-embed-back-btn, #gmap-embed-back:active #gmap-embed-back-btn {
-        background: rgba(122,62,30,.20); border-color: rgba(122,62,30,.65);
+        background: #9a5327; border-color: #b56530;
       }
       #gmap-embed-back-btn svg {
-        width: 13px; height: 13px; stroke: rgba(200,185,165,.80);
-        fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round;
+        width: 16px; height: 16px; stroke: #ffffff;
+        fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
       }
       #gmap-embed-title {
         font-family: 'Cormorant Garamond', serif;
@@ -500,8 +500,8 @@ window.HomeModule = (function () {
            behind the card (the building photo) show through as a sliver.
            This is the actual fix for the corner bleed that persisted
            after adding clip-path/border-radius alone. */
-        -webkit-mask-image: -webkit-radial-gradient(white, black);
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,.06), 0 4px 18px rgba(0,0,0,.35);
+        -webkit-mask-image: -webkit-radial-gradient(white, white);
+        box-shadow: none;
         transition: border-color .22s, box-shadow .22s, transform .18s ease;
         -webkit-tap-highlight-color: transparent;
         flex: 1 1 0;
@@ -511,16 +511,16 @@ window.HomeModule = (function () {
       }
       .unit-btn:hover {
         transform: translateY(-2px);
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,.10), 0 10px 34px rgba(0,0,0,.55);
+        box-shadow: none;
         z-index: 2;
       }
       .unit-btn:active {
         transform: translateY(0);
-        box-shadow: inset 0 0 0 1px rgba(255,255,255,.10), 0 4px 14px rgba(0,0,0,.45);
+        box-shadow: none;
       }
       .unit-btn.active {
         border-color: #7a3e1e;
-        box-shadow: inset 0 0 0 1px rgba(122,62,30,.35), 0 0 0 3px rgba(122,62,30,.18), 0 10px 34px rgba(0,0,0,.55);
+        box-shadow: inset 0 0 0 1px rgba(122,62,30,.35);
       }
 
       /* ── Selection overlay — a color wash over the thumbnail on
@@ -560,7 +560,7 @@ window.HomeModule = (function () {
       }
       .unit-btn-thumb-scrim {
         position: absolute; inset: 0;
-        background: linear-gradient(to top, rgba(0,0,0,.75) 0%, rgba(0,0,0,.05) 55%, transparent 100%);
+        background: linear-gradient(to top, rgba(0,0,0,.35) 0%, transparent 45%);
         pointer-events: none;
       }
       .unit-btn-label {
@@ -666,14 +666,14 @@ window.HomeModule = (function () {
         top: calc(14px + env(safe-area-inset-top, 0px));
         left: calc(14px + env(safe-area-inset-left, 0px));
         z-index: 15;
-        width: 36px; height: 36px; min-width: 36px; min-height: 36px; border-radius: 10px;
-        border: 1px solid rgba(200,185,165,.25); background: rgba(20,16,12,.55);
-        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        width: 56px; height: 34px; min-width: 56px; min-height: 34px; border-radius: 8px;
+        border: 1px solid #7a3e1e; background: #7a3e1e;
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; -webkit-tap-highlight-color: transparent;
+        transition: background 0.2s, border-color 0.2s;
       }
-      #unit-back svg { width: 15px; height: 15px; stroke: rgba(230,220,205,.9); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-      #unit-back svg { width: 15px; height: 15px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      #unit-back:hover, #unit-back:active { background: #9a5327; border-color: #b56530; }
+      #unit-back svg { width: 16px; height: 16px; stroke: #ffffff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
       /* ── Desktop refinement ──
          On phones, full-height cards make sense (there's little vertical

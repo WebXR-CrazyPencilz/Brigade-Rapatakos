@@ -76,7 +76,7 @@ window.GalleryModule = (function () {
       #gallery-overlay {
         position: fixed; top: 0; left: 0; right: 0;
         bottom: calc(62px + env(safe-area-inset-bottom, 0px));
-        z-index: 200; background: #080604;
+        z-index: 200; background: #ffffff;
         opacity: 0; pointer-events: none;
         transition: opacity .38s cubic-bezier(0.22,1,0.36,1);
         overflow: hidden;
@@ -93,44 +93,18 @@ window.GalleryModule = (function () {
         pointer-events: none;
       }
       #gl-header > * { pointer-events: all; }
-      #gl-title-wrap { min-width: 0; }
-      #gl-label {
-        font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 700;
-        letter-spacing: .22em; text-transform: uppercase;
-        color: rgba(200,185,165,.55); margin: 0 0 4px;
-        text-shadow: 0 1px 6px rgba(0,0,0,.55);
-      }
-      #gl-caption {
-        font-family: 'Cormorant Garamond', serif; font-style: italic;
-        font-size: 22px; font-weight: 300; color: rgba(245,240,232,.92);
-        margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        transition: opacity .25s;
-        text-shadow: 0 1px 8px rgba(0,0,0,.55);
-      }
-      #gl-caption.fading { opacity: 0; }
-      #gl-close {
-        flex-shrink: 0; width: 38px; height: 38px; min-width: 38px; min-height: 38px;
-        border: 1px solid rgba(200,185,165,.25); background: rgba(20,16,12,.55);
-        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-        border-radius: 10px; display: flex; align-items: center; justify-content: center;
-        cursor: pointer; color: rgba(230,220,205,.85); font-size: 16px;
-        transition: background .2s, border-color .2s;
-        -webkit-tap-highlight-color: transparent; margin-left: 16px;
-      }
-      #gl-close:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); }
 
-      /* Back arrow — same glass style as close, sits left of the title */
+      /* Back arrow — white/copper, rectangular (not rounded-square) */
       #gl-back {
-        flex-shrink: 0; width: 38px; height: 38px; min-width: 38px; min-height: 38px;
-        border: 1px solid rgba(200,185,165,.25); background: rgba(20,16,12,.55);
-        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-        border-radius: 10px; display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; width: 56px; height: 34px; min-width: 56px; min-height: 34px;
+        border: 1px solid #7a3e1e; background: #7a3e1e;
+        border-radius: 8px; display: flex; align-items: center; justify-content: center;
         cursor: pointer; margin-right: 14px;
         transition: background .2s, border-color .2s;
         -webkit-tap-highlight-color: transparent;
       }
-      #gl-back:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); }
-      #gl-back svg { width: 16px; height: 16px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+      #gl-back:hover { background: #9a5327; border-color: #b56530; }
+      #gl-back svg { width: 16px; height: 16px; stroke: #ffffff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
       /* ── STAGE — full bleed image area, no border, no shadow card ── */
       #gl-stage {
@@ -183,40 +157,15 @@ window.GalleryModule = (function () {
       .gl-arrow {
         position: absolute; top: 50%; transform: translateY(-50%);
         z-index: 20; width: 44px; height: 44px; min-width: 44px; min-height: 44px;
-        background: rgba(15,12,9,.45); border: 1px solid rgba(200,185,165,.20);
-        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-        border-radius: 12px; display: flex; align-items: center; justify-content: center;
+        background: #ffffff; border: 1px solid #7a3e1e;
+        border-radius: 4px; display: flex; align-items: center; justify-content: center;
         cursor: pointer; transition: background .2s, border-color .2s, transform .2s;
         -webkit-tap-highlight-color: transparent;
       }
-      .gl-arrow:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); transform: translateY(-50%) scale(1.06); }
+      .gl-arrow:hover { background: #f3e9de; border-color: #9a5327; transform: translateY(-50%) scale(1.06); }
       #gl-arrow-prev { left: calc(18px + env(safe-area-inset-left, 0px)); }
       #gl-arrow-next { right: calc(18px + env(safe-area-inset-right, 0px)); }
-      .gl-arrow svg { width: 17px; height: 17px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-
-      /* ── Zoom controls — explicit +/- buttons, since pinch-to-zoom
-         alone isn't discoverable on desktop without a trackpad ── */
-      #gl-zoom-controls {
-        position: absolute; left: calc(18px + env(safe-area-inset-left, 0px)); top: 50%;
-        transform: translateY(-50%);
-        z-index: 20; display: flex; flex-direction: column; gap: 8px;
-      }
-      .gl-zoom-btn {
-        width: 40px; height: 40px; min-width: 40px; min-height: 40px;
-        background: rgba(15,12,9,.45); border: 1px solid rgba(200,185,165,.20);
-        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-        border-radius: 10px; display: flex; align-items: center; justify-content: center;
-        cursor: pointer; transition: background .2s, border-color .2s, opacity .2s;
-        -webkit-tap-highlight-color: transparent;
-      }
-      .gl-zoom-btn:hover { background: rgba(122,62,30,.35); border-color: rgba(122,62,30,.65); }
-      .gl-zoom-btn:active { background: rgba(122,62,30,.5); }
-      .gl-zoom-btn.disabled { opacity: .35; pointer-events: none; }
-      .gl-zoom-btn svg { width: 16px; height: 16px; stroke: rgba(230,220,205,.90); fill: none; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
-      @media (max-width: 520px) {
-        #gl-zoom-controls { left: calc(10px + env(safe-area-inset-left, 0px)); gap: 6px; }
-        .gl-zoom-btn { width: 34px; height: 34px; min-width: 34px; min-height: 34px; }
-      }
+      .gl-arrow svg { width: 17px; height: 17px; stroke: #7a3e1e; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
       /* ── FOOTER — floating thumbnail strip OVER the image ── */
       #gl-footer {
@@ -283,10 +232,7 @@ window.GalleryModule = (function () {
 
       @media (max-width: 520px) {
         #gl-header { padding: calc(12px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) 32px calc(12px + env(safe-area-inset-left, 0px)); }
-        #gl-caption { font-size: 17px; }
-        #gl-label { font-size: 8px; margin-bottom: 2px; }
-        #gl-back, #gl-close { width: 34px; height: 34px; min-width: 34px; min-height: 34px; }
-        #gl-back { margin-right: 10px; }
+        #gl-back { width: 48px; height: 30px; min-width: 48px; min-height: 30px; margin-right: 10px; }
         .gl-arrow { width: 36px; height: 36px; min-width: 36px; min-height: 36px; }
         #gl-arrow-prev { left: calc(8px + env(safe-area-inset-left, 0px)); }
         #gl-arrow-next { right: calc(8px + env(safe-area-inset-right, 0px)); }
@@ -339,11 +285,6 @@ window.GalleryModule = (function () {
           <div id="gl-back">
             <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
           </div>
-          <div id="gl-title-wrap">
-            <p id="gl-label">Gallery</p>
-            <p id="gl-caption">${IMAGES[0].caption}</p>
-          </div>
-          <div id="gl-close">✕</div>
         </div>
 
         <div class="gl-arrow" id="gl-arrow-prev">
@@ -351,15 +292,6 @@ window.GalleryModule = (function () {
         </div>
         <div class="gl-arrow" id="gl-arrow-next">
           <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"/></svg>
-        </div>
-
-        <div id="gl-zoom-controls">
-          <div class="gl-zoom-btn" id="gl-zoom-in">
-            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-          </div>
-          <div class="gl-zoom-btn disabled" id="gl-zoom-out">
-            <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
-          </div>
         </div>
 
         <div id="gl-footer">
@@ -541,7 +473,6 @@ window.GalleryModule = (function () {
     const cardCur      = document.getElementById('gl-card-current');
     const cardBehind    = document.getElementById('gl-card-behind');
     const cardIncoming = document.getElementById('gl-card-incoming');
-    const caption       = document.getElementById('gl-caption');
 
     const img       = IMAGES[targetIdx];
     const nextAfter = (targetIdx + 1) % IMAGES.length;
@@ -581,12 +512,6 @@ window.GalleryModule = (function () {
     cardIncoming.style.transform  = 'scale(1) translateX(0)';
     cardIncoming.style.opacity    = '1';
     cardIncoming.style.filter     = 'blur(0)';
-
-    caption.classList.add('fading');
-    setTimeout(() => {
-      caption.textContent = img.caption;
-      caption.classList.remove('fading');
-    }, DURATION * 0.45);
 
     setTimeout(() => {
       cardCur.style.transition = 'none';
@@ -644,7 +569,6 @@ window.GalleryModule = (function () {
 
   // ─── EVENTS ──────────────────────────────────────────────────────
   function bindEvents() {
-    document.getElementById('gl-close').addEventListener('click', requestBack);
     document.getElementById('gl-back').addEventListener('click', requestBack);
     document.getElementById('gl-back').addEventListener('touchend', (e) => { e.preventDefault(); requestBack(); });
 
@@ -725,15 +649,6 @@ window.GalleryModule = (function () {
 
     bindGalleryZoom(stage);
 
-    document.getElementById('gl-zoom-in').addEventListener('click', (e) => {
-      e.stopPropagation();
-      zoomStep(1.4);
-    });
-    document.getElementById('gl-zoom-out').addEventListener('click', (e) => {
-      e.stopPropagation();
-      zoomStep(1 / 1.4);
-    });
-
     // Pause autoplay while the pointer is over the image or the
     // thumbnail strip (desktop) — resumes with a fresh interval once
     // the pointer leaves either area.
@@ -802,8 +717,6 @@ window.GalleryModule = (function () {
       cardIn.style.cssText = 'transform: scale(1.08); opacity: 0; z-index: 3; filter: blur(8px); transition: none;';
     }
 
-    document.getElementById('gl-caption').textContent = IMAGES[current].caption;
-    document.getElementById('gl-caption').classList.remove('fading');
     updateUI();
 
     requestAnimationFrame(() => overlay.classList.add('open'));
