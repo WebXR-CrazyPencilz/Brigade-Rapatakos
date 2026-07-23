@@ -2,17 +2,18 @@
 window.GalleryModule = (function () {
 
   const IMAGES = [
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157232/05_w03okg.jpg', caption: '01' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/09_gytlb3.jpg', caption: '02' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158354/14_nwgerk.jpg', caption: '03' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/11_si2bfi.jpg', caption: '04' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/04_guuouq.jpg', caption: '05' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/06_nz4s5w.jpg', caption: '06' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/12_sv6p4o.jpg', caption: '07' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/08_y7htgv.jpg', caption: '08' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/10_mj07h8.jpg', caption: '09' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158364/13_mv0mfy.jpg', caption: '10' },
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158355/16_kx2kfd.jpg', caption: '11' },
+    { type: 'video', videoId: 'OnDmVzp5MdA', src: 'https://img.youtube.com/vi/OnDmVzp5MdA/hqdefault.jpg', caption: 'Video' },
+     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158354/14_nwgerk.jpg', caption: '01' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157232/05_w03okg.jpg', caption: '02' },
+   
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/11_si2bfi.jpg', caption: '03' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/04_guuouq.jpg', caption: '04' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/06_nz4s5w.jpg', caption: '05' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/12_sv6p4o.jpg', caption: '06' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/08_y7htgv.jpg', caption: '07' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158353/10_mj07h8.jpg', caption: '08' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158364/13_mv0mfy.jpg', caption: '09' },
+    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781158355/16_kx2kfd.jpg', caption: '10' },
   ];
 
   let current     = 0;
@@ -54,6 +55,22 @@ window.GalleryModule = (function () {
   function requestBack() {
     if (_historyDepth > 0) history.back(); // → popstate → close()
     else close();
+  }
+
+  // ─── CARD MEDIA (image vs. embedded video) ───────────────────────
+  // Cards are reused/rotated DOM elements (see the 3-card carousel
+  // below), so instead of always assuming a single <img> child, this
+  // rebuilds the card's content as either an <img> or a live YouTube
+  // <iframe> depending on the item's type. Only pass isCurrent=true
+  // for the card actually in focus — off-screen/behind cards always
+  // fall back to the video's thumbnail image so we never have a
+  // hidden autoplaying iframe sitting in the background.
+  function setCardMedia(cardEl, item, isCurrent) {
+    if (item.type === 'video' && isCurrent) {
+      cardEl.innerHTML = `<iframe class="gl-video-frame" src="https://www.youtube.com/embed/${item.videoId}?rel=0" title="${item.caption || 'Video'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+    } else {
+      cardEl.innerHTML = `<img src="${item.src}" alt="${item.caption || ''}"/>`;
+    }
   }
 
   // ─── INJECT ──────────────────────────────────────────────────────
@@ -126,6 +143,9 @@ window.GalleryModule = (function () {
         width: 100%; height: 100%; object-fit: contain;
         display: block; pointer-events: none;
         user-select: none; -webkit-user-drag: none;
+      }
+      .gl-card iframe.gl-video-frame {
+        width: 100%; height: 100%; border: none; display: block; background: #000;
       }
 
       /* Resting stack positions */
@@ -454,6 +474,7 @@ window.GalleryModule = (function () {
     if (autoplayHoverPaused) return;
     autoplayTimer = setInterval(() => {
       if (isAnimating || glImgScale > 1.05 || autoplayHoverPaused) return; // mid-transition or zoomed in — skip this tick
+      if (IMAGES[current] && IMAGES[current].type === 'video') return; // don't yank the visitor away from a playing video
       cardTo((current + 1) % IMAGES.length, 'next');
     }, AUTOPLAY_MS);
   }
@@ -479,17 +500,8 @@ window.GalleryModule = (function () {
     const DURATION  = 620;
     const EASE      = 'cubic-bezier(0.65,0,0.35,1)';
 
-    cardIncoming.querySelector('img').src = img.src;
-    cardIncoming.querySelector('img').alt = img.caption;
-
-    // Incoming starts slightly zoomed + blurred, drifts in from depth
-    cardIncoming.style.transition = 'none';
-    cardIncoming.style.transform  = direction === 'next'
-      ? 'scale(1.10) translateX(3%)'
-      : 'scale(1.10) translateX(-3%)';
-    cardIncoming.style.opacity = '0';
-    cardIncoming.style.filter  = 'blur(10px)';
     cardIncoming.style.zIndex  = '3';
+    setCardMedia(cardIncoming, img, true);
 
     // Force reflow
     cardIncoming.getBoundingClientRect();
@@ -519,7 +531,7 @@ window.GalleryModule = (function () {
       cardCur.style.opacity    = '0';
       cardCur.style.filter     = 'blur(6px)';
       cardCur.style.zIndex     = '1';
-      cardCur.querySelector('img').src = IMAGES[nextAfter].src;
+      setCardMedia(cardCur, IMAGES[nextAfter], false);
 
       cardBehind.style.transition = 'none';
       cardBehind.style.transform  = 'scale(1.06)';
@@ -706,12 +718,12 @@ window.GalleryModule = (function () {
 
     if (cardCur) {
       cardCur.style.cssText = 'transform: scale(1) translateX(0); opacity: 1; z-index: 2; filter: blur(0); transition: none;';
-      cardCur.querySelector('img').src = IMAGES[current].src;
+      setCardMedia(cardCur, IMAGES[current], true);
     }
     const nextIdx = (current + 1) % IMAGES.length;
     if (cardBehind) {
       cardBehind.style.cssText = 'transform: scale(1.06); opacity: 0; z-index: 1; filter: blur(6px); transition: none;';
-      cardBehind.querySelector('img').src = IMAGES[nextIdx].src;
+      setCardMedia(cardBehind, IMAGES[nextIdx], false);
     }
     if (cardIn) {
       cardIn.style.cssText = 'transform: scale(1.08); opacity: 0; z-index: 3; filter: blur(8px); transition: none;';

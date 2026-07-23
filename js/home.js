@@ -63,6 +63,7 @@ window.HomeModule = (function () {
     1: 'unit1/index.html',
     2: 'unit2/index.html',
     3: 'unit3/index.html',
+    4: 'unit4/index.html',
   };
 
   // ─── CAROUSEL IMAGES ─────────────────────────────────────────────
@@ -420,16 +421,20 @@ window.HomeModule = (function () {
       #unit-row {
         position: fixed; top: 0; left: 0; right: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px));
         z-index: 98;
-        display: flex; flex-direction: row;
-        align-items: stretch; justify-content: stretch;
-        gap: 10px;
-        overflow-x: hidden; overflow-y: hidden;
+        /* 2×2 grid of square unit cards (matches the reference layout:
+           four equal cards stacked two-by-two, regardless of viewport). */
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: repeat(2, 1fr);
+        gap: 16px;
+        align-items: stretch; justify-items: stretch;
+        overflow: hidden;
         /* Larger inset padding + its own background/border turns this
-           into one framed, contained panel instead of three cards
-           floating loose against the raw photo — previously the
-           transparent background let the photo run right up to (and
-           visually past) the group's edges, which read as "out of the
-           box" rather than a bounded panel. */
+           into one framed, contained panel instead of cards floating
+           loose against the raw photo — previously the transparent
+           background let the photo run right up to (and visually past)
+           the group's edges, which read as "out of the box" rather
+           than a bounded panel. */
         padding: 22px;
         margin: 16px;
         border-radius: 22px;
@@ -442,39 +447,6 @@ window.HomeModule = (function () {
         box-sizing: border-box;
       }
       #unit-row.visible { opacity: 1; pointer-events: all; }
-      #unit-row::-webkit-scrollbar { height: 6px; }
-      #unit-row::-webkit-scrollbar-track { background: transparent; }
-      #unit-row::-webkit-scrollbar-thumb { background: rgba(122,62,30,.55); border-radius: 3px; }
-
-      /* ── Scroll mode — only once there are MORE THAN 3 units ──
-         With 3 or fewer cards, #unit-row keeps its default
-         justify-content:stretch + flex:1 1 0 behavior above (cards
-         evenly fill the row/column, no scroll). The instant a 4th
-         .unit-btn is present, this switches to a scrollable strip with
-         bounded card sizes instead of squeezing every card thinner. */
-      #unit-row:has(.unit-btn:nth-child(4)) {
-        justify-content: flex-start;
-        overflow-x: auto; overflow-y: hidden;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin; scrollbar-color: rgba(122,62,30,.55) transparent;
-      }
-      #unit-row:has(.unit-btn:nth-child(4)) .unit-btn {
-        flex: 1 1 260px;
-        min-width: 220px;
-        max-width: 420px;
-      }
-      @media (max-width: 640px) {
-        /* Same logic, but for the stacked column layout — vertical
-           scroll instead of each card shrinking shorter. */
-        #unit-row:has(.unit-btn:nth-child(4)) {
-          overflow-x: hidden; overflow-y: auto;
-        }
-        #unit-row:has(.unit-btn:nth-child(4)) .unit-btn {
-          width: 100%;
-          flex: 0 0 auto;
-          min-width: 0; max-width: none;
-        }
-      }
 
       .unit-btn {
         position: relative;
@@ -504,8 +476,9 @@ window.HomeModule = (function () {
         box-shadow: none;
         transition: border-color .22s, box-shadow .22s, transform .18s ease;
         -webkit-tap-highlight-color: transparent;
-        flex: 1 1 0;
+        width: 100%;
         height: 100%;
+        margin: 0;
         background: #0d0d0d;
         z-index: 1;
       }
@@ -546,17 +519,25 @@ window.HomeModule = (function () {
         border-radius: 14px;
         clip-path: inset(0 round 14px);
         -webkit-clip-path: inset(0 round 14px);
+        background: #ffffff;
       }
       /* The iframe simply fills its card at natural size — no more
          fixed-intrinsic-size + scale-down trick, which was blowing
          the image up and cropping it once cards became full-screen.
          border-radius here (in addition to the containers above) is
-         the actual fix for the corner bleed — see .unit-btn note. */
+         the actual fix for the corner bleed — see .unit-btn note.
+         background:#ffffff here too — without it, the iframe shows
+         whatever background its OWN internal page happens to have
+         (or the browser's blank-frame default) for a brief moment
+         before that page's own CSS paints, which read as an
+         inconsistent flash/seam between cards depending on how fast
+         each unit's page loaded. */
       .unit-btn-thumb-frame iframe {
         position: absolute; top: 0; left: 0;
         width: 100%; height: 100%;
         border: none;
         border-radius: 14px;
+        background: #ffffff;
       }
       .unit-btn-thumb-scrim {
         position: absolute; inset: 0;
@@ -683,8 +664,85 @@ window.HomeModule = (function () {
          instead, so the cards read as a deliberate strip rather than
          stretched-to-fit panels. */
       @media (min-width: 641px) {
-        #unit-row { align-items: center; }
-        .unit-btn { height: 58vh; max-height: 480px; min-height: 320px; }
+        /* Desktop gets its own distinct treatment matching the design
+           reference: white floating cards on a plain background, each
+           with its own label pill sitting BELOW the card (not overlaid
+           inside it like the mobile version). */
+        #unit-row {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          justify-content: center;
+          flex-wrap: wrap;
+          gap: 32px;
+          padding: 40px;
+          border: none;
+          background: #f5f4f2;
+          backdrop-filter: none;
+          -webkit-backdrop-filter: none;
+        }
+        .unit-btn {
+          flex: 0 1 260px;
+          max-width: 320px;
+          width: 100%;
+          height: auto;
+          margin: 0;
+          flex-direction: column;
+          align-items: stretch;
+          justify-content: flex-start;
+          gap: 14px;
+          /* Clipping now lives on .unit-btn-thumb-frame only, so the
+             label pill below can sit outside the card, unclipped. */
+          overflow: visible;
+          border: none;
+          border-radius: 0;
+          clip-path: none;
+          -webkit-clip-path: none;
+          -webkit-mask-image: none;
+          box-shadow: none;
+          background: transparent;
+        }
+        .unit-btn:hover { transform: none; }
+        .unit-btn:hover .unit-btn-thumb-frame { transform: translateY(-2px); }
+        .unit-btn-thumb-frame {
+          position: relative;
+          inset: auto;
+          width: 100%;
+          aspect-ratio: 1 / 1;
+          border-radius: 18px;
+          overflow: hidden;
+          background: #ffffff;
+          border: 2px solid transparent;
+          box-shadow: 0 10px 30px rgba(0,0,0,.14);
+          transition: border-color .22s, box-shadow .22s;
+        }
+        .unit-btn.active {
+          border-color: transparent;
+          box-shadow: none;
+        }
+        .unit-btn.active .unit-btn-thumb-frame {
+          border-color: #c9762f;
+        }
+        .unit-btn-thumb-frame iframe { border-radius: 16px; }
+        /* No dark gradient / color wash on white desktop cards */
+        .unit-btn-thumb-scrim { display: none; }
+        .unit-btn-overlay { background: transparent !important; }
+        .unit-btn-label {
+          position: static;
+          align-self: center;
+          padding: 8px 22px;
+          border-radius: 8px;
+          background: #ffffff;
+          border: 1px solid rgba(0,0,0,.08);
+          color: #7a5230;
+          font-size: 13px;
+          box-shadow: 0 4px 14px rgba(0,0,0,.08);
+        }
+        .unit-btn.active .unit-btn-label {
+          background: #8a4a22;
+          border-color: #8a4a22;
+          color: #ffffff;
+        }
       }
 
       /* ── Portrait / small-screen refinements ── */
@@ -700,18 +758,19 @@ window.HomeModule = (function () {
         /* Lightbox close within thumb reach */
         #lb-close { top: 12px; right: 12px; }
 
-        /* Unit row: stack full-width cards vertically instead of
-           squeezing 3 side-by-side — each card gets equal height so
-           its floor plan is actually readable on a narrow screen. */
+        /* Unit row: same 2×2 grid on mobile, but cap each card's
+           height so it reads as roughly square instead of stretching
+           to fill the whole portrait screen — the grid is vertically
+           centered in the leftover space instead. */
         #unit-row {
-          flex-direction: column;
-          padding: 14px;
+          padding: 12px;
           margin: 10px;
+          gap: 10px;
           border-radius: 18px;
+          grid-template-rows: repeat(2, minmax(0, 42vw));
+          align-content: center;
         }
-        .unit-btn {
-          width: 100%;
-        }
+        .unit-btn { height: 100%; max-height: 42vw; }
       }
       @media (max-width: 360px) {
         .panel-slot { padding: 0 7px; gap: 4px; }
@@ -817,6 +876,14 @@ window.HomeModule = (function () {
           <div class="unit-btn-overlay"></div>
           <span class="unit-btn-label">Unit 3</span>
         </div>
+        <!-- Unit 4 temporarily removed — restore this block to bring it back:
+        <div class="unit-btn" data-unit="4">
+          <div class="unit-btn-thumb-frame"></div>
+          <div class="unit-btn-thumb-scrim"></div>
+          <div class="unit-btn-overlay"></div>
+          <span class="unit-btn-label">Unit 4</span>
+        </div>
+        -->
       </div>
 
       <div id="bottom-panel">
@@ -1403,10 +1470,16 @@ window.HomeModule = (function () {
       iframe.setAttribute('loading', 'lazy');
       iframe.setAttribute('tabindex', '-1');
       iframe.setAttribute('aria-hidden', 'true');
-      // Hide that unit page's own Floor Plan / 360 View toggle bar
-      // inside the thumbnail — it's redundant here since our own
-      // bottom-panel already has that navigation.
-      iframe.addEventListener('load', () => hideThumbToggleBar(iframe));
+      // Fade the iframe in smoothly once its internal page has actually
+      // loaded, instead of it popping in abruptly the instant the
+      // browser creates the frame (which could show a blank/white flash
+      // before that page's own content had painted).
+      iframe.style.opacity = '0';
+      iframe.style.transition = 'opacity 0.35s ease';
+      iframe.addEventListener('load', () => {
+        hideThumbToggleBar(iframe);
+        requestAnimationFrame(() => { iframe.style.opacity = '1'; });
+      });
       frame.appendChild(iframe);
     });
   }
@@ -1690,10 +1763,150 @@ window.HomeModule = (function () {
     check();
   }
 
+  // ─── LANDING SCREEN ────────────────────────────────────────────
+  // Shown once, on load, before any home content — four big cards
+  // mirroring the bottom nav (Floor Plan / 360 View / Gallery /
+  // Location). Tapping one fades the landing screen out and simply
+  // clicks the matching .panel-slot underneath, so it reuses all of
+  // bindPanelEvents' existing open/history/GA4 logic instead of
+  // duplicating it.
+  function injectLanding() {
+    if (document.getElementById('landing-screen')) return;
+
+    const style = document.createElement('style');
+    style.textContent = `
+      #landing-screen {
+        position: fixed; inset: 0; z-index: 500;
+        background: #0a0805 url('https://ik.imagekit.io/pwzaetheh/Home/landing.jpeg') center center / cover no-repeat;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        overflow: hidden;
+        opacity: 1; pointer-events: all;
+        transition: opacity .45s ease;
+      }
+      #landing-screen::before {
+        display: none;
+      }
+      #landing-screen.hide { opacity: 0; pointer-events: none; }
+
+      #landing-tagline {
+        font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 700;
+        letter-spacing: .28em; text-transform: uppercase; color: #f0c896;
+        text-shadow: 0 2px 12px rgba(0,0,0,.45);
+        margin-bottom: 44px; text-align: center; padding: 0 20px;
+        position: relative; z-index: 2;
+      }
+
+      #landing-cards {
+        display: flex; flex-wrap: wrap; justify-content: center; gap: 22px;
+        padding: 0 24px; max-width: 1100px;
+        position: relative; z-index: 2;
+      }
+
+      .landing-card {
+        width: 190px; height: 210px;
+        background: rgba(255,255,255,.92);
+        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,.35);
+        border-radius: 18px;
+        display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+        cursor: pointer;
+        box-shadow: 0 12px 34px rgba(0,0,0,.28);
+        transition: transform .22s ease, box-shadow .22s ease, background .32s ease;
+        -webkit-tap-highlight-color: transparent;
+      }
+      .landing-card:hover, .landing-card:active {
+        transform: translateY(-4px);
+        box-shadow: 0 16px 40px rgba(0,0,0,.14);
+        background: linear-gradient(135deg, #7a3e1e, #c9762f);
+      }
+      .landing-card .panel-slot-icon {
+        width: 44px; height: 44px;
+        color: #7a3e1e;
+        transition: color .32s ease;
+      }
+      .landing-card:hover .panel-slot-icon, .landing-card:active .panel-slot-icon { color: #ffffff; }
+
+      .landing-card-label {
+        font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+        letter-spacing: .12em; text-transform: uppercase;
+        color: #2b3a4a; transition: color .32s ease;
+      }
+      .landing-card:hover .landing-card-label, .landing-card:active .landing-card-label { color: #ffffff; }
+
+      @media (max-width: 640px) {
+        #landing-tagline { font-size: 24px; font-weight: 700; letter-spacing: .16em; margin-bottom: 26px; }
+        .landing-card-label { font-size: 12px; }
+        /* 2x2 grid instead of flex-wrap — flex-wrap let 3 cards fit
+           per row on most phone widths, orphaning the 4th card alone
+           on its own row underneath. A fixed 2-column grid always
+           gives a clean 2x2 layout regardless of card width. */
+        #landing-cards {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          justify-content: center;
+          justify-items: center;
+          gap: 18px;
+          max-width: 420px;
+          width: 100%;
+          margin: 0 auto;
+        }
+        .landing-card {
+          width: 100%;
+          height: 170px;
+          gap: 14px;
+          border-radius: 18px;
+        }
+        .landing-card .panel-slot-icon { width: 42px; height: 42px; }
+      }
+      @media (max-width: 360px) {
+        .landing-card { width: 100%; height: 145px; }
+        #landing-cards { max-width: 320px; }
+      }
+    `;
+    document.head.appendChild(style);
+
+    document.body.insertAdjacentHTML('beforeend', `
+      <div id="landing-screen">
+        <div id="landing-tagline">Explore. Experience. Envision.</div>
+        <div id="landing-cards">
+          <div class="landing-card" data-slot="floorplan">
+            ${ICON_FLOORPLAN}
+            <span class="landing-card-label">Floor Plan</span>
+          </div>
+          <div class="landing-card" data-slot="360view">
+            ${ICON_360}
+            <span class="landing-card-label">360 View</span>
+          </div>
+          <div class="landing-card" data-slot="gallery">
+            ${ICON_GALLERY}
+            <span class="landing-card-label">Gallery</span>
+          </div>
+          <div class="landing-card" data-slot="map">
+            ${ICON_LOCATION}
+            <span class="landing-card-label">Location</span>
+          </div>
+        </div>
+      </div>
+    `);
+
+    document.getElementById('landing-screen').querySelectorAll('.landing-card').forEach(card => {
+      card.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const slot   = card.dataset.slot;
+        const screen = document.getElementById('landing-screen');
+        screen.classList.add('hide');
+        setTimeout(() => { screen.style.display = 'none'; }, 480);
+        const target = document.querySelector(`.panel-slot[data-slot="${slot}"]`);
+        if (target) target.click();
+      });
+    });
+  }
+
   // ─── PUBLIC API ──────────────────────────────────────────────────
   return {
     init() {
       injectHTML();
+      injectLanding();
       initCarousel();
       bindLightboxZoom();
       bindMapEvents();
@@ -1702,15 +1915,10 @@ window.HomeModule = (function () {
       bindOrientationCheck();
       if (window.App && typeof window.App.finishLoad === 'function') App.finishLoad();
 
-      // Default view: open straight into the Floor Plan instead of the
-      // carousel, since most customers land here first.
+      // Landing screen is the entry point now — nothing opens
+      // automatically until the visitor taps one of its four cards
+      // (which click()s the matching .panel-slot underneath).
       stopAuto();
-      const fpSlot = document.querySelector('.panel-slot[data-slot="floorplan"]');
-      if (fpSlot && window.FloorplanModule && typeof FloorplanModule.open === 'function') {
-        fpSlot.classList.add('active');
-        if (typeof gtag === 'function') gtag('event', 'view_change', { view_name: 'floorplan' });
-        FloorplanModule.open();
-      }
     }
   };
 
