@@ -1556,7 +1556,7 @@ window.HomeModule = (function () {
     style.textContent = `
       #landing-screen {
         position: fixed; inset: 0; z-index: 500;
-        background: #0a0805 url('https://ik.imagekit.io/pwzaetheh/Home/landing.jpeg') center center / cover no-repeat;
+        background: #0a0805;
         display: flex; flex-direction: column; align-items: center; justify-content: center;
         overflow: hidden;
         opacity: 1; pointer-events: all;
@@ -1565,8 +1565,20 @@ window.HomeModule = (function () {
       #landing-screen::before { display: none; }
       #landing-screen.hide { opacity: 0; pointer-events: none; }
 
+      /* NAV-PATCH: background lives on its own layer, oversized by 12% and
+         re-centred (inset: -6%), so it can be scaled independently of the
+         tagline/cards above it. --landing-bg-zoom is the one knob to turn:
+         1 = baseline (same framing as before), <1 = zoom out a touch,
+         >1 = zoom in. The 12% oversize gives headroom in both directions
+         before any edge/gap would show. */
+      #landing-bg {
+        position: absolute; inset: -6%; z-index: 0;
+        background: url('https://ik.imagekit.io/pwzaetheh/Home/landing.jpeg') center center / cover no-repeat;
+        transform: scale(var(--landing-bg-zoom, 0.94));
+      }
+
       #landing-tagline {
-        font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 600;
+        font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 600;
         letter-spacing: .22em; text-transform: uppercase; color: #c9762f;
         margin-bottom: 40px; text-align: center; padding: 0 20px;
         position: relative; z-index: 2;
@@ -1579,7 +1591,7 @@ window.HomeModule = (function () {
       }
 
       .landing-card {
-        width: 190px; height: 210px;
+        width: 232px; height: 252px;
         background: #fdfbf8;
         border: 1px solid rgba(255,255,255,.45);
         border-radius: 18px;
@@ -1604,7 +1616,7 @@ window.HomeModule = (function () {
         transform: translateY(-4px);
       }
       .landing-card .panel-slot-icon {
-        width: 34px; height: 34px;
+        width: 41px; height: 41px;
         color: #c9762f;
         transition: color .22s ease;
       }
@@ -1618,7 +1630,7 @@ window.HomeModule = (function () {
       }
 
       .landing-card-label {
-        font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+        font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
         letter-spacing: .12em; text-transform: uppercase;
         color: #2b3a4a; transition: color .22s ease;
       }
@@ -1632,8 +1644,8 @@ window.HomeModule = (function () {
       }
 
       @media (max-width: 640px) {
-        #landing-tagline { font-size: 18px; font-weight: 600; letter-spacing: .14em; margin-bottom: 26px; }
-        .landing-card-label { font-size: 12px; }
+        #landing-tagline { font-size: 20px; font-weight: 600; letter-spacing: .14em; margin-bottom: 26px; }
+        .landing-card-label { font-size: 14px; }
         #landing-cards {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
@@ -1646,14 +1658,14 @@ window.HomeModule = (function () {
         }
         .landing-card {
           width: 100%;
-          height: 170px;
+          height: 200px;
           gap: 14px;
           border-radius: 18px;
         }
-        .landing-card .panel-slot-icon { width: 32px; height: 32px; }
+        .landing-card .panel-slot-icon { width: 39px; height: 39px; }
       }
       @media (max-width: 360px) {
-        .landing-card { width: 100%; height: 145px; }
+        .landing-card { width: 100%; height: 172px; }
         #landing-cards { max-width: 320px; }
       }
     `;
@@ -1661,6 +1673,7 @@ window.HomeModule = (function () {
 
     document.body.insertAdjacentHTML('beforeend', `
       <div id="landing-screen">
+        <div id="landing-bg"></div>
         <div id="landing-tagline">Explore. Experience. Envision.</div>
         <div id="landing-cards">
           <div class="landing-card" data-slot="floorplan">
