@@ -15,38 +15,18 @@ window.HomeModule = (function () {
   let unitViewerEnteredAt    = 0;
   let activeUnitNumber       = null;
   let unitLoadTimeout        = null; // safety net so the unit-viewer spinner never spins forever
+  let _landingHideTimeout    = null; // NAV-PATCH: pending timeout for the landing screen's hide animation
 
   // ─── BROWSER/HARDWARE BACK SUPPORT ────────────────────────────────
-  // Map overlay, unit viewer, embedded-gmap overlay and lightbox each
-  // push a history entry when opened, so the phone's back button (and
-  // PC Backspace) closes them instead of leaving the page. Each overlay
-  // tracks its own depth; popstate closes whichever of ours is open.
   const _hist = { map: 0, unit: 0, lb: 0, threeSixty: 0, gmap: 0 };
   let _popping = false;
 
-  // replace=true is used for TAB SWITCHES: another tab (Floor Plan /
-  // Gallery / Map / 360) already owns the overlay system's one history
-  // entry, so we relabel it via replaceState instead of pushing a new
-  // one on top. Without this, every tab switch left the previous tab's
-  // entry orphaned in the real browser history stack (its depth counter
-  // gets zeroed by unwindHist(skipGo=true), but the entry itself was
-  // never popped) — the counters and the real stack drift apart, and
-  // that drift is what caused switching tabs to intermittently bounce
-  // back to Home and need a second click.
   function pushHist(key, replace) {
     if (replace) history.replaceState({ home: key }, '');
     else history.pushState({ home: key }, '');
     _hist[key] = 1;
   }
   function unwindHist(key, skipGo) {
-    // Overlay closed via UI while it still owns a history entry —
-    // silently consume it so back never needs an extra press later.
-    // skipGo=true just zeroes the counter without calling history.go():
-    // used when we know another module's open() is about to push a
-    // fresh state right after (tab switch) — calling history.go() here
-    // would be async and race with that immediate pushState, which is
-    // what caused switching tabs to intermittently bounce to the home
-    // view and need a second click.
     if (!_popping && _hist[key] > 0) {
       const n = _hist[key];
       _hist[key] = 0;
@@ -54,11 +34,10 @@ window.HomeModule = (function () {
     }
   }
   function requestHistBack(key, closeFn) {
-    if (_hist[key] > 0) history.back(); // → popstate → closeFn
+    if (_hist[key] > 0) history.back();
     else closeFn();
   }
 
-  // ─── UNIT URL MAP ────────────────────────────────────────────────
   const unitURLs = {
     1: 'unit1/index.html',
     2: 'unit2/index.html',
@@ -66,53 +45,40 @@ window.HomeModule = (function () {
     4: 'unit4/index.html',
   };
 
-  // ─── CAROUSEL IMAGES ─────────────────────────────────────────────
   const IMAGES = [
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/01_abyzw2.jpg', label: 'View 1' },
   ];
 
-  // ─── LOCATION MAP IMAGE ──────────────────────────────────────────
   const MAP_IMAGE_SRC = 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781162438/locationmap_cvfs0z.jpg';
 
-  // ─── GOOGLE MAPS LINK / EMBED ─────────────────────────────────────
-  // GMAPS_LINK is the plain share link — used for the "Open in Google
-  // Maps" external fallback link inside the embedded overlay.
-  // GMAPS_EMBED_SRC is what actually loads inside the <iframe> — Google
-  // blocks framing of the regular maps.app.goo.gl / google.com/maps
-  // share links (X-Frame-Options), so a plain share link can NOT be
-  // used as an iframe src directly. This must be either:
-  //   (a) a "https://www.google.com/maps?q=LAT,LNG&output=embed" URL, or
-  //   (b) the src copied from Google Maps → Share → "Embed a map" tab.
-  // PLACEHOLDER below — replace with the real coordinates/place or the
-  // official embed src before shipping.
   const GMAPS_LINK       = 'https://maps.app.goo.gl/kHTxw1SK2QpXku2KA';
   const GMAPS_EMBED_SRC  = 'https://www.google.com/maps?q=12.9920591,80.2189587&z=17&output=embed';
 
-  // ─── SVG ICONS ───────────────────────────────────────────────────
+  // ─── SVG ICONS (medium-thickness, non-scaling stroke) ─────────────
   const ICON_FLOORPLAN = `<svg class="panel-slot-icon" width="13" height="13" viewBox="0 0 13 13" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0.75" y="0.75" width="4.5" height="4.5" rx="0.5" stroke="currentColor" stroke-width="1.2"/>
-    <rect x="7.75" y="0.75" width="4.5" height="4.5" rx="0.5" stroke="currentColor" stroke-width="1.2"/>
-    <rect x="0.75" y="7.75" width="4.5" height="4.5" rx="0.5" stroke="currentColor" stroke-width="1.2"/>
-    <rect x="7.75" y="7.75" width="4.5" height="4.5" rx="0.5" stroke="currentColor" stroke-width="1.2"/>
+    <rect x="0.75" y="0.75" width="4.5" height="4.5" rx="0.5" stroke="currentColor" stroke-width="1.7" vector-effect="non-scaling-stroke"/>
+    <rect x="7.75" y="0.75" width="4.5" height="4.5" rx="0.5" stroke="currentColor" stroke-width="1.7" vector-effect="non-scaling-stroke"/>
+    <rect x="0.75" y="7.75" width="4.5" height="4.5" rx="0.5" stroke="currentColor" stroke-width="1.7" vector-effect="non-scaling-stroke"/>
+    <rect x="7.75" y="7.75" width="4.5" height="4.5" rx="0.5" stroke="currentColor" stroke-width="1.7" vector-effect="non-scaling-stroke"/>
   </svg>`;
 
   const ICON_360 = `<svg class="panel-slot-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <circle cx="7" cy="7" r="5.75" stroke="currentColor" stroke-width="1.2"/>
-    <line x1="1.25" y1="7" x2="12.75" y2="7" stroke="currentColor" stroke-width="1.2"/>
-    <path d="M7 1.25C7 1.25 9.25 3.75 9.25 7C9.25 10.25 7 12.75 7 12.75" stroke="currentColor" stroke-width="1.2"/>
-    <path d="M7 1.25C7 1.25 4.75 3.75 4.75 7C4.75 10.25 7 12.75 7 12.75" stroke="currentColor" stroke-width="1.2"/>
+    <circle cx="7" cy="7" r="5.75" stroke="currentColor" stroke-width="1.7" vector-effect="non-scaling-stroke"/>
+    <line x1="1.25" y1="7" x2="12.75" y2="7" stroke="currentColor" stroke-width="1.7" vector-effect="non-scaling-stroke"/>
+    <path d="M7 1.25C7 1.25 9.25 3.75 9.25 7C9.25 10.25 7 12.75 7 12.75" stroke="currentColor" stroke-width="1.7" vector-effect="non-scaling-stroke"/>
+    <path d="M7 1.25C7 1.25 4.75 3.75 4.75 7C4.75 10.25 7 12.75 7 12.75" stroke="currentColor" stroke-width="1.7" vector-effect="non-scaling-stroke"/>
   </svg>`;
 
   const ICON_GALLERY = `<svg class="panel-slot-icon" width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <rect x="0.75" y="0.75" width="12.5" height="9.5" rx="1.25" stroke="currentColor" stroke-width="1.2"/>
-    <circle cx="4.5" cy="4.5" r="1.25" stroke="currentColor" stroke-width="1.1"/>
-    <path d="M0.75 8.5L3.5 6L6 8L9 5.5L13.25 9.5" stroke="currentColor" stroke-width="1.1" stroke-linejoin="round"/>
-    <line x1="3" y1="12.5" x2="11" y2="12.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+    <rect x="0.75" y="0.75" width="12.5" height="9.5" rx="1.25" stroke="currentColor" stroke-width="1.7" vector-effect="non-scaling-stroke"/>
+    <circle cx="4.5" cy="4.5" r="1.25" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
+    <path d="M0.75 8.5L3.5 6L6 8L9 5.5L13.25 9.5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>
+    <line x1="3" y1="12.5" x2="11" y2="12.5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
   </svg>`;
 
   const ICON_LOCATION = `<svg class="panel-slot-icon" width="13" height="14" viewBox="0 0 13 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6.5 1C4.015 1 2 3.015 2 5.5C2 8.985 6.5 13.5 6.5 13.5C6.5 13.5 11 8.985 11 5.5C11 3.015 8.985 1 6.5 1Z" stroke="currentColor" stroke-width="1.2"/>
-    <circle cx="6.5" cy="5.5" r="1.5" stroke="currentColor" stroke-width="1.1"/>
+    <path d="M6.5 1C4.015 1 2 3.015 2 5.5C2 8.985 6.5 13.5 6.5 13.5C6.5 13.5 11 8.985 11 5.5C11 3.015 8.985 1 6.5 1Z" stroke="currentColor" stroke-width="1.7" vector-effect="non-scaling-stroke"/>
+    <circle cx="6.5" cy="5.5" r="1.5" stroke="currentColor" stroke-width="1.5" vector-effect="non-scaling-stroke"/>
   </svg>`;
 
   // ─── INJECT HTML & STYLES ────────────────────────────────────────
@@ -123,7 +89,6 @@ window.HomeModule = (function () {
     style.textContent = `
       @import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&family=Cormorant+Garamond:wght@300;400;500&display=swap');
 
-      /* ── Rotate Prompt ── */
       #rotate-prompt {
         display: none; position: fixed; inset: 0; z-index: 9999;
         background: #0a0805; flex-direction: column;
@@ -135,7 +100,6 @@ window.HomeModule = (function () {
       #rotate-prompt p { font-family:'Syne',sans-serif; font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:rgba(200,190,154,.55); margin:0; }
       @media (orientation:landscape) { #rotate-prompt { display:none !important; } }
 
-      /* ── Carousel ── */
       #carousel {
         position: fixed; inset: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px));
         background: #e8e4dd;
@@ -157,9 +121,7 @@ window.HomeModule = (function () {
         opacity: 1; transition: opacity 0.45s ease;
       }
       #carousel-img.fading { opacity: 0; }
-      #hc-vignette {
-        display: none;
-      }
+      #hc-vignette { display: none; }
       #hc-dots {
         position: absolute; bottom: 10px; left: 50%;
         transform: translateX(-50%);
@@ -173,7 +135,6 @@ window.HomeModule = (function () {
       }
       .hc-dot.active { width: 18px; background: rgba(245,240,232,.80); }
 
-      /* ── Lightbox ── */
       #lightbox {
         position: fixed; inset: 0; z-index: 500;
         background: rgba(5,4,2,.96);
@@ -201,7 +162,6 @@ window.HomeModule = (function () {
         z-index: 2; -webkit-tap-highlight-color: transparent;
       }
 
-      /* ── Location Map Overlay ── */
       #map-overlay {
         position: fixed; inset: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); z-index: 300;
         background: #e8e4dd;
@@ -268,9 +228,6 @@ window.HomeModule = (function () {
       }
       #map-zoom-hint.visible { opacity: 1; }
 
-      /* ── "View on Google Maps" — bottom-right tab button ──
-         Clicking it opens the in-app embedded map overlay below
-         (#gmap-embed-overlay) rather than leaving the app. ── */
       #map-gmaps-btn {
         position: absolute; bottom: 8px; right: 0; z-index: 10;
         width: 148px; height: 92px;
@@ -285,17 +242,11 @@ window.HomeModule = (function () {
         cursor: pointer;
         background: #1a1410;
       }
-      /* The live Google Map itself, shrunk to fit the thumbnail card.
-         pointer-events:none so it's purely a visual preview — all
-         clicks land on the outer #map-gmaps-btn wrapper instead of
-         getting eaten by the embedded map's own drag/zoom controls. */
       #map-gmaps-btn-preview {
         position: absolute; inset: 0; z-index: 0;
         width: 100%; height: 100%;
         border: none; pointer-events: none;
       }
-      /* Darkening scrim under the label so it stays readable regardless
-         of what the map thumbnail image looks like underneath. */
       #map-gmaps-btn::before {
         content: '';
         position: absolute; inset: 0; z-index: 1;
@@ -309,12 +260,8 @@ window.HomeModule = (function () {
         color: #ffffff; padding: 8px 10px; width: 100%; box-sizing: border-box;
       }
       #map-gmaps-btn-label svg { width: 12px; height: 12px; flex-shrink: 0; color: #d99a5e; }
-      #map-gmaps-btn:hover {
-        box-shadow: 0 -4px 16px rgba(0,0,0,.35);
-      }
-      #map-gmaps-btn:active {
-        transform: scale(0.98);
-      }
+      #map-gmaps-btn:hover { box-shadow: 0 -4px 16px rgba(0,0,0,.35); }
+      #map-gmaps-btn:active { transform: scale(0.98); }
       @media (max-width: 520px) {
         #map-gmaps-btn { width: 112px; height: 74px; }
         #map-gmaps-btn-label { font-size: 9px; padding: 6px 8px; }
@@ -324,10 +271,6 @@ window.HomeModule = (function () {
       #map-spinner-ring { width: 32px; height: 32px; border: 2px solid rgba(122,62,30,.20); border-top-color: rgba(122,62,30,.85); border-radius: 50%; animation: spinMap 0.72s linear infinite; }
       @keyframes spinMap { to { transform: rotate(360deg); } }
 
-      /* ── Embedded Google Maps Overlay ──
-         Opens ON TOP of the location map overlay when the "View on
-         Google Maps" button is clicked — a real interactive Google Map
-         loaded in an iframe, so the person never has to leave the app. */
       #gmap-embed-overlay {
         position: fixed; inset: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); z-index: 320;
         background: #e8e4dd;
@@ -388,9 +331,7 @@ window.HomeModule = (function () {
         background: rgba(122,62,30,.22); border-color: rgba(122,62,30,.65); color: #f5f0e8;
       }
       #gmap-embed-open-external svg { width: 12px; height: 12px; flex-shrink: 0; }
-      #gmap-embed-body {
-        flex: 1; position: relative; background: #0d1a24;
-      }
+      #gmap-embed-body { flex: 1; position: relative; background: #0d1a24; }
       #gmap-embed-iframe {
         width: 100%; height: 100%; border: none; display: block;
         opacity: 0; transition: opacity 0.3s ease;
@@ -409,32 +350,18 @@ window.HomeModule = (function () {
       @media (max-width: 640px) {
         #gmap-embed-overlay { padding: 12px; }
         #gmap-embed-title { font-size: 13px; }
-        #gmap-embed-open-external span { display: none; } /* icon-only on very small screens */
+        #gmap-embed-open-external span { display: none; }
       }
 
-      /* ── Unit Row — thumbnail strip ──
-         Each thumbnail is a live iframe of that unit's own 360 tour
-         page (unitURLs[n]), filling its card at natural size — so the
-         "thumbnail" is always the real scene, no separate image asset
-         needed. Full-screen edge-to-edge strip on ALL screen sizes
-         (desktop, landscape, and mobile) — no separate mobile rail. */
       #unit-row {
         position: fixed; top: 0; left: 0; right: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px));
         z-index: 98;
-        /* 2×2 grid of square unit cards (matches the reference layout:
-           four equal cards stacked two-by-two, regardless of viewport). */
         display: grid;
         grid-template-columns: repeat(2, 1fr);
         grid-template-rows: repeat(2, 1fr);
         gap: 16px;
         align-items: stretch; justify-items: stretch;
         overflow: hidden;
-        /* Larger inset padding + its own background/border turns this
-           into one framed, contained panel instead of cards floating
-           loose against the raw photo — previously the transparent
-           background let the photo run right up to (and visually past)
-           the group's edges, which read as "out of the box" rather
-           than a bounded panel. */
         padding: 22px;
         margin: 16px;
         border-radius: 22px;
@@ -455,23 +382,8 @@ window.HomeModule = (function () {
         border: 2px solid transparent;
         border-radius: 14px;
         overflow: hidden;
-        /* iframes are notorious for not respecting a parent's
-           overflow:hidden + border-radius clip (a long-standing Safari/
-           iOS bug, since an iframe gets promoted to its own compositing
-           layer) — the building photo behind the card was bleeding
-           through the rounded corner as a hard rectangular notch.
-           clip-path forces an actual hard clip that isn't subject to
-           that compositing-layer escape the way overflow:hidden is. */
         clip-path: inset(0 round 14px);
         -webkit-clip-path: inset(0 round 14px);
-        /* Forces Safari (and sometimes Chrome) to properly recomposite
-           the rounded-corner clip against the hover transform below —
-           without this, transforming (scale/translateY) an element that
-           ALSO clips its content via border-radius leaves a thin
-           anti-aliasing seam right at the curve, letting whatever sits
-           behind the card (the building photo) show through as a sliver.
-           This is the actual fix for the corner bleed that persisted
-           after adding clip-path/border-radius alone. */
         -webkit-mask-image: -webkit-radial-gradient(white, white);
         box-shadow: none;
         transition: border-color .22s, box-shadow .22s, transform .18s ease;
@@ -482,22 +394,10 @@ window.HomeModule = (function () {
         background: #0d0d0d;
         z-index: 1;
       }
-      .unit-btn:hover {
-        transform: translateY(-2px);
-        box-shadow: none;
-        z-index: 2;
-      }
-      .unit-btn:active {
-        transform: translateY(0);
-        box-shadow: none;
-      }
-      .unit-btn.active {
-        border-color: #7a3e1e;
-        box-shadow: inset 0 0 0 1px rgba(122,62,30,.35);
-      }
+      .unit-btn:hover { transform: translateY(-2px); box-shadow: none; z-index: 2; }
+      .unit-btn:active { transform: translateY(0); box-shadow: none; }
+      .unit-btn.active { border-color: #7a3e1e; box-shadow: inset 0 0 0 1px rgba(122,62,30,.35); }
 
-      /* ── Selection overlay — a color wash over the thumbnail on
-         hover and when selected, instead of only a border ── */
       .unit-btn-overlay {
         position: absolute; inset: 0;
         z-index: 3;
@@ -505,33 +405,18 @@ window.HomeModule = (function () {
         background: rgba(122,62,30,0);
         transition: background .22s ease;
       }
-      .unit-btn:hover .unit-btn-overlay {
-        background: rgba(20,14,8,.12);
-      }
-      .unit-btn.active .unit-btn-overlay {
-        background: rgba(122,62,30,.16);
-      }
+      .unit-btn:hover .unit-btn-overlay { background: rgba(20,14,8,.12); }
+      .unit-btn.active .unit-btn-overlay { background: rgba(122,62,30,.16); }
 
       .unit-btn-thumb-frame {
         position: absolute; inset: 0;
-        pointer-events: none; /* clicks always go to the .unit-btn wrapper */
+        pointer-events: none;
         overflow: hidden;
         border-radius: 14px;
         clip-path: inset(0 round 14px);
         -webkit-clip-path: inset(0 round 14px);
         background: #ffffff;
       }
-      /* The iframe simply fills its card at natural size — no more
-         fixed-intrinsic-size + scale-down trick, which was blowing
-         the image up and cropping it once cards became full-screen.
-         border-radius here (in addition to the containers above) is
-         the actual fix for the corner bleed — see .unit-btn note.
-         background:#ffffff here too — without it, the iframe shows
-         whatever background its OWN internal page happens to have
-         (or the browser's blank-frame default) for a brief moment
-         before that page's own CSS paints, which read as an
-         inconsistent flash/seam between cards depending on how fast
-         each unit's page loaded. */
       .unit-btn-thumb-frame iframe {
         position: absolute; top: 0; left: 0;
         width: 100%; height: 100%;
@@ -554,7 +439,6 @@ window.HomeModule = (function () {
       }
       .unit-btn.active .unit-btn-label { color: #f0c896; }
 
-      /* ── Bottom Panel ── */
       #bottom-panel {
         position: fixed; bottom: 0; left: 0; right: 0; width: 100%; height: 62px; z-index: 100;
         display: flex; flex-direction: row; align-items: center;
@@ -568,7 +452,6 @@ window.HomeModule = (function () {
       }
       @keyframes panelRiseIn { from{transform:translateY(100%);}to{transform:translateY(0);} }
 
-      /* Nav group — center */
       #panel-nav-group {
         display: flex; flex-direction: row; align-items: stretch;
         width: 100%; justify-content: center; height: 100%;
@@ -593,12 +476,7 @@ window.HomeModule = (function () {
         border-bottom-color: transparent;
       }
 
-      /* Icon color transitions */
-      .panel-slot-icon {
-        flex-shrink: 0;
-        color: rgba(80,55,30,.60);
-        transition: color .22s;
-      }
+      .panel-slot-icon { flex-shrink: 0; color: rgba(80,55,30,.60); transition: color .22s; }
       .panel-slot.active .panel-slot-icon { color: #f5f0e8; }
       .panel-slot:hover:not(.active) .panel-slot-icon { color: rgba(80,55,30,.90); }
 
@@ -611,7 +489,6 @@ window.HomeModule = (function () {
       .panel-slot.active .panel-slot-label { color: #f5f0e8; }
       .panel-slot:hover:not(.active) .panel-slot-label { color: rgba(80,55,30,.90); }
 
-      /* Divider between nav slots */
       .panel-slot + .panel-slot::before {
         content: '';
         position: absolute; left: 0; top: 28%; height: 44%;
@@ -620,8 +497,6 @@ window.HomeModule = (function () {
       .panel-slot.active + .panel-slot::before,
       .panel-slot + .panel-slot.active::before { display: none; }
 
-
-      /* ── Unit Viewer Overlay ── */
       #unit-viewer-overlay {
         position: fixed; top: 0; left: 0; right: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); z-index: 99;
         transform: translateY(100%); transition: transform .5s cubic-bezier(0.22,1,0.36,1);
@@ -641,7 +516,6 @@ window.HomeModule = (function () {
       #unit-loader-ring { width:36px; height:36px; border:2.5px solid rgba(200,190,154,.25); border-top-color:rgba(200,190,154,.9); border-radius:50%; animation:spinRing .75s linear infinite; }
       @keyframes spinRing { to{transform:rotate(360deg);} }
 
-      /* Floating back button over the unit 360 viewer (mobile + desktop) */
       #unit-back {
         position: absolute;
         top: calc(14px + env(safe-area-inset-top, 0px));
@@ -656,18 +530,7 @@ window.HomeModule = (function () {
       #unit-back:hover, #unit-back:active { background: #9a5327; border-color: #b56530; }
       #unit-back svg { width: 16px; height: 16px; stroke: #ffffff; fill: none; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 
-      /* ── Desktop refinement ──
-         On phones, full-height cards make sense (there's little vertical
-         space to spare). On desktop the same full-height stretch leaves
-         each thumbnail looking marooned in a tall column of empty
-         gradient. Cap the card height and vertically center the row
-         instead, so the cards read as a deliberate strip rather than
-         stretched-to-fit panels. */
       @media (min-width: 641px) {
-        /* Desktop gets its own distinct treatment matching the design
-           reference: white floating cards on a plain background, each
-           with its own label pill sitting BELOW the card (not overlaid
-           inside it like the mobile version). */
         #unit-row {
           display: flex;
           flex-direction: row;
@@ -691,8 +554,6 @@ window.HomeModule = (function () {
           align-items: stretch;
           justify-content: flex-start;
           gap: 14px;
-          /* Clipping now lives on .unit-btn-thumb-frame only, so the
-             label pill below can sit outside the card, unclipped. */
           overflow: visible;
           border: none;
           border-radius: 0;
@@ -716,15 +577,9 @@ window.HomeModule = (function () {
           box-shadow: 0 10px 30px rgba(0,0,0,.14);
           transition: border-color .22s, box-shadow .22s;
         }
-        .unit-btn.active {
-          border-color: transparent;
-          box-shadow: none;
-        }
-        .unit-btn.active .unit-btn-thumb-frame {
-          border-color: #c9762f;
-        }
+        .unit-btn.active { border-color: transparent; box-shadow: none; }
+        .unit-btn.active .unit-btn-thumb-frame { border-color: #c9762f; }
         .unit-btn-thumb-frame iframe { border-radius: 16px; }
-        /* No dark gradient / color wash on white desktop cards */
         .unit-btn-thumb-scrim { display: none; }
         .unit-btn-overlay { background: transparent !important; }
         .unit-btn-label {
@@ -738,30 +593,17 @@ window.HomeModule = (function () {
           font-size: 13px;
           box-shadow: 0 4px 14px rgba(0,0,0,.08);
         }
-        .unit-btn.active .unit-btn-label {
-          background: #8a4a22;
-          border-color: #8a4a22;
-          color: #ffffff;
-        }
+        .unit-btn.active .unit-btn-label { background: #8a4a22; border-color: #8a4a22; color: #ffffff; }
       }
 
-      /* ── Portrait / small-screen refinements ── */
       @media (max-width: 640px) {
-        /* Bottom nav: compress so all four tabs fit a narrow screen */
         .panel-slot { padding: 0 10px; gap: 5px; }
         .panel-slot-label { font-size: 9px; letter-spacing: .08em; }
         .panel-slot.active { margin: 8px 2px; }
-        /* Carousel + map: slimmer frame so the image owns the screen */
         #carousel { padding: 12px; }
         #map-overlay { padding: 12px; }
         #map-title { font-size: 13px; }
-        /* Lightbox close within thumb reach */
         #lb-close { top: 12px; right: 12px; }
-
-        /* Unit row: same 2×2 grid on mobile, but cap each card's
-           height so it reads as roughly square instead of stretching
-           to fill the whole portrait screen — the grid is vertically
-           centered in the leftover space instead. */
         #unit-row {
           padding: 12px;
           margin: 10px;
@@ -776,7 +618,6 @@ window.HomeModule = (function () {
         .panel-slot { padding: 0 7px; gap: 4px; }
         .panel-slot-label { font-size: 8px; }
       }
-      /* Respect notch/home-indicator on phones */
       #bottom-panel { padding-bottom: env(safe-area-inset-bottom, 0px); height: calc(62px + env(safe-area-inset-bottom, 0px)); }
     `;
     document.head.appendChild(style);
@@ -876,14 +717,6 @@ window.HomeModule = (function () {
           <div class="unit-btn-overlay"></div>
           <span class="unit-btn-label">Unit 3</span>
         </div>
-        <!-- Unit 4 temporarily removed — restore this block to bring it back:
-        <div class="unit-btn" data-unit="4">
-          <div class="unit-btn-thumb-frame"></div>
-          <div class="unit-btn-thumb-scrim"></div>
-          <div class="unit-btn-overlay"></div>
-          <span class="unit-btn-label">Unit 4</span>
-        </div>
-        -->
       </div>
 
       <div id="bottom-panel">
@@ -919,7 +752,6 @@ window.HomeModule = (function () {
       </div>
     `);
 
-    // Set initial carousel image
     const carouselImg = document.getElementById('carousel-img');
     if (carouselImg && IMAGES.length > 0) {
       carouselImg.src = IMAGES[0].src;
@@ -927,7 +759,6 @@ window.HomeModule = (function () {
     }
   }
 
-  // ─── CAROUSEL — CROSSFADE ────────────────────────────────────────
   function reportCarouselDwell(idx) {
     if (!carouselSlideEnteredAt) return;
     const dwellMs = Date.now() - carouselSlideEnteredAt;
@@ -952,7 +783,7 @@ window.HomeModule = (function () {
       img.src = next.src;
       img.alt = next.label || '';
       img.classList.remove('fading');
-      reportCarouselDwell(current); // 'current' is still the outgoing slide here
+      reportCarouselDwell(current);
       current = targetIdx;
       carouselSlideEnteredAt = Date.now();
       updateDots();
@@ -973,7 +804,6 @@ window.HomeModule = (function () {
     }, 3000);
   }
 
-  // FIX #9: stop carousel timer cleanly
   function stopAuto() {
     clearInterval(autoTimer);
     autoTimer = null;
@@ -981,9 +811,8 @@ window.HomeModule = (function () {
 
   function initCarousel() {
     const carousel = document.getElementById('carousel');
-    carouselSlideEnteredAt = Date.now(); // start the clock on the first slide
+    carouselSlideEnteredAt = Date.now();
 
-    // Touch
     let tapMoved = false;
     carousel.addEventListener('touchstart', e => {
       startX   = e.touches[0].clientX;
@@ -1004,7 +833,6 @@ window.HomeModule = (function () {
       }
     }, { passive: true });
 
-    // Mouse drag
     let mStart = 0, mDrag = false, mMoved = false;
     carousel.addEventListener('mousedown', e => { mStart = e.clientX; mDrag = true; mMoved = false; });
     window.addEventListener('mousemove',  e => { if (mDrag && Math.abs(e.clientX - mStart) > 8) mMoved = true; });
@@ -1025,7 +853,6 @@ window.HomeModule = (function () {
     startAuto();
   }
 
-  // ─── LIGHTBOX ────────────────────────────────────────────────────
   let lbScale = 1, lbPanX = 0, lbPanY = 0, lbPinchDist = 0;
   let lbPanStart = { x: 0, y: 0 };
   const LB_MAX = 4;
@@ -1117,7 +944,6 @@ window.HomeModule = (function () {
     });
   }
 
-  // ─── LOCATION MAP ────────────────────────────────────────────────
   let _mapLoaded = false;
 
   function openMap(replaceHistory) {
@@ -1155,9 +981,6 @@ window.HomeModule = (function () {
     unwindHist('map', skipHistory);
   }
 
-  // ─── EMBEDDED GOOGLE MAPS OVERLAY ──────────────────────────────────
-  // Opens ON TOP of the location map overlay (not a tab switch) — so
-  // going back from it returns to the location map, not the home view.
   let _gmapEmbedLoaded = false;
 
   function openGmapEmbed() {
@@ -1187,9 +1010,6 @@ window.HomeModule = (function () {
     unwindHist('gmap', skipHistory);
   }
 
-  // ─── GENERIC ZOOM/PAN (pinch + drag + wheel) ──────────────────
-  // Same pattern used in floorplan.js — transforms `target` inside
-  // `area` via translate+scale. Reused here for the location map.
   function bindZoomPan(area, target, opts) {
     if (!area || !target) return () => {};
     const { maxScale = 4, minScale = 1, hintEl = null } = opts || {};
@@ -1313,15 +1133,11 @@ window.HomeModule = (function () {
     mapBack.addEventListener('click', handleMapBack);
     mapBack.addEventListener('touchend', (e) => { e.preventDefault(); handleMapBack(); });
 
-    // "View on Google Maps" now opens the in-app embedded map overlay
-    // instead of navigating away from the page.
     const gmapsBtn = document.getElementById('map-gmaps-btn');
     if (gmapsBtn) {
       gmapsBtn.addEventListener('click', () => openGmapEmbed());
     }
 
-    // Embedded Google Maps overlay's own back button — returns to the
-    // location map (not home), since it opened on top of it.
     const gmapBack = document.getElementById('gmap-embed-back');
     function handleGmapEmbedBack() { requestHistBack('gmap', closeGmapEmbed); }
     if (gmapBack) {
@@ -1340,7 +1156,6 @@ window.HomeModule = (function () {
     });
   }
 
-  // ─── UNIT THEME CSS (injected into iframe) ────────────────────────
   const UNIT_THEME_CSS = `
     :root {
       --accent:        #7a3e1e;
@@ -1424,21 +1239,11 @@ window.HomeModule = (function () {
       style.id = 'stellaris-theme-override';
       style.textContent = UNIT_THEME_CSS;
       (doc.head || doc.documentElement).appendChild(style);
-    } catch (e) {
-      // cross-origin iframe — skip silently
-    }
+    } catch (e) {}
   }
 
-  // ─── UNIT THUMBNAILS — live iframes of each unit's own 360 page,
-  // filling their card at natural size. Created lazily the first time
-  // the 360 View tab is opened (not on page load) so three extra
-  // heavy panorama pages aren't fetched before the user asks for them.
   let _thumbsLoaded = false;
 
-  // Hides the unit page's own Floor Plan / 360 View pill toggle when
-  // it's shown as a small thumbnail — it's not needed there since our
-  // own bottom nav bar already provides that switch. Wrapped in
-  // try/catch since same-origin access can still throw in some setups.
   function hideThumbToggleBar(iframe) {
     try {
       const doc = iframe.contentDocument || iframe.contentWindow?.document;
@@ -1446,15 +1251,11 @@ window.HomeModule = (function () {
       if (doc.getElementById('stellaris-thumb-toggle-hide')) return;
       const style = doc.createElement('style');
       style.id = 'stellaris-thumb-toggle-hide';
-      // #view-switch is the exact id used by each unit page's own
-      // Floor Plan / 360° View pill toggle (confirmed from source).
       style.textContent = `
         #view-switch { display: none !important; }
       `;
       (doc.head || doc.documentElement).appendChild(style);
-    } catch (e) {
-      // cross-origin iframe — skip silently
-    }
+    } catch (e) {}
   }
 
   function loadUnitThumbnails() {
@@ -1470,10 +1271,6 @@ window.HomeModule = (function () {
       iframe.setAttribute('loading', 'lazy');
       iframe.setAttribute('tabindex', '-1');
       iframe.setAttribute('aria-hidden', 'true');
-      // Fade the iframe in smoothly once its internal page has actually
-      // loaded, instead of it popping in abruptly the instant the
-      // browser creates the frame (which could show a blank/white flash
-      // before that page's own content had painted).
       iframe.style.opacity = '0';
       iframe.style.transition = 'opacity 0.35s ease';
       iframe.addEventListener('load', () => {
@@ -1492,32 +1289,23 @@ window.HomeModule = (function () {
     const url = unitURLs[unit];
     if (!url) return;
 
-    // Use data attribute to track what's loaded — iframe.src becomes
-    // an absolute URL so endsWith() is unreliable for same-unit checks
     const currentTarget = iframe.dataset.targetUrl || '';
     const isSameUnit    = currentTarget === url;
 
     if (overlay.classList.contains('open') && isSameUnit) return;
 
     if (!isSameUnit) {
-      // Report dwell for whichever unit was previously open, if switching directly between units
       if (activeUnitNumber !== null && activeUnitNumber !== unit) reportUnitViewerDwell();
       activeUnitNumber    = unit;
       unitViewerEnteredAt = Date.now();
 
-      // Record what we're loading so rapid re-clicks don't double-load
       iframe.dataset.targetUrl = url;
 
-      // Fade iframe immediately — no setTimeout delay
       iframe.classList.add('fading');
       if (loader) loader.classList.add('visible');
 
-      // Clear any previous safety timeout from an earlier unit switch
       clearTimeout(unitLoadTimeout);
 
-      // Safety net: if onload never fires (stalled request, connection
-      // contention, etc.), don't leave the spinner stuck forever —
-      // force it to clear after 12s and log why for debugging.
       unitLoadTimeout = setTimeout(() => {
         if (iframe.onload) {
           console.warn('Unit viewer: iframe did not finish loading within 12s for', url);
@@ -1527,7 +1315,6 @@ window.HomeModule = (function () {
         }
       }, 12000);
 
-      // Set onload BEFORE src so cached pages don't miss the event
       iframe.onload = () => {
         clearTimeout(unitLoadTimeout);
         iframe.classList.remove('fading');
@@ -1536,19 +1323,16 @@ window.HomeModule = (function () {
         iframe.onload = null;
       };
 
-      // Assign src immediately — starts loading right away
       iframe.src = url;
     } else {
       injectUnitTheme(iframe);
     }
 
-    // Open overlay immediately so slide-up plays while iframe loads
     const wasOpen = overlay.classList.contains('open');
     overlay.classList.add('open');
     if (!wasOpen && !_popping) pushHist('unit');
   }
 
-  // Reports how long the currently open unit's 360 viewer was on screen, then resets.
   function reportUnitViewerDwell() {
     if (!unitViewerEnteredAt || activeUnitNumber === null) return;
     const dwellMs = Date.now() - unitViewerEnteredAt;
@@ -1571,9 +1355,7 @@ window.HomeModule = (function () {
     unwindHist('unit', skipHistory);
   }
 
-  // ─── BACK NAVIGATION (hardware back / Backspace) ─────────────────
   function bindBackNav() {
-    // Unit viewer floating back button
     const unitBack = document.getElementById('unit-back');
     function requestUnitBack() { requestHistBack('unit', closeUnitViewer); }
     if (unitBack) {
@@ -1581,7 +1363,6 @@ window.HomeModule = (function () {
       unitBack.addEventListener('touchend', (e) => { e.preventDefault(); requestUnitBack(); });
     }
 
-    // Backspace / Escape closes the unit viewer on PC
     document.addEventListener('keydown', (e) => {
       const overlay = document.getElementById('unit-viewer-overlay');
       if (!overlay || !overlay.classList.contains('open')) return;
@@ -1590,9 +1371,6 @@ window.HomeModule = (function () {
       if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); requestUnitBack(); }
     });
 
-    // Hardware/browser back button — closes whichever of our overlays
-    // is open, most-recent first (lightbox > embedded gmap > unit
-    // viewer > map).
     window.addEventListener('popstate', () => {
       _popping = true;
       const lb        = document.getElementById('lightbox');
@@ -1609,6 +1387,8 @@ window.HomeModule = (function () {
       } else if (mapOvl && mapOvl.classList.contains('open') && _hist.map > 0) {
         _hist.map--; closeMap();
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+        // NAV-PATCH: nothing else is open after Location closes — surface Landing (home root).
+        showLanding();
       } else if (unitRowVisible && _hist.threeSixty > 0) {
         _hist.threeSixty--;
         unitRowVisible = false;
@@ -1616,21 +1396,16 @@ window.HomeModule = (function () {
         document.getElementById('carousel').style.display = '';
         document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
+        // NAV-PATCH: nothing else is open after 360 Viewer closes — surface Landing (home root).
+        showLanding();
       }
       _popping = false;
     });
   }
 
-  // ─── CLOSE ALL MODULES ───────────────────────────────────────────
-  // skipHistory=true is used when we're about to immediately open a
-  // different module (tab switch) — it avoids each module's own
-  // history.go() unwind racing against the next module's pushState,
-  // which was causing a tab switch to intermittently bounce back to
-  // the home view and require a second click to actually open.
-  function closeAllModules(skipHistory) {
-    // FIX #9: stop carousel auto-timer when navigating away
+  function closeAllModules(skipHistory, toLanding) {
     stopAuto();
-    document.getElementById('carousel').style.display = '';   // show hero again
+    document.getElementById('carousel').style.display = '';
 
     closeGmapEmbed(skipHistory);
     closeUnitViewer(skipHistory);
@@ -1646,49 +1421,39 @@ window.HomeModule = (function () {
     setTimeout(() => { if (fpOverlay) fpOverlay.style.pointerEvents = ''; }, 420);
     if (window.GalleryModule && typeof GalleryModule.close === 'function') GalleryModule.close(skipHistory);
 
-    // Restart carousel auto-play after closing modules
-    // (only matters if carousel becomes visible again)
     startAuto();
+
+    // NAV-PATCH: only re-surface Landing when we're actually landing back at
+    // the idle/root state (i.e. nothing new is about to open). Callers that
+    // are switching straight into another module pass toLanding=false so
+    // there's no Landing flash between sibling switches.
+    if (toLanding) showLanding();
   }
 
-  // ─── PANEL EVENTS ────────────────────────────────────────────────
   function bindPanelEvents() {
     document.querySelectorAll('.panel-slot').forEach(el => {
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         const slot     = el.dataset.slot;
         const isActive = el.classList.contains('active');
-        // Was some OTHER tab already open? If so this click is a TAB
-        // SWITCH, not a fresh open from the closed/home state — the
-        // module we're about to open should replaceState the existing
-        // history entry rather than push a new one (see pushHist above).
         const switching = !isActive && document.querySelector('.panel-slot.active') !== null;
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
-        // Switching to a different tab (isActive===false) means a new
-        // module opens right after this — skip each module's own
-        // history.go() unwind so it can't race the new pushState.
-        // Toggling the CURRENT tab off (isActive===true) is a real
-        // close with nothing opening next, so unwind history properly.
-        closeAllModules(!isActive);
+        // NAV-PATCH: only show Landing if this click is *closing* the active
+        // slot (isActive); if we're opening a new slot, closeAllModules must
+        // not surface Landing first.
+        closeAllModules(!isActive, isActive);
         if (isActive) return;
         el.classList.add('active');
 
-        // Track section entry in GA4 — this is the real click path for
-        // Floor Plan / 360 View / Gallery / Location, unlike App.navigate()
-        // which these buttons never call.
         if (typeof gtag === 'function') {
           gtag('event', 'view_change', { view_name: slot });
         }
 
         if (slot === '360view') {
           unitRowVisible = true;
-          // Carousel stays visible (not hidden) — unit-row is transparent
-          // now, so the hero image shows through the space around the
-          // shorter desktop cards instead of a flat black backdrop.
           document.getElementById('unit-row')?.classList.add('visible');
           loadUnitThumbnails();
           if (!_popping) pushHist('threeSixty', switching);
-          // Warm the most-clicked unit while the user picks
           const iframe = document.getElementById('unit-iframe');
           if (iframe && !iframe.dataset.targetUrl) {
             iframe.dataset.targetUrl = unitURLs[1];
@@ -1709,7 +1474,6 @@ window.HomeModule = (function () {
         el.classList.add('active');
         const unitNum = parseInt(el.dataset.unit);
 
-        // Track which specific unit's 360 view was opened
         if (typeof gtag === 'function') {
           gtag('event', 'unit_360_view', { unit_number: unitNum });
         }
@@ -1745,17 +1509,16 @@ window.HomeModule = (function () {
 
       if (clickedOutside) {
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
-        closeAllModules();
+        // NAV-PATCH: clicking outside with nothing about to open next → surface Landing.
+        closeAllModules(false, true);
       }
     });
   }
 
-  // ─── ORIENTATION CHECK ───────────────────────────────────────────
   function bindOrientationCheck() {
     function check() {
       const prompt = document.getElementById('rotate-prompt');
       if (!prompt) return;
-      // Portrait is now fully supported — no longer forcing landscape rotation.
       prompt.classList.remove('show');
     }
     window.addEventListener('resize', check);
@@ -1763,13 +1526,29 @@ window.HomeModule = (function () {
     check();
   }
 
-  // ─── LANDING SCREEN ────────────────────────────────────────────
-  // Shown once, on load, before any home content — four big cards
-  // mirroring the bottom nav (Floor Plan / 360 View / Gallery /
-  // Location). Tapping one fades the landing screen out and simply
-  // clicks the matching .panel-slot underneath, so it reuses all of
-  // bindPanelEvents' existing open/history/GA4 logic instead of
-  // duplicating it.
+  // NAV-PATCH: hideLanding()/showLanding() extracted so Landing can be a
+  // re-enterable root state instead of a one-time splash. Same visual
+  // transition as before (opacity/transform via the existing `.hide` class),
+  // just made reversible.
+  function hideLanding() {
+    const screen = document.getElementById('landing-screen');
+    if (!screen || screen.classList.contains('hide')) return;
+    screen.classList.add('hide');
+    clearTimeout(_landingHideTimeout);
+    _landingHideTimeout = setTimeout(() => { screen.style.display = 'none'; }, 480);
+  }
+
+  function showLanding() {
+    const screen = document.getElementById('landing-screen');
+    if (!screen) return;
+    document.querySelectorAll('.landing-card.active').forEach(c => c.classList.remove('active'));
+    clearTimeout(_landingHideTimeout);
+    screen.style.display = 'flex';
+    // force reflow so removing '.hide' actually re-triggers the CSS transition
+    void screen.offsetWidth;
+    screen.classList.remove('hide');
+  }
+
   function injectLanding() {
     if (document.getElementById('landing-screen')) return;
 
@@ -1783,16 +1562,13 @@ window.HomeModule = (function () {
         opacity: 1; pointer-events: all;
         transition: opacity .45s ease;
       }
-      #landing-screen::before {
-        display: none;
-      }
+      #landing-screen::before { display: none; }
       #landing-screen.hide { opacity: 0; pointer-events: none; }
 
       #landing-tagline {
-        font-family: 'Syne', sans-serif; font-size: 30px; font-weight: 700;
-        letter-spacing: .28em; text-transform: uppercase; color: #f0c896;
-        text-shadow: 0 2px 12px rgba(0,0,0,.45);
-        margin-bottom: 44px; text-align: center; padding: 0 20px;
+        font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 600;
+        letter-spacing: .22em; text-transform: uppercase; color: #c9762f;
+        margin-bottom: 40px; text-align: center; padding: 0 20px;
         position: relative; z-index: 2;
       }
 
@@ -1804,42 +1580,60 @@ window.HomeModule = (function () {
 
       .landing-card {
         width: 190px; height: 210px;
-        background: rgba(255,255,255,.92);
-        backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-        border: 1px solid rgba(255,255,255,.35);
+        background: #fdfbf8;
+        border: 1px solid rgba(255,255,255,.45);
         border-radius: 18px;
         display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
         cursor: pointer;
-        box-shadow: 0 12px 34px rgba(0,0,0,.28);
-        transition: transform .22s ease, box-shadow .22s ease, background .32s ease;
+        box-shadow: 0 3px 8px rgba(0,0,0,.07);
+        transition: transform .22s ease, border-color .22s ease, background .22s ease, box-shadow .22s ease;
         -webkit-tap-highlight-color: transparent;
       }
-      .landing-card:hover, .landing-card:active {
+      .landing-card:hover,
+      .landing-card:focus,
+      .landing-card:focus-visible {
         transform: translateY(-4px);
-        box-shadow: 0 16px 40px rgba(0,0,0,.14);
-        background: linear-gradient(135deg, #7a3e1e, #c9762f);
+        box-shadow: 0 6px 14px rgba(0,0,0,.10);
+        background: #fdfbf8;
+        border-color: #c9762f;
+        outline: none;
+      }
+      .landing-card.active {
+        background: linear-gradient(135deg, #7A3E1E 0%, #C97846 100%);
+        border-color: transparent;
+        transform: translateY(-4px);
       }
       .landing-card .panel-slot-icon {
-        width: 44px; height: 44px;
-        color: #7a3e1e;
-        transition: color .32s ease;
+        width: 34px; height: 34px;
+        color: #c9762f;
+        transition: color .22s ease;
       }
-      .landing-card:hover .panel-slot-icon, .landing-card:active .panel-slot-icon { color: #ffffff; }
+      .landing-card:hover .panel-slot-icon,
+      .landing-card:focus .panel-slot-icon,
+      .landing-card:focus-visible .panel-slot-icon {
+        color: #c9762f;
+      }
+      .landing-card.active .panel-slot-icon {
+        color: #f5f0e8;
+      }
 
       .landing-card-label {
         font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
         letter-spacing: .12em; text-transform: uppercase;
-        color: #2b3a4a; transition: color .32s ease;
+        color: #2b3a4a; transition: color .22s ease;
       }
-      .landing-card:hover .landing-card-label, .landing-card:active .landing-card-label { color: #ffffff; }
+      .landing-card:hover .landing-card-label,
+      .landing-card:focus .landing-card-label,
+      .landing-card:focus-visible .landing-card-label {
+        color: #2b3a4a;
+      }
+      .landing-card.active .landing-card-label {
+        color: #f5f0e8;
+      }
 
       @media (max-width: 640px) {
-        #landing-tagline { font-size: 24px; font-weight: 700; letter-spacing: .16em; margin-bottom: 26px; }
+        #landing-tagline { font-size: 18px; font-weight: 600; letter-spacing: .14em; margin-bottom: 26px; }
         .landing-card-label { font-size: 12px; }
-        /* 2x2 grid instead of flex-wrap — flex-wrap let 3 cards fit
-           per row on most phone widths, orphaning the 4th card alone
-           on its own row underneath. A fixed 2-column grid always
-           gives a clean 2x2 layout regardless of card width. */
         #landing-cards {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
@@ -1856,7 +1650,7 @@ window.HomeModule = (function () {
           gap: 14px;
           border-radius: 18px;
         }
-        .landing-card .panel-slot-icon { width: 42px; height: 42px; }
+        .landing-card .panel-slot-icon { width: 32px; height: 32px; }
       }
       @media (max-width: 360px) {
         .landing-card { width: 100%; height: 145px; }
@@ -1892,17 +1686,18 @@ window.HomeModule = (function () {
     document.getElementById('landing-screen').querySelectorAll('.landing-card').forEach(card => {
       card.addEventListener('click', (e) => {
         e.stopPropagation();
+        document.querySelectorAll('.landing-card.active').forEach(c => c.classList.remove('active'));
+        card.classList.add('active');
         const slot   = card.dataset.slot;
-        const screen = document.getElementById('landing-screen');
-        screen.classList.add('hide');
-        setTimeout(() => { screen.style.display = 'none'; }, 480);
+        // NAV-PATCH: reuse the shared hideLanding() instead of the inline
+        // duplicate that used to live here, so open/close stays symmetric.
+        hideLanding();
         const target = document.querySelector(`.panel-slot[data-slot="${slot}"]`);
         if (target) target.click();
       });
     });
   }
 
-  // ─── PUBLIC API ──────────────────────────────────────────────────
   return {
     init() {
       injectHTML();
@@ -1915,11 +1710,14 @@ window.HomeModule = (function () {
       bindOrientationCheck();
       if (window.App && typeof window.App.finishLoad === 'function') App.finishLoad();
 
-      // Landing screen is the entry point now — nothing opens
-      // automatically until the visitor taps one of its four cards
-      // (which click()s the matching .panel-slot underneath).
       stopAuto();
-    }
+    },
+    // NAV-PATCH: exposed so FloorplanModule/GalleryModule (files not in this
+    // patch) can call HomeModule.showLanding() from their own back-button /
+    // popstate handling once they finish closing, so "Floor Plan → Landing"
+    // and "Gallery → Landing" work too. See chat notes for why this couldn't
+    // be wired end-to-end here.
+    showLanding
   };
 
 })();

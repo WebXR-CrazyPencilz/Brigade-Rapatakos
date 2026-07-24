@@ -8,7 +8,7 @@
   // ═══════════════════════════════════════════════════════════════
 
   // ─── CONFIG ─────────────────────────────────────────────────────
-  const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Dimension/3BHK(S)B.jpg?updatedAt=1779451188877'
+  const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Units/unit02_3bhk_s(b)_tower_03.jpg'
 
   // The viewBox matches the image's natural pixel size.
   // All polygon coordinates are based on these dimensions.

@@ -8,7 +8,7 @@
   // ═══════════════════════════════════════════════════════════════
 
   // ─── CONFIG ─────────────────────────────────────────────────────
-  const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Dimension/3BHK(L)-c.jpg?updatedAt=1779450444040'
+  const FP_IMAGE_URL = 'https://ik.imagekit.io/pwzaetheh/Units/unit01_3bhk_l(c)_podium_tower_02.jpg'
 
   // The viewBox matches the image's natural pixel size.
   // All polygon coordinates are based on these dimensions.
@@ -23,12 +23,12 @@
   // clicked (loadRoom() logs "Invalid room key" and no-ops). Fixed to
   // the correct key below.
   const zones = [
-    { room: 'livinganddining', label: 'LIVING',         points: '372,218 600,218 600,365 372,365', fill: 'rgba(0,220,0,0)',    stroke: 'rgba(0,220,0,0)' },
-    { room: 'masterbedroom', label: 'MASTER BEDROOM',  points: '325,368 556,368 556,515 325,515', fill: 'rgba(255,200,0,0)',  stroke: 'rgba(255,200,0,0)' },
-    { room: 'kidsbedroom',   label: 'KIDS BEDROOM',    points: '325,68 528,68 528,214 325,214',   fill: 'rgba(60,140,255,0)', stroke: 'rgba(60,140,255,0)' },
-    { room: 'kitchen',       label: 'KITCHEN',         points: '602,218 715,218 715,417 602,417', fill: 'rgba(255,80,80,0)',  stroke: 'rgba(255,80,80,0)' },
-    { room: 'guestbedroom',  label: 'GUEST BEDROOM',   points: '532,68 715,68 715,214 532,214',   fill: 'rgba(255,80,140,0)', stroke: 'rgba(255,80,140,0)' },
-    { room: 'lobby',         label: 'LOBBY',           points: '560,420 715,420 715,515 560,515', fill: 'rgba(0,204,204,0)',  stroke: 'rgba(0,204,204,0)' },
+    { room: 'livinganddining', label: 'LIVING',         points: '380,230 608,230 608,380 380,380', fill: 'rgba(0,220,0,0)',    stroke: 'rgba(0,220,0,0)' },
+    { room: 'masterbedroom', label: 'MASTER BEDROOM',  points: '330,380 564,380 564,526 330,526', fill: 'rgba(255,200,0,0)',  stroke: 'rgba(255,200,0,0)' },
+    { room: 'kidsbedroom',   label: 'KIDS BEDROOM',    points: '330,82 538,82 538,228 330,228',   fill: 'rgba(60,140,255,0)', stroke: 'rgba(60,140,255,0)' },
+    { room: 'kitchen',       label: 'KITCHEN',         points: '606,230 720,230 720,428 606,428', fill: 'rgba(255,80,80,0)',  stroke: 'rgba(255,80,80,0)' },
+    { room: 'guestbedroom',  label: 'GUEST BEDROOM',   points: '538,82 724,82 724,228 538,228',   fill: 'rgba(255,80,140,0)', stroke: 'rgba(255,80,140,0)' },
+    { room: 'lobby',         label: 'LOBBY',           points: '564,432 722,432 722,528 564,528', fill: 'rgba(0,204,204,0)',  stroke: 'rgba(0,204,204,0)' },
   ]
 
   // ─── INJECT LAYER ───────────────────────────────────────────────
