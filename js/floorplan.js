@@ -46,16 +46,30 @@ window.FloorplanModule = (function () {
   const SITEMAP_LABEL_IMAGE   = './assets/png/sitemaptext.png';
 
   const SITEMAP = {
-    image: IK('Cluster/sitemap.png'),
+    // NAV-PATCH: no longer a static image field — the sitemap now requests
+    // a different server-side CROP per breakpoint from Cloudinary (see
+    // SITEMAP_CLOUD_BASE / SITEMAP_CLOUD_PATH / buildSitemapImageUrl,
+    // further down this file) instead of loading one full image and
+    // CSS-scaling it. Change the source asset there, not here.
     towerTiles: [
       // labelX/labelY (optional): moves just the TAG, independent of the
       // clickable polygon above — use this to nudge a tag into open
       // ground (a courtyard, walkway) instead of wherever the polygon's
       // centroid happens to fall. Same 0–100 coordinate space as points.
-      { id: 'tower-A', label: 'Tower A', points: '47,9 83.5,9 83.5,36 47,36', labelX: 57, labelY: 18 },
-      { id: 'tower-B', label: 'Tower B', points: '57,39 95,39 95,67 57,67', labelX: 90, labelY: 75 },
-      { id: 'tower-C', label: 'Tower C', points: '7,51 54,51 54,97.5 7,97.5' },
-      { id: 'tower-D', label: 'Tower D', points: '7,22 46,22 46,65 7,65', labelX: 13, labelY: 39 },
+      //
+      // NAV-PATCH (image swap to map_ntwd3e.jpg): these 4 zones are a
+      // FIRST-PASS estimate — a simple quadrant split (NE/SE/SW/NW) around
+      // the building cluster's center, eyeballed from a screenshot, not
+      // measured against the real 8001×8001 source file. tower-A/B/C/D are
+      // assigned to NE/SE/SW/NW respectively, carrying forward the old
+      // Tower1=A/Tower2=B/Tower3=C/Tower4=D convention. VERIFY each zone
+      // on the live page actually sits on the tower it's meant to, then
+      // adjust these four `points` (and labelX/labelY) to match — a wrong
+      // assignment here shows a visitor the wrong tower's floor plans.
+      { id: 'tower-A', label: 'Tower A', points: '53,25.5 77,25.5 77,52.8 53,52.8', labelX: 65,   labelY: 33.5 },
+      { id: 'tower-B', label: 'Tower B', points: '53,52.8 77,52.8 77,80 53,80',     labelX: 65,   labelY: 72.5 },
+      { id: 'tower-C', label: 'Tower C', points: '29,52.8 53,52.8 53,80 29,80',     labelX: 41,   labelY: 72.5 },
+      { id: 'tower-D', label: 'Tower D', points: '29,25.5 53,25.5 53,52.8 29,52.8', labelX: 41,   labelY: 33.5 },
     ],
   };
 
@@ -808,7 +822,10 @@ window.FloorplanModule = (function () {
     `);
 
     const sitemapImg = document.getElementById('fp-sitemap-img');
-    if (sitemapImg) sitemapImg.src = SITEMAP.image;
+    // NAV-PATCH: no longer setting a static src here — buildSitemapTiles()
+    // now requests a server-side-cropped image sized for the active
+    // breakpoint (see buildSitemapImageUrl), so the src is set there
+    // instead of eagerly loading the full master image on inject.
 
     const sitemapCompass = document.getElementById('fp-sitemap-compass');
     if (sitemapCompass) {
@@ -943,10 +960,50 @@ window.FloorplanModule = (function () {
   }
 
   function buildSitemapTiles() {
-    disposeSitemapCanvas();
     const wrap = document.getElementById('fp-sitemap-wrap');
     const img  = document.getElementById('fp-sitemap-img');
     if (!wrap || !img) return;
+
+    // NAV-PATCH: determine which crop region this breakpoint should show,
+    // remap tower poly data into that region's own 0–100 space BEFORE
+    // building overlays, and request that exact crop from Cloudinary
+    // (server-side crop, not a CSS zoom) — see buildSitemapImageUrl.
+    const bp = getSitemapBreakpoint();
+
+    // NAV-PATCH: fit to the LIVE panel aspect ratio for every breakpoint,
+    // not just desktop — the old fixed tablet/mobile regions had a fixed
+    // aspect ratio (~0.88, roughly square) that didn't match an actual
+    // phone screen's much taller shape, so the delivered crop ended up
+    // width-constrained with big empty gaps above/below. Using the same
+    // live-aspect fit as desktop (fitSitemapForPCMaxZoom — name kept for
+    // minimal diff, but it's breakpoint-agnostic: always crops to exactly
+    // match whatever container it's given, centered on the tower-safety
+    // box) means every breakpoint now fills its panel completely with no
+    // letterboxing, before the extra-zoom knob is even applied.
+    const panel = document.getElementById('fp-panel-sitemap');
+    const rect  = panel ? panel.getBoundingClientRect() : null;
+    const containerAspect = (rect && rect.height > 0) ? (rect.width / rect.height) : 1.8;
+    const fitted = fitSitemapForPCMaxZoom(containerAspect);
+    const extraZoom = (bp === 'desktop') ? SITEMAP_PC_EXTRA_ZOOM : SITEMAP_EXTRA_ZOOM[bp];
+    const zoomed = shrinkRegionAroundCenter(fitted, extraZoom);
+    const pan    = SITEMAP_PAN[bp] || { x: 0, y: 0 };
+    const region = shiftRegion(zoomed, pan.x, pan.y);
+
+    const targetUrl = buildSitemapImageUrl(region, computeSitemapDeliverWidth());
+
+
+    // NAV-PATCH: if this exact crop is already loaded and built, do
+    // nothing — avoids tearing down and rebuilding the whole GLB scene
+    // on every resize tick when the computed crop didn't actually change
+    // (e.g. a sub-pixel resize that rounds to the same delivered width).
+    if (targetUrl === _sitemapLoadedUrl && (_sitemapRenderer || wrap.querySelector('.fp-sitemap-svg'))) {
+      return;
+    }
+
+    disposeSitemapCanvas();
+    _sitemapPolyData = computeSitemapPolyData(region);
+    _sitemapActiveBreakpoint = bp;
+    _sitemapLoadedUrl = targetUrl;
 
     // Wait until the image has laid out before creating the canvas
     function tryBuild() {
@@ -961,10 +1018,16 @@ window.FloorplanModule = (function () {
       }
     }
 
-    if (img.complete && img.naturalWidth > 0) tryBuild();
-    else img.addEventListener('load', tryBuild, { once: true });
+    if (img.src === targetUrl && img.complete && img.naturalWidth > 0) {
+      tryBuild();
+    } else {
+      img.src = targetUrl;
+      if (img.complete && img.naturalWidth > 0) tryBuild();
+      else img.addEventListener('load', tryBuild, { once: true });
+    }
 
     // Keep canvas locked to image on resize
+    if (_sitemapRO) _sitemapRO.disconnect();
     _sitemapRO = new ResizeObserver(() => {
       clearTimeout(_sitemapROTimer);
       _sitemapROTimer = setTimeout(() => {
@@ -976,17 +1039,49 @@ window.FloorplanModule = (function () {
   }
 
   // ── Precomputed polygon data for sitemap tiles ────────────────
-  const _sitemapPolyData = {};
-  SITEMAP_MESHES.forEach(m => {
-    const pts        = parsePoints(m.points);
-    const { cx, cy } = polyCentroid(pts);
-    const bbox       = polyBBox(pts);
-    // Falls back to the polygon centroid when a tower has no manual
-    // labelX/labelY override set in SITEMAP.towerTiles.
-    const labelX = (m.labelX !== undefined) ? m.labelX : cx;
-    const labelY = (m.labelY !== undefined) ? m.labelY : cy;
-    _sitemapPolyData[m.towerId] = { cx, cy, bbox, labelX, labelY };
-  });
+  // NAV-PATCH: was a static, once-at-load computation from raw
+  // SITEMAP.towerTiles points. Now that the sitemap can display a
+  // server-side CROP of the master image (see buildSitemapImageUrl),
+  // raw points no longer correspond 1:1 to what's on screen — they need
+  // remapping into the active crop region's own 0–100 space first (see
+  // remapPercent/computeSitemapPolyData below). This is now populated by
+  // buildSitemapTiles() on every load, not once here.
+  let _sitemapPolyData = {};
+
+  // Remaps a point from the FULL master image's 0–100 space into the
+  // ACTIVE crop region's own 0–100 space — i.e. "where does this point
+  // land within whatever sub-rectangle of the image is currently loaded."
+  // SITEMAP.towerTiles itself is never touched; this is computed fresh
+  // whenever the active region changes.
+  function remapPercent(x, y, region) {
+    return {
+      x: (x - region.left) / (region.right - region.left) * 100,
+      y: (y - region.top)  / (region.bottom - region.top)  * 100,
+    };
+  }
+  function remapPointsStr(pointsStr, region) {
+    return pointsStr.trim().split(/\s+/).map(p => {
+      const [px, py] = p.split(',').map(Number);
+      const r = remapPercent(px, py, region);
+      return `${r.x},${r.y}`;
+    }).join(' ');
+  }
+  function computeSitemapPolyData(region) {
+    const out = {};
+    SITEMAP.towerTiles.forEach(t => {
+      const remappedPoints = remapPointsStr(t.points, region);
+      const pts        = parsePoints(remappedPoints);
+      const { cx, cy } = polyCentroid(pts);
+      const bbox       = polyBBox(pts);
+      let labelX = cx, labelY = cy;
+      if (t.labelX !== undefined && t.labelY !== undefined) {
+        const rl = remapPercent(t.labelX, t.labelY, region);
+        labelX = rl.x; labelY = rl.y;
+      }
+      out[t.id] = { cx, cy, bbox, labelX, labelY, remappedPoints };
+    });
+    return out;
+  }
 
   // Shared resize sync — same maths as syncToImage in buildGltfZones
   let _sitemapRootList  = [];
@@ -1320,9 +1415,16 @@ window.FloorplanModule = (function () {
 
       const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
       poly.setAttribute('class', 'fp-tower-poly');
-      poly.setAttribute('points', tile.points);
+      // NAV-PATCH: use the remapped points (relative to the currently
+      // loaded crop region), not tile.points directly — tile.points is
+      // in the FULL master image's space, which no longer matches what's
+      // on screen once a crop is active. Falls back to raw points if
+      // _sitemapPolyData hasn't been populated for this tile for any
+      // reason, rather than silently drawing nothing.
+      const remapped = (_sitemapPolyData[tile.id] && _sitemapPolyData[tile.id].remappedPoints) || tile.points;
+      poly.setAttribute('points', remapped);
 
-      const pts = parsePoints(tile.points);
+      const pts = parsePoints(remapped);
       const { cx, cy } = polyCentroid(pts);
       const { minY }   = polyBBox(pts);
 
@@ -2172,7 +2274,7 @@ window.FloorplanModule = (function () {
   // the transformed canvas without any changes to the hit-testing code.
   function bindZoomPan(area, target, opts) {
     if (!area || !target) return () => {};
-    const { maxScale = 4, minScale = 1, hintEl = null, onScaleChange = null } = opts || {};
+    const { maxScale = 4, minScale = 1, hintEl = null, onScaleChange = null, initialScale = null, initialFocus = null } = opts || {};
     let scale = 1, originX = 0, originY = 0, lastDist = null;
     let panStartX = 0, panStartY = 0, panOriginX = 0, panOriginY = 0, lastTap = 0;
 
@@ -2264,6 +2366,23 @@ window.FloorplanModule = (function () {
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
 
+    // NAV-PATCH: optional default starting zoom (e.g. sitemap crop) — same
+    // pivot-around-a-point math as onWheel above, just applied once at bind
+    // time instead of per scroll tick. initialFocus is {xFrac,yFrac}, 0–1
+    // fractions of target's own (untransformed) box. Falls back to the
+    // untouched scale=1/origin=(0,0) start when not provided, so every
+    // other bindZoomPan call site (unit plan, cluster) is unaffected.
+    if (initialScale && initialFocus) {
+      const rect0 = area.getBoundingClientRect();
+      const pivotX = (initialFocus.xFrac - 0.5) * rect0.width;
+      const pivotY = (initialFocus.yFrac - 0.5) * rect0.height;
+      const newScale = Math.min(maxScale, Math.max(minScale, initialScale));
+      originX = pivotX * (1 - newScale);
+      originY = pivotY * (1 - newScale);
+      scale = newScale;
+      applyTransform();
+    }
+
     // Returns a teardown fn so callers can unbind when a panel is rebuilt
     return function unbind() {
       area.removeEventListener('touchstart', onTouchStart);
@@ -2284,18 +2403,226 @@ window.FloorplanModule = (function () {
     bindZoomPan(area, img, { hintEl: zoomHint });
   }
 
-  // Level 0 / Level 1 zoom-pan: transform the *wrap* element (image +
-  // GLB canvas + labels move together, and canvas rect stays accurate
-  // for raycasting since transforms are reflected in getBoundingClientRect).
-  let _unbindSitemapZoom = null;
-  let _unbindClusterZoom = null;
+  // ─── CAMERA VIEWPORT (sitemap) ─────────────────────────────────
+  // Each entry is a region of the FULL master image, in the same 0–100
+  // percentage space as SITEMAP.towerTiles points — { left, top, right,
+  // bottom }. Instead of loading the full image and CSS-scaling it up
+  // (which was the source of the quality loss), each breakpoint requests
+  // its OWN server-side crop from Cloudinary at native resolution — see
+  // buildSitemapImageUrl. SITEMAP.towerTiles itself is never touched;
+  // computeSitemapPolyData (above) remaps points into whichever region is
+  // active, fresh, every time buildSitemapTiles() runs.
+  //
+  // mobile is the ONLY entry actually used now — it's the required
+  // "must stay visible" bounding box (contains all 4 tower zones,
+  // so cropping to it can never clip a tower's tap zone), reused as the
+  // center/minimum-size anchor for fitSitemapForPCMaxZoom(), which now
+  // computes every breakpoint's actual crop live from the panel's real
+  // aspect ratio (see buildSitemapTiles). desktop/tablet entries below
+  // are unused leftovers, kept only so nothing else that might reference
+  // this object shape breaks — the live fit replaced them.
+  const SITEMAP_VIEWPORT_REGIONS = {
+    mobile:  { left: 29,   top: 25.5, right: 77,   bottom: 80  },
+  };
+  const SITEMAP_VIEWPORT_BREAKPOINTS = { mobileMax: 640, tabletMax: 1024 };
 
-  function bindSitemapZoomPan() {
-    if (_unbindSitemapZoom) { _unbindSitemapZoom(); _unbindSitemapZoom = null; }
-    const area = document.getElementById('fp-panel-sitemap');
-    const wrap = document.getElementById('fp-sitemap-wrap');
-    _unbindSitemapZoom = bindZoomPan(area, wrap, { maxScale: 4 });
+  function getSitemapBreakpoint() {
+    const w = window.innerWidth;
+    if (w <= SITEMAP_VIEWPORT_BREAKPOINTS.mobileMax) return 'mobile';
+    if (w <= SITEMAP_VIEWPORT_BREAKPOINTS.tabletMax) return 'tablet';
+    return 'desktop';
   }
+
+  // ─── PC MAX-ZOOM FIT (desktop only) ────────────────────────────
+  // "Fill the entire browser width, crop top/bottom, zoom to the max
+  // level that still keeps the whole project visible." Computed live
+  // from the panel's actual aspect ratio (not a fixed crop) so it holds
+  // correctly across any desktop window size, and re-runs on resize.
+  //
+  // SITEMAP_VIEWPORT_REGIONS.mobile IS the exact bounding box already
+  // containing all 4 tower zones — reused here as "the required content
+  // that must never be clipped," so this can never cut off a tower no
+  // matter how the math below plays out.
+  //
+  // Assumes the source image is square (1:1) — matches the 8001×8001
+  // dimensions confirmed earlier for this project's site-plan renders.
+  // If a future source image isn't square, this aspect math would need
+  // the image's real pixel aspect ratio factored in, not just 0–100
+  // percentages, since those percentages are of width and height
+  // separately and only interchange cleanly on a square source.
+  // NAV-PATCH: pan/shift, on top of the zoom above — for "the view is
+  // centered wrong, nudge it left/right/up/down" without changing zoom
+  // level. Units are the same 0–100 image-percentage space as everything
+  // else. Sign convention is chosen to match what you'd expect visually,
+  // NOT raw crop-window direction (those are opposite — shifting the crop
+  // window left makes the content appear to shift right on screen, which
+  // is a very easy sign to get backwards, so it's handled once here):
+  //   x: positive = visible content moves RIGHT.  negative = LEFT.
+  //   y: positive = visible content moves DOWN.   negative = UP.
+  const SITEMAP_PAN = { desktop: { x: 0, y: 0 }, tablet: { x: 0, y: 0 }, mobile: { x: .9, y: 0 } };
+
+  function shiftRegion(region, panX, panY) {
+    if (!panX && !panY) return region;
+    const dx = -panX, dy = -panY; // crop window moves opposite to the visual pan direction
+    let left = region.left + dx, right = region.right + dx;
+    let top  = region.top  + dy, bottom = region.bottom + dy;
+    if (left < 0)    { right -= left; left = 0; }
+    if (right > 100) { left -= (right - 100); right = 100; }
+    if (top < 0)     { bottom -= top; top = 0; }
+    if (bottom > 100) { top -= (bottom - 100); bottom = 100; }
+    left = Math.max(0, left); right = Math.min(100, right);
+    top  = Math.max(0, top);  bottom = Math.min(100, bottom);
+    return { left, top, right, bottom };
+  }
+
+  // NAV-PATCH: tablet/mobile extra zoom — same idea as SITEMAP_PC_EXTRA_ZOOM
+  // below, one number per breakpoint. 1 = the original fixed crop
+  // (SITEMAP_VIEWPORT_REGIONS[bp]) untouched. Raise mobile toward ~1.15–1.3
+  // to match "project fills ~80–85% of screen" — shrinks the crop toward
+  // its own center, so the towers stay centered as it tightens.
+  const SITEMAP_EXTRA_ZOOM = { tablet: 1, mobile: 2.015 };
+
+  // NAV-PATCH: PC-only extra zoom, on top of the max-zoom fit below.
+  // 1 = no extra zoom (the fit's natural max). 2 = roughly double the
+  // zoom (crop half the width/height, centered on the same point).
+  // This is the one number to change for "zoom PC in more" — it only
+  // affects desktop; SITEMAP_VIEWPORT_REGIONS.mobile (tablet/mobile crop,
+  // and the tower tap-zone safety box) is untouched by this.
+  const SITEMAP_PC_EXTRA_ZOOM = 2;
+
+  // Shrinks a region toward its own center by `factor` (2 = half size),
+  // then shifts (never shrinks further) back inside [0,100] if that pushed
+  // an edge out of bounds.
+  function shrinkRegionAroundCenter(region, factor) {
+    if (!factor || factor <= 1) return region;
+    const cx = (region.left + region.right) / 2;
+    const cy = (region.top + region.bottom) / 2;
+    const w = (region.right - region.left) / factor;
+    const h = (region.bottom - region.top) / factor;
+    let left = cx - w / 2, right = cx + w / 2;
+    let top  = cy - h / 2, bottom = cy + h / 2;
+    if (left < 0)    { right -= left; left = 0; }
+    if (right > 100) { left -= (right - 100); right = 100; }
+    if (top < 0)     { bottom -= top; top = 0; }
+    if (bottom > 100) { top -= (bottom - 100); bottom = 100; }
+    left = Math.max(0, left); right = Math.min(100, right);
+    top  = Math.max(0, top);  bottom = Math.min(100, bottom);
+    return { left, top, right, bottom };
+  }
+
+  function fitSitemapForPCMaxZoom(containerAspect) {
+    const req  = SITEMAP_VIEWPORT_REGIONS.mobile;
+    const reqW = req.right - req.left;
+    const reqH = req.bottom - req.top;
+    const cx   = (req.left + req.right) / 2;
+    const cy   = (req.top  + req.bottom) / 2;
+
+    let w, h;
+    if (containerAspect >= reqW / reqH) {
+      // Container is wider (relative to height) than the required
+      // content box — keep the full required height (already the
+      // minimum needed to show every tower) and grow width to match the
+      // container's aspect, i.e. crop top/bottom to exactly this height,
+      // fill however much width the screen's shape calls for.
+      h = reqH;
+      w = Math.min(100, h * containerAspect);
+      // NAV-PATCH: when width hits the 100% ceiling (very wide windows),
+      // shrink h to EXACTLY match the container's aspect at that width —
+      // not clamped back up to reqH. Keeping h==reqH here made the
+      // delivered crop's aspect narrower than the container's, so the
+      // browser fit it to height and left empty margin on both sides
+      // (touching top/bottom, gap left/right) instead of filling edge to
+      // edge. This does mean extreme wide-window cases crop slightly
+      // tighter than the tower-label safety box — acceptable per "maximize
+      // the zoom."
+      if (w >= 100) { w = 100; h = w / containerAspect; }
+    } else {
+      // Rare: a narrower/taller "desktop" window — keep full required
+      // width, grow height to match instead.
+      w = reqW;
+      h = Math.min(100, w / containerAspect);
+      if (h >= 100) { h = 100; w = h * containerAspect; }
+    }
+
+    let left = cx - w / 2, right = cx + w / 2;
+    let top  = cy - h / 2, bottom = cy + h / 2;
+    // Shift (don't shrink) back into the image's own bounds if centering
+    // pushed an edge past 0/100 — shrinking here could re-clip a tower.
+    if (left < 0)   { right -= left; left = 0; }
+    if (right > 100) { left -= (right - 100); right = 100; }
+    if (top < 0)    { bottom -= top; top = 0; }
+    if (bottom > 100) { top -= (bottom - 100); bottom = 100; }
+    left = Math.max(0, left); right = Math.min(100, right);
+    top  = Math.max(0, top);  bottom = Math.min(100, bottom);
+
+    return { left, top, right, bottom };
+  }
+
+  const SITEMAP_CLOUD_BASE = 'https://res.cloudinary.com/dp5ifzgge/image/upload';
+  const SITEMAP_CLOUD_PATH = 'v1784891078/mapgot_lnjjpp.jpg';
+  const SITEMAP_DELIVER_MIN = 800;
+  const SITEMAP_DELIVER_MAX = 2400; // ceiling — sharp on retina without requesting absurd pixel counts
+
+  // How many CSS pixels to actually deliver for the current crop — based
+  // on the panel's real on-screen size × device pixel ratio (capped),
+  // so we're never downloading more resolution than the screen can show.
+  function computeSitemapDeliverWidth() {
+    const area = document.getElementById('fp-panel-sitemap');
+    const cssWidth = (area && area.clientWidth) || window.innerWidth || 800;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    return Math.max(SITEMAP_DELIVER_MIN, Math.min(Math.round(cssWidth * dpr), SITEMAP_DELIVER_MAX));
+  }
+
+  // Builds a Cloudinary URL that CROPS server-side (c_crop + fl_relative,
+  // fractional 0–1 coordinates of the source) before resizing — so the
+  // browser receives real pixels of "the building, zoomed in," not a
+  // stretched version of the whole map. Full-image regions (desktop) skip
+  // the crop segment entirely and just resize.
+  function buildSitemapImageUrl(region, deliverWidth) {
+    const isFull = region.left === 0 && region.top === 0 && region.right === 100 && region.bottom === 100;
+    let cropSeg = '';
+    if (!isFull) {
+      const x = (region.left / 100).toFixed(4);
+      const y = (region.top / 100).toFixed(4);
+      const w = ((region.right - region.left) / 100).toFixed(4);
+      const h = ((region.bottom - region.top) / 100).toFixed(4);
+      cropSeg = `c_crop,x_${x},y_${y},w_${w},h_${h},fl_relative/`;
+    }
+    return `${SITEMAP_CLOUD_BASE}/${cropSeg}w_${deliverWidth},q_100/${SITEMAP_CLOUD_PATH}`;
+  }
+
+  let _sitemapActiveBreakpoint = null;
+  let _sitemapLoadedUrl = null;
+  let _sitemapResizeTimer = null;
+
+  function bindSitemapResizeWatcher() {
+    window.addEventListener('resize', () => {
+      clearTimeout(_sitemapResizeTimer);
+      _sitemapResizeTimer = setTimeout(() => {
+        if (!overlayOpen || level !== 0) return;
+        // NAV-PATCH: always re-run (debounced), not just on breakpoint-name
+        // change — desktop's crop now depends on the live window aspect
+        // ratio (fitSitemapForPCMaxZoom), which can change within the
+        // "desktop" breakpoint itself as the window is resized/dragged.
+        // buildSitemapTiles()'s own img.src === targetUrl check already
+        // no-ops if the computed crop didn't actually change, so this
+        // stays cheap when nothing meaningful moved.
+        buildSitemapTiles();
+      }, 300);
+    });
+    window.addEventListener('orientationchange', () => {
+      setTimeout(() => {
+        if (overlayOpen && level === 0) buildSitemapTiles();
+      }, 100);
+    });
+  }
+  let _sitemapResizeWatcherBound = false;
+
+  // Level 1 (cluster) zoom-pan is untouched — still interactive, still
+  // transform-based. The sitemap no longer uses bindZoomPan at all: no
+  // manual pinch/wheel/double-tap, and no CSS-transform "zoom" — the
+  // camera-viewport crop above is the only thing controlling framing.
+  let _unbindClusterZoom = null;
 
   function bindClusterZoomPan() {
     if (_unbindClusterZoom) { _unbindClusterZoom(); _unbindClusterZoom = null; }
@@ -2565,7 +2892,7 @@ window.FloorplanModule = (function () {
       });
     });
     bindPinchZoom();
-    bindSitemapZoomPan();
+    if (!_sitemapResizeWatcherBound) { _sitemapResizeWatcherBound = true; bindSitemapResizeWatcher(); }
     bindClusterZoomPan();
     bindSwipeBack();
     bindHistoryNav();
