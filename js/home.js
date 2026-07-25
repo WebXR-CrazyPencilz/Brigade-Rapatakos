@@ -1580,18 +1580,18 @@ window.HomeModule = (function () {
       #landing-tagline {
         font-family: 'Syne', sans-serif; font-size: 26px; font-weight: 600;
         letter-spacing: .22em; text-transform: uppercase; color: #c9762f;
-        margin-bottom: 40px; text-align: center; padding: 0 20px;
+        margin-top: -30px; margin-bottom: 40px; text-align: center; padding: 0 20px;
         position: relative; z-index: 2;
       }
 
       #landing-cards {
-        display: flex; flex-wrap: wrap; justify-content: center; gap: 22px;
-        padding: 0 24px; max-width: 1100px;
+        display: grid; grid-template-columns: repeat(4, 1fr); justify-content: center; gap: 22px;
+        padding: 0 24px; max-width: 1100px; width: 100%; margin: 0 auto;
         position: relative; z-index: 2;
       }
 
       .landing-card {
-        width: 232px; height: 252px;
+        width: 100%; height: 268px;
         background: #fdfbf8;
         border: 1px solid rgba(255,255,255,.45);
         border-radius: 18px;
@@ -1603,70 +1603,62 @@ window.HomeModule = (function () {
       }
       .landing-card:hover,
       .landing-card:focus,
-      .landing-card:focus-visible {
-        transform: translateY(-4px);
-        box-shadow: 0 6px 14px rgba(0,0,0,.10);
-        background: #fdfbf8;
-        border-color: #c9762f;
-        outline: none;
-      }
+      .landing-card:focus-visible,
       .landing-card.active {
         background: linear-gradient(135deg, #7A3E1E 0%, #C97846 100%);
         border-color: transparent;
         transform: translateY(-4px);
+        box-shadow: 0 6px 14px rgba(0,0,0,.10);
+        outline: none;
       }
       .landing-card .panel-slot-icon {
-        width: 41px; height: 41px;
+        width: 48px; height: 48px;
         color: #c9762f;
         transition: color .22s ease;
       }
       .landing-card:hover .panel-slot-icon,
       .landing-card:focus .panel-slot-icon,
-      .landing-card:focus-visible .panel-slot-icon {
-        color: #c9762f;
-      }
+      .landing-card:focus-visible .panel-slot-icon,
       .landing-card.active .panel-slot-icon {
         color: #f5f0e8;
       }
 
       .landing-card-label {
-        font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700;
+        font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700;
         letter-spacing: .12em; text-transform: uppercase;
         color: #2b3a4a; transition: color .22s ease;
       }
       .landing-card:hover .landing-card-label,
       .landing-card:focus .landing-card-label,
-      .landing-card:focus-visible .landing-card-label {
-        color: #2b3a4a;
-      }
+      .landing-card:focus-visible .landing-card-label,
       .landing-card.active .landing-card-label {
         color: #f5f0e8;
       }
 
       @media (max-width: 640px) {
-        #landing-tagline { font-size: 20px; font-weight: 600; letter-spacing: .14em; margin-bottom: 26px; }
-        .landing-card-label { font-size: 14px; }
+        #landing-tagline { font-size: 23px; font-weight: 600; letter-spacing: .14em; margin-top: -52px; margin-bottom: 26px; }
+        .landing-card-label { font-size: 16px; }
         #landing-cards {
           display: grid;
           grid-template-columns: repeat(2, 1fr);
           justify-content: center;
           justify-items: center;
           gap: 18px;
-          max-width: 420px;
+          max-width: 452px;
           width: 100%;
           margin: 0 auto;
         }
         .landing-card {
           width: 100%;
-          height: 200px;
+          height: 216px;
           gap: 14px;
           border-radius: 18px;
         }
-        .landing-card .panel-slot-icon { width: 39px; height: 39px; }
+        .landing-card .panel-slot-icon { width: 47px; height: 47px; }
       }
       @media (max-width: 360px) {
-        .landing-card { width: 100%; height: 172px; }
-        #landing-cards { max-width: 320px; }
+        .landing-card { width: 100%; height: 188px; }
+        #landing-cards { max-width: 340px; }
       }
     `;
     document.head.appendChild(style);

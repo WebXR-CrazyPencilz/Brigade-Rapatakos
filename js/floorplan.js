@@ -68,6 +68,14 @@ window.FloorplanModule = (function () {
       // ground (a courtyard, walkway) instead of wherever the polygon's
       // centroid happens to fall. Same 0–100 coordinate space as points.
       //
+      // pointsMobile / labelXMobile / labelYMobile (optional): mobile-only
+      // overrides. When the active breakpoint is 'mobile' AND pointsMobile
+      // is set on a tile, computeSitemapPolyData() uses these instead of
+      // points/labelX/labelY for that tile. Leave them equal to the
+      // desktop values (as seeded below) until calibrated with
+      // SITEMAP_DEBUG_GRID=true at a ≤640px window width — see the
+      // "Calibrating mobile" note further down this file.
+      //
       // NAV-PATCH (image swap to map_ntwd3e.jpg): these 4 zones are a
       // FIRST-PASS estimate — a simple quadrant split (NE/SE/SW/NW) around
       // the building cluster's center, eyeballed from a screenshot, not
@@ -77,10 +85,15 @@ window.FloorplanModule = (function () {
       // on the live page actually sits on the tower it's meant to, then
       // adjust these four `points` (and labelX/labelY) to match — a wrong
       // assignment here shows a visitor the wrong tower's floor plans.
-      { id: 'tower-A', label: 'Tower A', points: '48,10 56,10 56,49.5 48,49.5', labelX: 65,   labelY: 33.5 },
-      { id: 'tower-B', label: 'Tower B', points: '52.5,48 60,48 60,55 52.5,55', labelX: 65,   labelY: 72.5 },
-      { id: 'tower-C', label: 'Tower C', points: '43,52.5 55,52.5 55,64.5 43,64.5', labelX: 41,   labelY: 72.5 },
-      { id: 'tower-D', label: 'Tower D', points: '42,49 50,49 50,57 42,57', labelX: 41,   labelY: 33.5 },
+      { id: 'tower-A', label: 'Tower A', points: '48,10 56,10 56,49.5 48,49.5', labelX: 65,   labelY: 33.5,
+        pointsMobile: '49,28 57,28 57,64 49,64', labelXMobile: 65, labelYMobile: 33.5 },
+      { id: 'tower-B', label: 'Tower B', points: '52.5,48 60,48 60,55 52.5,55', labelX: 65,   labelY: 72.5,
+        pointsMobile: '46.5,46.7 68.5,46.7 68.5,57 46.5,57', labelXMobile: 65, labelYMobile: 72.5 },
+
+      { id: 'tower-C', label: 'Tower C', points: '43,52.5 55,52.5 55,64.5 43,64.5', labelX: 41,   labelY: 72.5,
+        pointsMobile: '41.5,49 58,49 58,68 41.5,68', labelXMobile: 41, labelYMobile: 72.5 },
+      { id: 'tower-D', label: 'Tower D', points: '42,49 50,49 50,57 42,57', labelX: 41,   labelY: 33.5,
+        pointsMobile: '45.5,45.3 48,45.3 48,60 45.5,60', labelXMobile: 41, labelYMobile: 33.5 },
     ],
   };
 
@@ -91,8 +104,8 @@ window.FloorplanModule = (function () {
     // ══════════════════════════════════════════════════════════
     'tower-A': {
       label: 'Tower A',
-      odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_01.jpg')  },
-      even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_01.jpg') },
+      odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower01.jpg')  },
+      even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower01.jpg') },
       oddUnits: [
         { unitId:'A-odd-01', top:IK('Dimension/unit03_4bhk_(c)_tower_01.jpg'),       iso:IK('Isometric/unit03_4bhk_(c)_tower_01.jpg'),       points:'59,07.5 78,07.5 78,45 59,45' },
         { unitId:'A-odd-02', top:IK('Dimension/unit06_3bhk_l(d)_tower_02.jpg'),      iso:IK('Isometric/unit06_3bhk_l(d)_tower_02.jpg'),      points:'26,63 41.75,63 41.75,91.4 26,91.4' },
@@ -116,8 +129,8 @@ window.FloorplanModule = (function () {
     // ══════════════════════════════════════════════════════════
     'tower-B': {
       label: 'Tower B',
-      odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_02.jpg')  },
-      even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_02.jpg') },
+      odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower02.jpg')  },
+      even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower02.jpg') },
       oddUnits: [
         { unitId:'B-odd-01', top:IK('Dimension/unit03_4bhk_(c)_tower_01.jpg'),  iso:IK('Isometric/unit03_4bhk_(c)_tower_01.jpg'),  points:'58.25,3 80.25,3 80.25,41 58.25,41' },
         { unitId:'B-odd-02', top:IK('Dimension/unit06_3bhk_l(d)_tower_02.jpg'), iso:IK('Isometric/unit06_3bhk_l(d)_tower_02.jpg'), points:'19.5,65 37.5,65 37.5,97.7 19.5,97.7' },
@@ -141,8 +154,8 @@ window.FloorplanModule = (function () {
     // ══════════════════════════════════════════════════════════
     'tower-C': {
       label: 'Tower C',
-      odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_03.jpg')  },
-      even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_03.jpg') },
+      odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower03.jpg')  },
+      even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower03.jpg') },
       oddUnits: [
         { unitId:'C-odd-01', top:IK('Dimension/unit06_3bhk_l(g)_tower_03.jpg'),  iso:IK('Isometric/unit06_3bhk_l(g)_tower_03.jpg'), points:'43,60 65,60 65,92 43,92' },
         { unitId:'C-odd-02', top:IK('Dimension/unit02_3bhk_s(b)_odd_tower_03.jpg'),                                                     points:'52,16.6 72,16.6 72,50 52,50' },
@@ -168,8 +181,8 @@ window.FloorplanModule = (function () {
     // ══════════════════════════════════════════════════════════
     'tower-D': {
       label: 'Tower D',
-      odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower_04.jpg')  },
-      even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower_04.jpg') },
+      odd:  { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_odd_tower04.jpg')  },
+      even: { image: IK('Cluster/Brigade_raptakose_Cluster_Floorplan/typical_even_tower04.jpg') },
       oddUnits: [
         { unitId:'D-odd-01', top:IK('Dimension/unit03_3bhk_l(a)_tower_04.jpg'), iso:IK('Isometric/unit03_3bhk_l(a)_tower_04.jpg'), points:'60.5,7 76.5,7 76.5,38 60.5,38' },
         { unitId:'D-odd-02', top:IK('Dimension/unit05_3bhk_s(a)_tower_02.jpg'), iso:IK('Isometric/unit05_3bhk_s(a)_tower_02.jpg'), points:'43.3,61 61,61 61,85.5 43.3,85.5' },
@@ -617,69 +630,48 @@ window.FloorplanModule = (function () {
         .fp-unit-label-text { font-size: 10px; }
       }
 
-      /* Cluster badge — shows which tower + odd/even floor set is active.
-         Lives in the topbar's normal flex flow now (not absolutely
-         positioned above the cluster image) — it reserves its own space
-         automatically like any other flex item, and can't get clipped by
-         an ancestor's overflow:hidden the way a floated overlay can.
-         Shown only on the cluster/unit panels via .fp-topbar--cluster
-         (see showPanel below), same pattern as the sitemap compass/label. */
-      #fp-cluster-badge {
-        display: none; align-items: center; justify-content: center;
-        font-family: 'Syne', sans-serif;
-        font-size: clamp(9.5px, 2.2vw, 13px);
-        font-weight: 700;
-        letter-spacing: .07em; text-transform: uppercase;
-        color: #f5f0e8; background: rgba(122,62,30,.88);
-        padding: clamp(5px, 1.1vw, 8px) clamp(10px, 2.4vw, 16px);
-        border-radius: 999px;
-        white-space: nowrap; flex-shrink: 0;
-      }
-      #fp-topbar.fp-topbar--cluster #fp-cluster-badge { display: flex; }
-      @media (max-width: 360px) {
-        #fp-cluster-badge { font-size: 8.5px; padding: 5px 9px; }
-      }
-
       #fp-sitemap-hint {
         position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%);
         font-family: 'Cormorant Garamond', serif; font-size: 11px; font-style: italic;
         color: rgba(80,50,30,.40); pointer-events: none; white-space: nowrap;
       }
 
-      /* ── Sitemap floating overlays — compass (top-right) and
-         "SITE PLAN" label (top-left), positioned relative to the
-         sitemap image itself so they track it through zoom/pan and
-         scale down together on mobile. Hidden by default, shown only
-         while the sitemap panel is active (see fp-topbar--sitemap). ── */
+      /* ── Sitemap floating badges — compass (top-right) and
+         "SITE PLAN" label (top-left) are now TWO SEPARATE floating
+         cards, each with its own translucent/blurred background,
+         anchored independently to a corner — not sharing #fp-topbar's
+         bar shape or background anymore. Hidden by default, shown only
+         while the sitemap panel is active (see fp-topbar--sitemap,
+         now toggled on #fp-card so it reaches these siblings too). ── */
       #fp-sitemap-compass,
       #fp-sitemap-label {
         display: none;
+        position: absolute; z-index: 35; pointer-events: none;
+        background: rgba(255,253,250,.92);
+        -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+        border-radius: 12px;
+        box-shadow: 0 4px 14px rgba(0,0,0,.16);
+        padding: 8px 12px;
       }
-      #fp-topbar.fp-topbar--sitemap #fp-sitemap-compass,
-      #fp-topbar.fp-topbar--sitemap #fp-sitemap-label {
+      #fp-card.fp-topbar--sitemap #fp-sitemap-compass,
+      #fp-card.fp-topbar--sitemap #fp-sitemap-label {
         display: block;
       }
       #fp-sitemap-compass {
-        position: absolute; top: 50%; left: 50%;
-        transform: translate(calc(-50% + 90px), -50%);
+        top: 12px; right: 12px;
         height: 46px; width: auto;
-        z-index: 25; pointer-events: none;
-        filter: drop-shadow(0 1px 3px rgba(0,0,0,.20));
       }
       #fp-sitemap-label {
-        position: absolute; top: 50%; left: 50%;
-        transform: translate(calc(-50% - 70px), -50%);
+        top: 12px; left: 12px;
         height: 34px; width: auto;
-        z-index: 25; pointer-events: none;
-        filter: drop-shadow(0 1px 3px rgba(0,0,0,.15));
       }
       @media (max-width: 640px) {
-        #fp-sitemap-compass { height: 36px; transform: translate(calc(-50% + 66px), -50%); }
-        #fp-sitemap-label   { height: 26px; transform: translate(calc(-50% - 54px), -50%); }
+        #fp-sitemap-compass { height: 36px; padding: 6px 10px; }
+        #fp-sitemap-label   { height: 26px; padding: 6px 10px; }
       }
       @media (max-width: 400px) {
-        #fp-sitemap-compass { height: 30px; }
-        #fp-sitemap-label   { height: 22px; }
+        #fp-sitemap-compass { height: 30px; padding: 5px 8px; }
+        #fp-sitemap-label   { height: 22px; padding: 5px 8px; }
       }
 
       /* ── CLUSTER ── */
@@ -688,13 +680,13 @@ window.FloorplanModule = (function () {
         background: #ffffff; transform: translateX(32px);
         overflow: hidden; touch-action: none;
       }
-      #fp-cluster-wrap { position: relative; display: inline-block; max-width: 100%; max-height: 100%; will-change: transform; perspective: 1400px; }
+      #fp-cluster-wrap { position: relative; display: inline-block; max-width: 100%; max-height: 100%; will-change: transform; }
       #fp-cluster-img {
         display: block; max-width: 100%;
         max-height: calc(100dvh - var(--fp-topbar-h) - 62px - 48px - env(safe-area-inset-bottom, 0px));
         object-fit: contain; border: 1px solid rgba(122,62,30,.12);
         transition: opacity 0.28s; pointer-events: none;
-        backface-visibility: hidden; will-change: transform, opacity;
+        will-change: opacity;
       }
       #fp-cluster-img.fading { opacity: 0; }
 
@@ -776,13 +768,14 @@ window.FloorplanModule = (function () {
     document.body.insertAdjacentHTML('beforeend', `
       <div id="fp-overlay">
         <div id="fp-card">
+          <img id="fp-sitemap-label" src="" alt="Site Plan" />
+          <img id="fp-sitemap-compass" src="" alt="North direction" />
           <div id="fp-topbar">
             <div id="fp-back">
               <div id="fp-back-arrow">
                 <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
               </div>
             </div>
-            <img id="fp-sitemap-label" src="" alt="Site Plan" />
             <div id="fp-toggles-row">
               <div id="fp-parity-toggle">
                 <button class="fp-parity-btn active" data-parity="odd">Odd</button>
@@ -793,8 +786,6 @@ window.FloorplanModule = (function () {
                 <button class="fp-toggle-btn"        data-view="iso">ISO</button>
               </div>
             </div>
-            <img id="fp-sitemap-compass" src="" alt="North direction" />
-            <div id="fp-cluster-badge"></div>
             <div id="fp-topbar-spacer"></div>
           </div>
           <div id="fp-content">
@@ -874,27 +865,24 @@ window.FloorplanModule = (function () {
       el.classList.remove('enter','exit-l','exit-r');
       el.classList.add(pid === id ? 'enter' : direction === 'forward' ? 'exit-l' : 'exit-r');
     });
-    // Compass/label overlays only make sense on the sitemap panel —
-    // hide them on cluster/unit panels via a class on the topbar.
-    // The cluster badge is the mirror image: shown only on cluster/unit.
-    const topbar = document.getElementById('fp-topbar');
-    if (topbar) {
-      topbar.classList.toggle('fp-topbar--sitemap', id === 'fp-panel-sitemap');
-      topbar.classList.toggle('fp-topbar--cluster', id === 'fp-panel-cluster' || id === 'fp-panel-unit');
+    // Compass/label badges only make sense on the sitemap panel — they're
+    // independent floating elements (siblings of #fp-topbar under
+    // #fp-card), so the visibility class is toggled on #fp-card.
+    const card = document.getElementById('fp-card');
+    if (card) {
+      card.classList.toggle('fp-topbar--sitemap', id === 'fp-panel-sitemap');
     }
   }
 
   function updateTitle() { /* fp-title removed — toggle row is centred via spacer */ }
 
   function resetToSitemap() {
-    _flipToken++; // cancels any in-flight Odd/Even flip — see swapParity
+    _flipToken++; // cancels any in-flight Odd/Even swap — see swapParity
     disposeGltfCanvas();
     disposeSitemapCanvas();
     if (_sitemapRO) { _sitemapRO.disconnect(); _sitemapRO = null; }
     const clusterWrap = document.getElementById('fp-cluster-wrap');
     if (clusterWrap) clusterWrap.style.transform = '';
-    const clusterBadge = document.getElementById('fp-cluster-badge');
-    if (clusterBadge) clusterBadge.textContent = '';
     level = 0; activeTower = null; activeUnit = null;
     viewMode = 'top'; floorParity = 'odd';
     const svg = document.getElementById('fp-zone-svg');
@@ -903,9 +891,9 @@ window.FloorplanModule = (function () {
     if (clusterImg) {
       clusterImg.classList.remove('fading');
       clusterImg.removeAttribute('src');
-      // Clear any in-flight flip transform (see swapParity) — without
-      // this, navigating away mid-flip left the image permanently
-      // stuck edge-on (rotateY 90°) the next time this element was reused.
+      // Clear any in-flight fade left over from swapParity — defensive
+      // reset so a stale inline opacity/transition can't linger onto
+      // the next time this element is reused.
       clusterImg.style.transition = '';
       clusterImg.style.transform  = '';
       clusterImg.style.opacity    = '';
@@ -1028,7 +1016,7 @@ window.FloorplanModule = (function () {
     }
 
     disposeSitemapCanvas();
-    _sitemapPolyData = computeSitemapPolyData(region);
+    _sitemapPolyData = computeSitemapPolyData(region, bp);
     _sitemapActiveBreakpoint = bp;
     _sitemapLoadedUrl = targetUrl;
 
@@ -1094,16 +1082,25 @@ window.FloorplanModule = (function () {
       return `${r.x},${r.y}`;
     }).join(' ');
   }
-  function computeSitemapPolyData(region) {
+  // NAV-PATCH: now breakpoint-aware — when `bp` is 'mobile' and a tile has
+  // pointsMobile/labelXMobile/labelYMobile set, those are used instead of
+  // the desktop points/labelX/labelY. Falls back to desktop values for any
+  // tile that doesn't define mobile overrides, so PC behavior (and any
+  // tower not yet calibrated for mobile) is completely unaffected.
+  function computeSitemapPolyData(region, bp) {
     const out = {};
     SITEMAP.towerTiles.forEach(t => {
-      const remappedPoints = remapPointsStr(t.points, region);
+      const useMobile = bp === 'mobile' && t.pointsMobile;
+      const srcPoints = useMobile ? t.pointsMobile : t.points;
+      const remappedPoints = remapPointsStr(srcPoints, region);
       const pts        = parsePoints(remappedPoints);
       const { cx, cy } = polyCentroid(pts);
       const bbox       = polyBBox(pts);
       let labelX = cx, labelY = cy;
-      if (t.labelX !== undefined && t.labelY !== undefined) {
-        const rl = remapPercent(t.labelX, t.labelY, region);
+      const lx = useMobile && t.labelXMobile !== undefined ? t.labelXMobile : t.labelX;
+      const ly = useMobile && t.labelYMobile !== undefined ? t.labelYMobile : t.labelY;
+      if (lx !== undefined && ly !== undefined) {
+        const rl = remapPercent(lx, ly, region);
         labelX = rl.x; labelY = rl.y;
       }
       out[t.id] = { cx, cy, bbox, labelX, labelY, remappedPoints };
@@ -1202,7 +1199,17 @@ window.FloorplanModule = (function () {
       const box1  = new THREE.Box3().setFromObject(root);
       const size1 = new THREE.Vector3(); box1.getSize(size1);
 
-      const glbScale = SITEMAP_GLB_SCALE[towerId] != null ? SITEMAP_GLB_SCALE[towerId] : 1;
+      // NAV-PATCH: mobile-only scale override — SITEMAP_GLB_SCALE_MOBILE
+      // takes precedence when the active breakpoint is 'mobile' and that
+      // tower has a non-null override set; otherwise falls back to the
+      // existing desktop/shared SITEMAP_GLB_SCALE value (unaffected on
+      // PC/tablet, and on mobile for any tower left at null). Fixed
+      // number — does NOT change with window width within the mobile
+      // range, so it can't drift/grow as the window is resized.
+      const mobileOverride = _sitemapActiveBreakpoint === 'mobile' ? SITEMAP_GLB_SCALE_MOBILE[towerId] : null;
+      const glbScale = mobileOverride != null
+        ? mobileOverride
+        : (SITEMAP_GLB_SCALE[towerId] != null ? SITEMAP_GLB_SCALE[towerId] : 1);
       const scaleX = (size1.x > 0.0001 ? sz.sw / size1.x : 1) * glbScale;
       const scaleY = (size1.y > 0.0001 ? sz.sh / size1.y : 1) * glbScale;
       root.scale.set(scaleX, scaleY, Math.min(scaleX, scaleY));
@@ -1569,26 +1576,16 @@ window.FloorplanModule = (function () {
   }
 
   // ─── SWAP PARITY ─────────────────────────────────────────────
-  // ─── CLUSTER BADGE ─────────────────────────────────────────────
-  // Shows which tower + which floor set (odd/even) is currently on
-  // screen — e.g. "Tower 2 · Odd Floors" — since several units can look
-  // similar and the odd/even toggle alone isn't always obvious at a glance.
-  function updateClusterBadge(towerId, parity) {
-    const badge = document.getElementById('fp-cluster-badge');
-    if (!badge) return;
-    const num = _towerDisplayNumber[towerId] || '';
-    const parityLabel = parity === 'even' ? 'Even Floors' : 'Odd Floors';
-    badge.textContent = `Tower ${num} · ${parityLabel}`;
-  }
-
-  // Card-flip transition for the Odd/Even toggle — the current plan
-  // rotates away to edge-on (invisible at 90°), the source swaps at
-  // that exact instant with the transition briefly disabled (so the
-  // jump to the mirrored edge-on angle is imperceptible), then it
-  // rotates back to flat with the new plan. Reads as one continuous
-  // 180° flip even though it's really two 90° halves.
-  const FLIP_HALF_MS = 180;
-  let _flipToken = 0; // bumped on every call — lets a newer flip cancel a stale one cleanly
+  // Odd/Even toggle — instant image swap with a brief, subtle opacity
+  // fade (no 3D flip/rotate/perspective animation). Keeps the same
+  // in-flight-swap cancellation token (_flipToken — name kept as-is
+  // since drillToCluster/resetToSitemap already reference it to cancel
+  // a swap in progress) so rapid double-taps on Odd/Even still behave
+  // correctly: a newer swap safely supersedes a stale one instead of
+  // fighting over the element's opacity or triggering a stale GLB zone
+  // rebuild.
+  const PARITY_FADE_MS = 130;
+  let _flipToken = 0; // bumped on every call — lets a newer swap cancel a stale one cleanly
 
   function swapParity(newParity) {
     if (!activeTower || newParity === floorParity || level !== 1) return;
@@ -1597,79 +1594,46 @@ window.FloorplanModule = (function () {
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
     });
-    updateClusterBadge(activeTower, floorParity);
     const img = document.getElementById('fp-cluster-img');
     const svg = document.getElementById('fp-zone-svg');
     if (!img || !svg) return;
     document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
     svg.innerHTML = '';
 
-    // Supersedes any flip already in flight — the stale one's callbacks
+    // Supersedes any swap already in flight — the stale one's callbacks
     // check this token and become no-ops instead of fighting this one
-    // for control of the element's transform.
+    // for control of the element.
     const myToken  = ++_flipToken;
     const reqTower = activeTower, reqParity = floorParity;
 
-    img.style.transition = `transform ${FLIP_HALF_MS}ms ease-in, opacity ${FLIP_HALF_MS}ms ease-in`;
-    img.style.transform  = 'rotateY(90deg)';
-    img.style.opacity    = '0.35';
-
-    function resetFlip() {
-      img.style.transition = 'none';
-      img.style.transform  = 'rotateY(-90deg)';
-      void img.offsetWidth; // force reflow so the jump registers before re-enabling the transition
-      img.style.transition = `transform ${FLIP_HALF_MS}ms ease-out, opacity ${FLIP_HALF_MS}ms ease-out`;
-      img.style.transform  = 'rotateY(0deg)';
-      img.style.opacity    = '1';
-    }
+    img.style.transition = `opacity ${PARITY_FADE_MS}ms ease`;
+    img.style.opacity    = '0.25';
 
     setTimeout(() => {
-      // A newer flip already took over — it owns the element's reset now.
+      // A newer swap already took over — it owns the element now.
       if (myToken !== _flipToken) return;
       let done = false;
       let hardTimer = null;
       function finish() {
         if (done) return; done = true;
         clearTimeout(hardTimer);
-        // Superseded while the new image was loading — the newer flip is
-        // already mid-animation on this element; don't fight it.
+        // Superseded while the new image was loading — the newer swap
+        // is already handling this element; don't fight it.
         if (myToken !== _flipToken) return;
-        resetFlip();
-        // Wait for the rotate-back-to-flat transition to ACTUALLY finish
-        // before measuring the image for the zone canvas — don't guess
-        // with a fixed timer. getBoundingClientRect() reflects the LIVE
-        // transform; measuring even a fraction of a degree before
-        // rotateY(0deg) is reached returns a box skewed by the wrap's
-        // CSS `perspective`, and since a transform never changes layout
-        // size, no ResizeObserver fires afterward to correct it — the
-        // skew (meshes shifted right) sticks permanently. A fixed
-        // setTimeout matching the CSS duration is a race: browser paint/
-        // transition timing doesn't line up exactly with JS timer timing.
-        let rebuilt = false;
-        function rebuildZones() {
-          if (rebuilt) return; rebuilt = true;
-          img.removeEventListener('transitionend', onTransitionEnd);
+        img.style.opacity = '1';
+        // Rebuild the GLB zone canvas once the new image is visible. A
+        // plain opacity fade never changes layout size (unlike the old
+        // rotateY transform), so there's no skew/measurement risk to
+        // wait out — this short delay just lets the fade-in paint
+        // before buildGltfZones measures the image.
+        setTimeout(() => {
           if (myToken !== _flipToken) return;
-          // Double rAF: wait one frame for the transitionend paint to be
-          // committed, then a second to be safe against any layout
-          // rounding — before reading getBoundingClientRect().
-          requestAnimationFrame(() => requestAnimationFrame(() => {
-            if (myToken !== _flipToken) return;
-            buildGltfZones(reqTower, reqParity);
-          }));
-        }
-        function onTransitionEnd(e) {
-          if (e.target !== img || e.propertyName !== 'transform') return;
-          rebuildZones();
-        }
-        img.addEventListener('transitionend', onTransitionEnd);
-        // Fallback in case transitionend never fires (e.g. tab backgrounded,
-        // reduced-motion disabling the transition) — same duration as before.
-        setTimeout(rebuildZones, FLIP_HALF_MS + 60);
+          buildGltfZones(reqTower, reqParity);
+        }, PARITY_FADE_MS);
       }
       img.addEventListener('load', finish, { once: true });
       img.addEventListener('error', finish, { once: true });
-      // Uses this flip's own captured tower/parity, not the live globals —
+      // Uses this swap's own captured tower/parity, not the live globals —
       // if a second tap changed floorParity again before this fired, the
       // wrong plan could otherwise load here.
       const newSrc = getClusterImage(reqTower, reqParity);
@@ -1678,25 +1642,23 @@ window.FloorplanModule = (function () {
       // reassigning .src, some browsers don't synchronously reset
       // `complete` to false, so checking it immediately here can resolve
       // against the PREVIOUS image's loaded state and fire finish() before
-      // the new image has actually decoded — corrupting the flip reset and
-      // zone-rebuild timing. This bites asymmetrically depending on which
-      // parity's image happens to already be cached, which is why the bug
-      // looked direction-specific (Odd→Even vs Even→Odd) rather than a
-      // real logic bug. Only take the fast path when currentSrc already
-      // matches the src we just requested.
+      // the new image has actually decoded. This bites asymmetrically
+      // depending on which parity's image happens to already be cached.
+      // Only take the fast path when currentSrc already matches the src
+      // we just requested.
       if (img.currentSrc && img.currentSrc.endsWith(newSrc.split('/').pop()) && img.complete && img.naturalWidth > 0) {
         finish();
       }
       // Last-resort safety net: if for any reason neither load nor error
       // ever fires, this guarantees the image can't stay invisible forever.
       hardTimer = setTimeout(finish, 4000);
-    }, FLIP_HALF_MS);
+    }, PARITY_FADE_MS);
   }
 
   // ─── DRILL TO CLUSTER ────────────────────────────────────────
   function drillToCluster(towerId) {
     if (_transitioning) return;
-    _flipToken++; // cancels any in-flight Odd/Even flip — see swapParity
+    _flipToken++; // cancels any in-flight Odd/Even swap — see swapParity
     activeUnit = null; viewMode = 'top'; floorParity = 'odd';
     const unitInfo = document.getElementById('fp-unit-info');
     if (unitInfo) unitInfo.classList.remove('visible');
@@ -1711,12 +1673,11 @@ window.FloorplanModule = (function () {
     document.querySelectorAll('.fp-parity-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.parity === floorParity);
     });
-    updateClusterBadge(activeTower, floorParity);
     const img = document.getElementById('fp-cluster-img');
     const svg = document.getElementById('fp-zone-svg');
     if (!img || !svg) return;
-    // Clear any in-flight flip transform left over from swapParity — see
-    // the matching note in resetToSitemap.
+    // Clear any in-flight fade left over from swapParity — defensive
+    // reset, same as the matching note in resetToSitemap.
     img.style.transition = '';
     img.style.transform  = '';
     img.style.opacity    = '';
@@ -2568,11 +2529,26 @@ window.FloorplanModule = (function () {
   // lower both to make them smaller; sw=width, sh=height.
   const SITEMAP_GLB_TARGET_SIZE = { sw: 0.185, sh: 0.3995 };
 
+  // NAV-PATCH: desktop/shared per-tower GLB scale multiplier — used as-is
+  // on PC/tablet, and on mobile for any tower whose
+  // SITEMAP_GLB_SCALE_MOBILE entry is left at null (see below).
   const SITEMAP_GLB_SCALE = {
     'tower-A':2.35,
     'tower-B': 2.3,
     'tower-C': 2.6,
     'tower-D': 2.2,
+  };
+
+  // NAV-PATCH: mobile-only per-tower GLB scale override. Only takes effect
+  // when the active breakpoint is 'mobile' (see _syncSitemapToImage).
+  // null = falls back to SITEMAP_GLB_SCALE's PC value for that tower —
+  // set a number here to size that tower's tile independently on mobile
+  // without touching its desktop/tablet size.
+  const SITEMAP_GLB_SCALE_MOBILE = {
+    'tower-A': 1.2,
+    'tower-B': 1.2,
+    'tower-C': 1.4,
+    'tower-D': 1.15,
   };
 
   // NAV-PATCH: pan/shift system removed — see the note in buildSitemapTiles.
