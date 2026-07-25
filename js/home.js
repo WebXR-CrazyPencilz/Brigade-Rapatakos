@@ -431,15 +431,15 @@ window.HomeModule = (function () {
         background: #f5f4f2;
       }
       .unit-plan-card {
-        width: 260px; display: flex; flex-direction: column; align-items: center; gap: 16px;
+        width: 340px; display: flex; flex-direction: column; align-items: center; gap: 16px;
       }
       .unit-plan-thumb {
-        position: relative; width: 100%; height: 260px;
+        position: relative; width: 100%;
         background: #ffffff; border-radius: 18px; overflow: hidden;
         box-shadow: 0 3px 10px rgba(0,0,0,.08);
       }
       .unit-plan-thumb img {
-        width: 100%; height: 100%; object-fit: contain; display: block;
+        width: 100%; height: auto; display: block;
       }
       .unit-plan-caption {
         position: absolute; top: 14px; left: 16px;
@@ -461,9 +461,12 @@ window.HomeModule = (function () {
       .unit-plan-pill:hover {
         background: #c9762f; color: #ffffff;
       }
+      @media (min-width: 641px) {
+        .unit-plan-card { width: 460px; }
+        .unit-plan-thumb { padding: 24px; box-sizing: border-box; }
+      }
       @media (max-width: 640px) {
-        .unit-plan-card { width: 44%; min-width: 150px; }
-        .unit-plan-thumb { height: 180px; }
+        .unit-plan-card { width: 46%; min-width: 170px; }
       }
 
       .unit-btn {
@@ -508,12 +511,14 @@ window.HomeModule = (function () {
         -webkit-clip-path: inset(0 round 14px);
         background: #ffffff;
       }
-      .unit-btn-thumb-frame iframe {
+      .unit-btn-thumb-frame iframe,
+      .unit-btn-thumb-frame img {
         position: absolute; top: 0; left: 0;
         width: 100%; height: 100%;
         border: none;
         border-radius: 14px;
         background: #ffffff;
+        object-fit: cover;
       }
       .unit-btn-thumb-scrim {
         position: absolute; inset: 0;
@@ -670,7 +675,7 @@ window.HomeModule = (function () {
         }
         .unit-btn.active { border-color: transparent; box-shadow: none; }
         .unit-btn.active .unit-btn-thumb-frame { border-color: #c9762f; }
-        .unit-btn-thumb-frame iframe { border-radius: 16px; }
+        .unit-btn-thumb-frame iframe, .unit-btn-thumb-frame img { border-radius: 16px; }
         .unit-btn-thumb-scrim { display: none; }
         .unit-btn-overlay { background: transparent !important; }
         .unit-btn-label {
@@ -790,24 +795,14 @@ window.HomeModule = (function () {
       </div>
 
       <div id="unit-row">
-        <div class="unit-btn" data-unit="1">
-          <div class="unit-btn-thumb-frame"></div>
-          <div class="unit-btn-thumb-scrim"></div>
-          <div class="unit-btn-overlay"></div>
-          <span class="unit-btn-label">Unit 1</span>
-        </div>
-        <div class="unit-btn" data-unit="2">
-          <div class="unit-btn-thumb-frame"></div>
-          <div class="unit-btn-thumb-scrim"></div>
-          <div class="unit-btn-overlay"></div>
-          <span class="unit-btn-label">Unit 2</span>
-        </div>
-        <div class="unit-btn" data-unit="3">
-          <div class="unit-btn-thumb-frame"></div>
-          <div class="unit-btn-thumb-scrim"></div>
-          <div class="unit-btn-overlay"></div>
-          <span class="unit-btn-label">Unit 3</span>
-        </div>
+        ${UNIT_PLAN_THUMBS.map(u => `
+          <div class="unit-btn" data-unit="${u.id}">
+            <div class="unit-btn-thumb-frame"><img src="${u.image}" alt="${u.title} floor plan" loading="lazy" /></div>
+            <div class="unit-btn-thumb-scrim"></div>
+            <div class="unit-btn-overlay"></div>
+            <span class="unit-btn-label">${u.pillLabel}</span>
+          </div>
+        `).join('')}
       </div>
 
       <div id="unit-plans-gallery">
@@ -1355,45 +1350,6 @@ window.HomeModule = (function () {
     } catch (e) {}
   }
 
-  let _thumbsLoaded = false;
-
-  function hideThumbToggleBar(iframe) {
-    try {
-      const doc = iframe.contentDocument || iframe.contentWindow?.document;
-      if (!doc) return;
-      if (doc.getElementById('stellaris-thumb-toggle-hide')) return;
-      const style = doc.createElement('style');
-      style.id = 'stellaris-thumb-toggle-hide';
-      style.textContent = `
-        #view-switch { display: none !important; }
-      `;
-      (doc.head || doc.documentElement).appendChild(style);
-    } catch (e) {}
-  }
-
-  function loadUnitThumbnails() {
-    if (_thumbsLoaded) return;
-    _thumbsLoaded = true;
-    document.querySelectorAll('.unit-btn').forEach(btn => {
-      const unitNum = btn.dataset.unit;
-      const url = unitURLs[unitNum];
-      const frame = btn.querySelector('.unit-btn-thumb-frame');
-      if (!url || !frame) return;
-      const iframe = document.createElement('iframe');
-      iframe.src = url;
-      iframe.setAttribute('loading', 'lazy');
-      iframe.setAttribute('tabindex', '-1');
-      iframe.setAttribute('aria-hidden', 'true');
-      iframe.style.opacity = '0';
-      iframe.style.transition = 'opacity 0.35s ease';
-      iframe.addEventListener('load', () => {
-        hideThumbToggleBar(iframe);
-        requestAnimationFrame(() => { iframe.style.opacity = '1'; });
-      });
-      frame.appendChild(iframe);
-    });
-  }
-
   function openUnitViewer(unit) {
     const overlay = document.getElementById('unit-viewer-overlay');
     const iframe  = document.getElementById('unit-iframe');
@@ -1565,7 +1521,6 @@ window.HomeModule = (function () {
         if (slot === '360view') {
           unitRowVisible = true;
           document.getElementById('unit-row')?.classList.add('visible');
-          loadUnitThumbnails();
           if (!_popping) pushHist('threeSixty', switching);
           const iframe = document.getElementById('unit-iframe');
           if (iframe && !iframe.dataset.targetUrl) {
