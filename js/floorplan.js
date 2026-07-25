@@ -42,6 +42,17 @@ window.FloorplanModule = (function () {
   // padding around the artwork (originals were 873x960 canvases with
   // only a small logo/text in the middle) — replace the files at
   // these paths with the cropped versions provided.
+  // NAV-PATCH: set to false once the 4 tower zones are correctly
+  // positioned — draws a red 0–100 coordinate grid over the sitemap so
+  // exact building corner coordinates can be read directly off the
+  // screen instead of estimated from a screenshot.
+  // NAV-PATCH: the one switch for GLB vs flat outline —
+  //   true  = 3D GLB tiles (SITEMAP_GLB_TARGET_SIZE / SITEMAP_GLB_SCALE apply)
+  //   false = flat SVG outline (simplest, matches SITEMAP.towerTiles points directly)
+  const SITEMAP_USE_GLB = true;
+
+  const SITEMAP_DEBUG_GRID = false;
+
   const SITEMAP_COMPASS_IMAGE = './assets/png/sitemapdirection.png';
   const SITEMAP_LABEL_IMAGE   = './assets/png/sitemaptext.png';
 
@@ -66,10 +77,10 @@ window.FloorplanModule = (function () {
       // on the live page actually sits on the tower it's meant to, then
       // adjust these four `points` (and labelX/labelY) to match — a wrong
       // assignment here shows a visitor the wrong tower's floor plans.
-      { id: 'tower-A', label: 'Tower A', points: '53,25.5 77,25.5 77,52.8 53,52.8', labelX: 65,   labelY: 33.5 },
-      { id: 'tower-B', label: 'Tower B', points: '53,52.8 77,52.8 77,80 53,80',     labelX: 65,   labelY: 72.5 },
-      { id: 'tower-C', label: 'Tower C', points: '29,52.8 53,52.8 53,80 29,80',     labelX: 41,   labelY: 72.5 },
-      { id: 'tower-D', label: 'Tower D', points: '29,25.5 53,25.5 53,52.8 29,52.8', labelX: 41,   labelY: 33.5 },
+      { id: 'tower-A', label: 'Tower A', points: '48,10 56,10 56,49.5 48,49.5', labelX: 65,   labelY: 33.5 },
+      { id: 'tower-B', label: 'Tower B', points: '52.5,48 60,48 60,55 52.5,55', labelX: 65,   labelY: 72.5 },
+      { id: 'tower-C', label: 'Tower C', points: '43,52.5 55,52.5 55,64.5 43,64.5', labelX: 41,   labelY: 72.5 },
+      { id: 'tower-D', label: 'Tower D', points: '42,49 50,49 50,57 42,57', labelX: 41,   labelY: 33.5 },
     ],
   };
 
@@ -928,10 +939,10 @@ window.FloorplanModule = (function () {
 
   // GLB file list — points derived from SITEMAP.towerTiles (single source of truth)
   const SITEMAP_MESH_FILES = {
-    'tower-A': './assets/sitemap/TOWER A.glb',
-    'tower-B': './assets/sitemap/TOWER B.glb',
-    'tower-C': './assets/sitemap/TOWER C.glb',
-    'tower-D': './assets/sitemap/TOWER D.glb',
+    'tower-A': './assets/sitemap/tower1.glb',
+    'tower-B': './assets/sitemap/tower2.glb',
+    'tower-C': './assets/sitemap/tower3.glb',
+    'tower-D': './assets/sitemap/tower4.glb',
   };
   const SITEMAP_MESHES = SITEMAP.towerTiles.map(t => ({
     file:    SITEMAP_MESH_FILES[t.id],
@@ -985,9 +996,25 @@ window.FloorplanModule = (function () {
     const containerAspect = (rect && rect.height > 0) ? (rect.width / rect.height) : 1.8;
     const fitted = fitSitemapForPCMaxZoom(containerAspect);
     const extraZoom = (bp === 'desktop') ? SITEMAP_PC_EXTRA_ZOOM : SITEMAP_EXTRA_ZOOM[bp];
-    const zoomed = shrinkRegionAroundCenter(fitted, extraZoom);
-    const pan    = SITEMAP_PAN[bp] || { x: 0, y: 0 };
-    const region = shiftRegion(zoomed, pan.x, pan.y);
+    // NAV-PATCH: pan/shift removed — it was an extra hidden offset between
+    // the crop region and what the tower `points` describe, which made
+    // manually matching zones to the image via the debug grid confusing
+    // (grid coordinates wouldn't quite match what ended up on screen).
+    // The zoom fit below is now the only thing between raw points and
+    // what's rendered.
+    // NAV-PATCH: while calibrating (SITEMAP_DEBUG_GRID on), skip the crop
+    // entirely — show the full, uncropped master image. This was the
+    // actual bug behind "I read the grid and typed those numbers in but
+    // the zone lands somewhere else": the grid was drawn in the CROPPED
+    // view's local 0–100 space, but SITEMAP.towerTiles points are in the
+    // FULL image's 0–100 space — two different scales. With no crop
+    // active, those two spaces are identical, so grid readings can be
+    // typed straight into `points` and land exactly where read. Once
+    // SITEMAP_DEBUG_GRID is set back to false, real per-breakpoint
+    // cropping resumes automatically.
+    const region = SITEMAP_DEBUG_GRID
+      ? { left: 0, top: 0, right: 100, bottom: 100 }
+      : shrinkRegionAroundCenter(fitted, extraZoom);
 
     const targetUrl = buildSitemapImageUrl(region, computeSitemapDeliverWidth());
 
@@ -1010,8 +1037,9 @@ window.FloorplanModule = (function () {
       if (!img.offsetWidth || !img.offsetHeight) {
         requestAnimationFrame(tryBuild); return;
       }
-      // Three.js available? → GLTF path. Otherwise → SVG fallback.
-      if (typeof THREE !== 'undefined' && typeof THREE.GLTFLoader !== 'undefined') {
+      // NAV-PATCH: controlled by SITEMAP_USE_GLB (top of file) — flip that
+      // one flag to switch between 3D GLB tiles and the flat SVG outline.
+      if (SITEMAP_USE_GLB && typeof THREE !== 'undefined' && typeof THREE.GLTFLoader !== 'undefined') {
         _buildSitemapGltf(wrap, img);
       } else {
         _buildSitemapSvg(wrap, img);
@@ -1153,12 +1181,19 @@ window.FloorplanModule = (function () {
     _sitemapCamera.bottom = -0.5;
     _sitemapCamera.updateProjectionMatrix();
 
+    // NAV-PATCH: fixed constant now, not recomputed from live polygon
+    // data each time — frozen at the average of all 4 towers' boxes as
+    // they stood when this was set. Edit SITEMAP_GLB_TARGET_SIZE directly
+    // (further down this file) to change the shared GLB size; it won't
+    // silently shift anymore if the tower polygons are edited later.
+    const uniformSz = SITEMAP_GLB_TARGET_SIZE;
+
     _sitemapRootList.forEach(({ root, towerId }) => {
       const poly = _sitemapPolyData[towerId];
       if (!poly) return;
 
       const sc = centroidToScene(poly.cx, poly.cy, aspect);
-      const sz = bboxToSceneSize(poly.bbox, aspect);
+      const sz = uniformSz;
 
       root.scale.set(1, 1, 1);
       root.position.set(0, 0, 0);
@@ -1167,14 +1202,33 @@ window.FloorplanModule = (function () {
       const box1  = new THREE.Box3().setFromObject(root);
       const size1 = new THREE.Vector3(); box1.getSize(size1);
 
-      const scaleX = size1.x > 0.0001 ? sz.sw / size1.x : 1;
-      const scaleY = size1.y > 0.0001 ? sz.sh / size1.y : 1;
+      const glbScale = SITEMAP_GLB_SCALE[towerId] != null ? SITEMAP_GLB_SCALE[towerId] : 1;
+      const scaleX = (size1.x > 0.0001 ? sz.sw / size1.x : 1) * glbScale;
+      const scaleY = (size1.y > 0.0001 ? sz.sh / size1.y : 1) * glbScale;
       root.scale.set(scaleX, scaleY, Math.min(scaleX, scaleY));
 
       root.updateMatrixWorld(true);
       const box2 = new THREE.Box3().setFromObject(root);
       const ctr2 = new THREE.Vector3(); box2.getCenter(ctr2);
       root.position.set(sc.sx - ctr2.x, sc.sy - ctr2.y, 0);
+
+      // NAV-PATCH: keep the whole mesh on-screen — if any edge would
+      // render past the current viewport (camera frustum), nudge the
+      // whole mesh inward (position only, never resized) just enough to
+      // pull that edge back in. Was showing up as towers near a crop
+      // edge rendering half off-screen once zoom/pan got tight enough
+      // that a tower's uniform-size GLB no longer fully fit inside its
+      // own visible crop region.
+      root.updateMatrixWorld(true);
+      const box3 = new THREE.Box3().setFromObject(root);
+      const frustumLeft = -aspect * 0.5, frustumRight = aspect * 0.5;
+      const frustumTop  = 0.5,           frustumBottom = -0.5;
+      let dx = 0, dy = 0;
+      if (box3.min.x < frustumLeft)   dx = frustumLeft  - box3.min.x;
+      if (box3.max.x > frustumRight)  dx = frustumRight - box3.max.x;
+      if (box3.min.y < frustumBottom) dy = frustumBottom - box3.min.y;
+      if (box3.max.y > frustumTop)    dy = frustumTop    - box3.max.y;
+      if (dx || dy) root.position.set(root.position.x + dx, root.position.y + dy, 0);
 
       // Re-register children in meshMap
       root.traverse(child => {
@@ -1408,6 +1462,44 @@ window.FloorplanModule = (function () {
     svg.setAttribute('viewBox', '0 0 100 100');
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;';
+
+    // NAV-PATCH: TEMPORARY calibration grid — set SITEMAP_DEBUG_GRID=false
+    // (further down this file) once the 4 tower zones are correctly
+    // positioned, to remove it. Draws lines every 10 units + coordinate
+    // labels in the SAME space the polygon points below are edited in
+    // (the active crop region's own 0–100), so you can read a building
+    // corner's x,y directly off the screen and put those exact numbers
+    // into SITEMAP.towerTiles — no more guessing from a screenshot.
+    if (SITEMAP_DEBUG_GRID) {
+      const gridG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      gridG.setAttribute('class', 'fp-debug-grid');
+      for (let v = 0; v <= 100; v += 10) {
+        const vLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        vLine.setAttribute('x1', v); vLine.setAttribute('y1', 0);
+        vLine.setAttribute('x2', v); vLine.setAttribute('y2', 100);
+        vLine.setAttribute('stroke', 'rgba(255,0,0,.35)'); vLine.setAttribute('stroke-width', '0.15');
+        gridG.appendChild(vLine);
+
+        const hLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        hLine.setAttribute('x1', 0); hLine.setAttribute('y1', v);
+        hLine.setAttribute('x2', 100); hLine.setAttribute('y2', v);
+        hLine.setAttribute('stroke', 'rgba(255,0,0,.35)'); hLine.setAttribute('stroke-width', '0.15');
+        gridG.appendChild(hLine);
+
+        const xLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        xLabel.setAttribute('x', v); xLabel.setAttribute('y', 3);
+        xLabel.setAttribute('font-size', '2.2'); xLabel.setAttribute('fill', 'red');
+        xLabel.textContent = v;
+        gridG.appendChild(xLabel);
+
+        const yLabel = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        yLabel.setAttribute('x', 1); yLabel.setAttribute('y', v + 1.5);
+        yLabel.setAttribute('font-size', '2.2'); yLabel.setAttribute('fill', 'red');
+        yLabel.textContent = v;
+        gridG.appendChild(yLabel);
+      }
+      svg.appendChild(gridG);
+    }
 
     SITEMAP.towerTiles.forEach((tile, i) => {
       const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -2459,28 +2551,38 @@ window.FloorplanModule = (function () {
   // is a very easy sign to get backwards, so it's handled once here):
   //   x: positive = visible content moves RIGHT.  negative = LEFT.
   //   y: positive = visible content moves DOWN.   negative = UP.
-  const SITEMAP_PAN = { desktop: { x: 0, y: 0 }, tablet: { x: 0, y: 0 }, mobile: { x: .9, y: 0 } };
+  // NAV-PATCH: sitemap tower GLB meshes are sized to fit their polygon's
+  // area within the CURRENT crop — as the crop tightens (SITEMAP_EXTRA_ZOOM
+  // going up), that area is a bigger share of a smaller frame, so the mesh
+  // renders proportionally larger too. This scales it back down, applied
+  // on top of that fit — 1 = no change, lower = smaller mesh. Position
+  // (centered on the tower) is unaffected — only size shrinks. One entry
+  // per tower, not a single shared number — adjust each independently.
+  // NAV-PATCH: equalize GLB size across all 4 towers — every tower's mesh
+  // fits to THIS one shared box now, instead of its own individually
+  // sized/shaped polygon zone (which made same-scale towers still render
+  // at different absolute sizes). Fixed constant, not recalculated from
+  // live polygon data — won't shift if the tower points are edited later.
+  // Units are Three.js scene units (frozen average of all 4 towers' boxes
+  // at the time this was set) — raise both to make every tower bigger,
+  // lower both to make them smaller; sw=width, sh=height.
+  const SITEMAP_GLB_TARGET_SIZE = { sw: 0.185, sh: 0.3995 };
 
-  function shiftRegion(region, panX, panY) {
-    if (!panX && !panY) return region;
-    const dx = -panX, dy = -panY; // crop window moves opposite to the visual pan direction
-    let left = region.left + dx, right = region.right + dx;
-    let top  = region.top  + dy, bottom = region.bottom + dy;
-    if (left < 0)    { right -= left; left = 0; }
-    if (right > 100) { left -= (right - 100); right = 100; }
-    if (top < 0)     { bottom -= top; top = 0; }
-    if (bottom > 100) { top -= (bottom - 100); bottom = 100; }
-    left = Math.max(0, left); right = Math.min(100, right);
-    top  = Math.max(0, top);  bottom = Math.min(100, bottom);
-    return { left, top, right, bottom };
-  }
+  const SITEMAP_GLB_SCALE = {
+    'tower-A':2.35,
+    'tower-B': 2.3,
+    'tower-C': 2.6,
+    'tower-D': 2.2,
+  };
+
+  // NAV-PATCH: pan/shift system removed — see the note in buildSitemapTiles.
 
   // NAV-PATCH: tablet/mobile extra zoom — same idea as SITEMAP_PC_EXTRA_ZOOM
   // below, one number per breakpoint. 1 = the original fixed crop
   // (SITEMAP_VIEWPORT_REGIONS[bp]) untouched. Raise mobile toward ~1.15–1.3
   // to match "project fills ~80–85% of screen" — shrinks the crop toward
   // its own center, so the towers stay centered as it tightens.
-  const SITEMAP_EXTRA_ZOOM = { tablet: 1, mobile: 2.015 };
+  const SITEMAP_EXTRA_ZOOM = { tablet: 1, mobile: 2.1 };
 
   // NAV-PATCH: PC-only extra zoom, on top of the max-zoom fit below.
   // 1 = no extra zoom (the fit's natural max). 2 = roughly double the
