@@ -45,6 +45,40 @@ window.HomeModule = (function () {
     4: 'unit4/index.html',
   };
 
+  // ─── UNIT FLOOR PLAN THUMBNAILS ──────────────────────────────────
+  // Config for the new #unit-plans-gallery section — one entry per
+  // card. Replace `image` with the real floor plan render for that
+  // unit (an ImageKit/Cloudinary URL, same pattern as IMAGES/
+  // MAP_IMAGE_SRC above). title/subtitle/towerLine are the small
+  // caption text printed over the top-left of each thumbnail;
+  // pillLabel is the text on the button underneath the card.
+  const UNIT_PLAN_THUMBS = [
+    {
+      id: 1,
+      image: 'https://ik.imagekit.io/pwzaetheh/360view/4bhkf.jpg',
+      title: 'UNIT01',
+      subtitle: '4BHK - F',
+      towerLine: 'TOWER - 03 (EVEN)',
+      pillLabel: 'Unit 1',
+    },
+    {
+      id: 2,
+      image: 'https://ik.imagekit.io/pwzaetheh/360view/3bhklc.jpg',
+      title: 'UNIT02',
+      subtitle: '3BHK(L) - C',
+      towerLine: 'TOWER - 02',
+      pillLabel: 'Unit 2',
+    },
+    {
+      id: 3,
+      image: 'https://ik.imagekit.io/pwzaetheh/360view/3bhksb.jpg',
+      title: 'UNIT03',
+      subtitle: '3BHK(S) - B',
+      towerLine: 'TOWER - 03 (ODD)',
+      pillLabel: 'Unit 3',
+    },
+  ];
+
   const IMAGES = [
     { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/01_abyzw2.jpg', label: 'View 1' },
   ];
@@ -374,6 +408,63 @@ window.HomeModule = (function () {
         box-sizing: border-box;
       }
       #unit-row.visible { opacity: 1; pointer-events: all; }
+
+      /* ─── UNIT FLOOR PLAN THUMBNAILS (new section) ───────────────
+         Static gallery — driven by UNIT_PLAN_THUMBS above. Not tied to
+         any open/close state by default (renders inline wherever the
+         markup sits); use HomeModule.showUnitPlans()/hideUnitPlans()
+         if you want to toggle it like the other overlays. */
+      #unit-plans-gallery {
+        /* FIX: this element had no "position" set, so per CSS stacking
+           rules it painted in the "non-positioned block" layer — which
+           paints BEFORE positioned elements with z-index:auto. #carousel
+           is position:fixed and covers the entire viewport as the
+           always-on home background, so even though this gallery comes
+           LATER in the HTML, #carousel was painting ON TOP of it and
+           hiding it completely — nothing to do with the image URLs
+           (verified those load fine). Making this positioned + giving it
+           an explicit z-index moves it into the later stacking layer, so
+           it now paints above #carousel as intended. */
+        position: relative; z-index: 5;
+        display: flex; flex-wrap: wrap; justify-content: center; gap: 32px;
+        padding: 40px 24px;
+        background: #f5f4f2;
+      }
+      .unit-plan-card {
+        width: 260px; display: flex; flex-direction: column; align-items: center; gap: 16px;
+      }
+      .unit-plan-thumb {
+        position: relative; width: 100%; height: 260px;
+        background: #ffffff; border-radius: 18px; overflow: hidden;
+        box-shadow: 0 3px 10px rgba(0,0,0,.08);
+      }
+      .unit-plan-thumb img {
+        width: 100%; height: 100%; object-fit: contain; display: block;
+      }
+      .unit-plan-caption {
+        position: absolute; top: 14px; left: 16px;
+        font-family: 'Syne', sans-serif; font-weight: 700;
+        color: #7a3e1e; line-height: 1.5; pointer-events: none;
+      }
+      .unit-plan-caption span { display: block; font-size: 9px; letter-spacing: .04em; }
+      .unit-plan-icon {
+        position: absolute; top: 12px; right: 14px;
+        width: 22px; height: 22px; color: #7a3e1e; opacity: .85;
+      }
+      .unit-plan-pill {
+        font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+        letter-spacing: .08em; text-transform: uppercase; color: #7a3e1e;
+        background: #ffffff; border: 1.5px solid #c9762f; border-radius: 999px;
+        padding: 10px 28px; cursor: pointer;
+        transition: background .2s ease, color .2s ease;
+      }
+      .unit-plan-pill:hover {
+        background: #c9762f; color: #ffffff;
+      }
+      @media (max-width: 640px) {
+        .unit-plan-card { width: 44%; min-width: 150px; }
+        .unit-plan-thumb { height: 180px; }
+      }
 
       .unit-btn {
         position: relative;
@@ -717,6 +808,28 @@ window.HomeModule = (function () {
           <div class="unit-btn-overlay"></div>
           <span class="unit-btn-label">Unit 3</span>
         </div>
+      </div>
+
+      <div id="unit-plans-gallery">
+        ${UNIT_PLAN_THUMBS.map(u => `
+          <div class="unit-plan-card">
+            <div class="unit-plan-thumb">
+              <img src="${u.image}" alt="${u.title} floor plan" loading="lazy" />
+              <div class="unit-plan-caption">
+                <span>${u.title}</span>
+                <span>${u.subtitle}</span>
+                <span>${u.towerLine}</span>
+              </div>
+              <svg class="unit-plan-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 3H5a2 2 0 0 0-2 2v4"/>
+                <path d="M15 3h4a2 2 0 0 1 2 2v4"/>
+                <path d="M9 21H5a2 2 0 0 1-2-2v-4"/>
+                <path d="M15 21h4a2 2 0 0 0 2-2v-4"/>
+              </svg>
+            </div>
+            <button type="button" class="unit-plan-pill" data-plan-unit="${u.id}">${u.pillLabel}</button>
+          </div>
+        `).join('')}
       </div>
 
       <div id="bottom-panel">
@@ -1479,6 +1592,22 @@ window.HomeModule = (function () {
         }
 
         openUnitViewer(unitNum);
+      });
+    });
+
+    // ─── UNIT PLAN THUMBNAIL PILLS ──────────────────────────────────
+    // Fires a CustomEvent so this new gallery isn't hard-wired to any
+    // one destination — listen for 'unitplan:select' wherever you want
+    // to react (open a lightbox, scroll to a section, etc.), e.g.:
+    //   document.addEventListener('unitplan:select', e => { ... e.detail.unitId ... });
+    document.querySelectorAll('.unit-plan-pill').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const unitId = parseInt(btn.dataset.planUnit);
+        document.dispatchEvent(new CustomEvent('unitplan:select', { detail: { unitId } }));
+        if (typeof gtag === 'function') {
+          gtag('event', 'unit_plan_thumb_click', { unit_number: unitId });
+        }
       });
     });
 
