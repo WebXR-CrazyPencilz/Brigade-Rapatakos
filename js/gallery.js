@@ -30,31 +30,12 @@ window.GalleryModule = (function () {
   let autoplayHoverPaused = false; // true while pointer is over the stage or thumb strip
 
   // ─── BROWSER/HARDWARE BACK SUPPORT ────────────────────────────────
-  // Opening the gallery pushes a history entry so the phone's back
-  // button (or PC Backspace) closes the gallery instead of leaving
-  // the page. requestBack() is the single exit point used by ✕, the
-  // mobile back arrow, hardware back, Backspace and Escape.
-  let _historyDepth = 0;
-  let _popping      = false;
-
-  // replace=true is used for tab switches: instead of adding a NEW
-  // history entry on top of the one the previous tab (Floor Plan / Map /
-  // etc.) already owned, we relabel that single entry as ours via
-  // replaceState. This is what stops entries from piling up when the
-  // user bounces between tabs — a pushState-only version leaves orphaned
-  // entries behind every time (see the matching note in home.js /
-  // floorplan.js), which desyncs the depth counters from the real
-  // browser history stack and is what caused tab switches to
-  // intermittently bounce back to Home and need a second click.
-  function pushGlState(replace) {
-    if (replace) history.replaceState({ gl: true }, '');
-    else history.pushState({ gl: true }, '');
-    _historyDepth = 1;
-  }
-
+  // All history bookkeeping (pushState/replaceState/back/go, depth
+  // counters, the popping flag) now lives in NavigationManager.
+  // requestBack() remains the single exit point used by ✕, the mobile
+  // back arrow, hardware back, Backspace and Escape — it just delegates.
   function requestBack() {
-    if (_historyDepth > 0) history.back(); // → popstate → close()
-    else close();
+    NavigationManager.requestBack('gallery', 'gl', close);
   }
 
   // ─── CARD MEDIA (image vs. embedded video) ───────────────────────
@@ -67,11 +48,18 @@ window.GalleryModule = (function () {
   // hidden autoplaying iframe sitting in the background.
   function setCardMedia(cardEl, item, isCurrent) {
     if (item.type === 'video' && isCurrent) {
-      cardEl.innerHTML = `<iframe class="gl-video-frame" src="https://www.youtube.com/embed/${item.videoId}?rel=0" title="${item.caption || 'Video'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
+      cardEl.innerHTML = `<iframe class="gl-video-frame" src="https://www.youtube.com/embed/${item.videoId}?rel=0" title="${item.caption || 'Video'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
     } else {
       cardEl.innerHTML = `<img src="${item.src}" alt="${item.caption || ''}"/>`;
     }
   }
+
+  function stopCurrentVideo() {
+    const iframe = document.querySelector('#gl-card-current iframe.gl-video-frame');
+    if (!iframe) return;
+
+    iframe.src = 'about:blank';
+}
 
   // ─── INJECT ──────────────────────────────────────────────────────
   function inject() {
@@ -128,7 +116,7 @@ window.GalleryModule = (function () {
         position: absolute; inset: 0; z-index: 1;
         overflow: hidden;
         perspective: 1400px;
-        touch-action: none;
+        touch-action: auto;
         overscroll-behavior: none;
       }
 
@@ -136,6 +124,7 @@ window.GalleryModule = (function () {
         position: absolute; inset: 0;
         width: 100%; height: 100%;
         will-change: transform, opacity, filter;
+        pointer-events: none;
         cursor: grab;
       }
       .gl-card:active { cursor: grabbing; }
@@ -145,7 +134,15 @@ window.GalleryModule = (function () {
         user-select: none; -webkit-user-drag: none;
       }
       .gl-card iframe.gl-video-frame {
-        width: 100%; height: 100%; border: none; display: block; background: #000;
+       width: 100%;
+    height: 100%;
+    border: none;
+    display: block;
+    background: #000;
+    pointer-events: auto !important;
+    touch-action: auto !important;
+    position: relative;
+    z-index: 9999;
       }
 
       /* Resting stack positions */
@@ -330,7 +327,9 @@ window.GalleryModule = (function () {
       </div>
     `);
 
-    bindEvents();
+    // NAV-PATCH: event binding moved out of inject() and into
+    // attachEvents(), called by NavigationManager.open('gallery') —
+    // rule 8 requires no listener registration inside open()/inject().
   }
 
   // ─── CURVED CROSS-DISSOLVE TRANSITION ─────────────────────────────
@@ -412,6 +411,7 @@ window.GalleryModule = (function () {
     function mid(t)  { return { x:(t[0].clientX+t[1].clientX)/2, y:(t[0].clientY+t[1].clientY)/2 }; }
 
     stage.addEventListener('touchstart', (e) => {
+      if (e.target.closest('iframe.gl-video-frame')) return; // let the player handle its own touches
       if (e.touches.length === 2) {
         lastDist = dist(e.touches);
       } else if (e.touches.length === 1 && glImgScale > 1) {
@@ -424,6 +424,7 @@ window.GalleryModule = (function () {
     }, { passive: true });
 
     stage.addEventListener('touchmove', (e) => {
+      if (e.target.closest('iframe.gl-video-frame')) return; // let the player handle its own touches
       if (e.touches.length === 2) {
         e.preventDefault();
         const d = dist(e.touches), m = mid(e.touches), rect = stage.getBoundingClientRect();
@@ -446,6 +447,7 @@ window.GalleryModule = (function () {
     }, { passive: false });
 
     stage.addEventListener('touchend', (e) => {
+      if (e.target.closest('iframe.gl-video-frame')) return; // let the player handle its own touches
       if (e.touches.length < 2) lastDist = null;
       if (glImgScale <= MIN_SCALE + 0.05) resetGalleryZoom();
     }, { passive: true });
@@ -489,6 +491,9 @@ window.GalleryModule = (function () {
 
   function cardTo(targetIdx, direction) {
     if (isAnimating || targetIdx === current) return;
+
+    stopCurrentVideo();
+
     isAnimating = true;
 
     const cardCur      = document.getElementById('gl-card-current');
@@ -580,30 +585,41 @@ window.GalleryModule = (function () {
   }
 
   // ─── EVENTS ──────────────────────────────────────────────────────
-  function bindEvents() {
-    document.getElementById('gl-back').addEventListener('click', requestBack);
-    document.getElementById('gl-back').addEventListener('touchend', (e) => { e.preventDefault(); requestBack(); });
+  // ─── EVENT LIFECYCLE ───────────────────────────────────────────────
+  // _listeners tracks every (el, type, fn, opts) tuple registered by
+  // attachEvents() so detachEvents() can remove exactly those, and
+  // nothing else, on module close/teardown.
+  let _listeners = [];
+  let _eventsAttached = false;
+  function _on(el, type, fn, opts) {
+    el.addEventListener(type, fn, opts);
+    _listeners.push({ el, type, fn, opts });
+  }
 
-    // Hardware/browser back button (mobile) — closes the gallery, not the page
-    window.addEventListener('popstate', () => {
-      const overlay = document.getElementById('gallery-overlay');
-      if (!overlay || !overlay.classList.contains('open') || _historyDepth === 0) return;
-      _historyDepth--;
-      _popping = true;
-      close();
-      _popping = false;
-    });
+  function attachEvents() {
+    if (_eventsAttached) return; // idempotent — NavigationManager may call this on re-entry
+    _eventsAttached = true;
 
-    document.getElementById('gl-arrow-prev').addEventListener('click', (e) => {
+    _on(document.getElementById('gl-back'), 'click', requestBack);
+    _on(document.getElementById('gl-back'), 'touchend', (e) => { e.preventDefault(); requestBack(); });
+
+    // NAV-PATCH: the local popstate listener that used to live here has
+    // been removed. The app now has exactly one popstate listener,
+    // owned by NavigationManager, which calls GalleryModule.handlePopState()
+    // (defined in the Public API section below) whenever gallery is the
+    // active module. Hardware/browser back still closes the gallery —
+    // it's just routed centrally instead of listened for here.
+
+    _on(document.getElementById('gl-arrow-prev'), 'click', (e) => {
       e.stopPropagation();
       cardTo((current - 1 + IMAGES.length) % IMAGES.length, 'prev');
     });
-    document.getElementById('gl-arrow-next').addEventListener('click', (e) => {
+    _on(document.getElementById('gl-arrow-next'), 'click', (e) => {
       e.stopPropagation();
       cardTo((current + 1) % IMAGES.length, 'next');
     });
 
-    document.getElementById('gl-thumbs-track').addEventListener('click', (e) => {
+    _on(document.getElementById('gl-thumbs-track'), 'click', (e) => {
       const thumb = e.target.closest('.gl-thumb');
       if (!thumb) return;
       e.stopPropagation();
@@ -615,24 +631,26 @@ window.GalleryModule = (function () {
     // image's prev/next arrows. Scrolls the track by roughly one
     // "page" worth of thumbnails at a time.
     const thumbTrack = document.getElementById('gl-thumbs-track');
-    document.getElementById('gl-thumb-nav-prev').addEventListener('click', (e) => {
+    _on(document.getElementById('gl-thumb-nav-prev'), 'click', (e) => {
       e.stopPropagation();
       thumbTrack.scrollBy({ left: -thumbTrack.clientWidth * 0.8, behavior: 'smooth' });
     });
-    document.getElementById('gl-thumb-nav-next').addEventListener('click', (e) => {
+    _on(document.getElementById('gl-thumb-nav-next'), 'click', (e) => {
       e.stopPropagation();
       thumbTrack.scrollBy({ left: thumbTrack.clientWidth * 0.8, behavior: 'smooth' });
     });
-    thumbTrack.addEventListener('scroll', updateThumbNavVisibility);
-    window.addEventListener('resize', updateThumbNavVisibility);
+    _on(thumbTrack, 'scroll', updateThumbNavVisibility);
+    _on(window, 'resize', updateThumbNavVisibility);
 
     // Swipe
     const stage = document.getElementById('gl-stage');
-    stage.addEventListener('touchstart', e => {
+    _on(stage, 'touchstart', e => {
+      if (e.target.closest('iframe.gl-video-frame')) return; // let the player handle its own touches
       if (e.touches.length > 1) return; // multi-touch = pinch-zoom, not a swipe
       startX = e.touches[0].clientX; startY = e.touches[0].clientY;
     }, { passive: true });
-    stage.addEventListener('touchmove', e => {
+    _on(stage, 'touchmove', e => {
+      if (e.target.closest('iframe.gl-video-frame')) return; // let the player handle its own touches
       if (e.touches.length > 1) return; // pinch-zoom handled separately in bindGalleryZoom
       if (glImgScale > 1.05) return; // zoomed in — let bindGalleryZoom's pan handle this
       const dx = e.touches[0].clientX - startX;
@@ -647,7 +665,8 @@ window.GalleryModule = (function () {
         e.preventDefault();
       }
     }, { passive: false });
-    stage.addEventListener('touchend', e => {
+    _on(stage, 'touchend', e => {
+      if (e.target.closest('iframe.gl-video-frame')) return; // let the player handle its own touches
       if (e.touches.length > 0) return; // still mid-pinch
       const dx = e.changedTouches[0].clientX - startX;
       const dy = e.changedTouches[0].clientY - startY;
@@ -666,14 +685,17 @@ window.GalleryModule = (function () {
     // the pointer leaves either area.
     const footerEl = document.getElementById('gl-footer');
     [stage, footerEl].forEach(el => {
-      el.addEventListener('mouseenter', () => { autoplayHoverPaused = true; stopAutoplay(); });
-      el.addEventListener('mouseleave', () => { autoplayHoverPaused = false; startAutoplay(); });
+      _on(el, 'mouseenter', () => { autoplayHoverPaused = true; stopAutoplay(); });
+      _on(el, 'mouseleave', () => { autoplayHoverPaused = false; startAutoplay(); });
     });
 
     // Mouse drag
     let mStart = 0, mDrag = false;
-    stage.addEventListener('mousedown', e => { mStart = e.clientX; mDrag = true; });
-    window.addEventListener('mouseup', e => {
+    _on(stage, 'mousedown', e => {
+      if (e.target.closest('iframe.gl-video-frame')) return; // let the player handle its own clicks
+      mStart = e.clientX; mDrag = true;
+    });
+    _on(window, 'mouseup', e => {
       if (!mDrag) return;
       mDrag = false;
       const dx = e.clientX - mStart;
@@ -685,7 +707,7 @@ window.GalleryModule = (function () {
     });
 
     // Keyboard — arrows navigate, Backspace/Escape go back (PC)
-    document.addEventListener('keydown', e => {
+    _on(document, 'keydown', e => {
       const overlay = document.getElementById('gallery-overlay');
       if (!overlay || !overlay.classList.contains('open')) return;
       const t = e.target;
@@ -695,6 +717,12 @@ window.GalleryModule = (function () {
       if (e.key === 'ArrowLeft')  cardTo((current - 1 + IMAGES.length) % IMAGES.length, 'prev');
       if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); requestBack(); }
     });
+  }
+
+  function detachEvents() {
+    _listeners.forEach(({ el, type, fn, opts }) => el.removeEventListener(type, fn, opts));
+    _listeners = [];
+    _eventsAttached = false;
   }
 
   // ─── PUBLIC API ──────────────────────────────────────────────────
@@ -732,34 +760,44 @@ window.GalleryModule = (function () {
     updateUI();
 
     requestAnimationFrame(() => overlay.classList.add('open'));
-    if (!_popping) pushGlState(replaceHistory);
+    NavigationManager.pushSubState('gallery', 'gl', { replace: replaceHistory });
     startAutoplay();
     setTimeout(updateThumbNavVisibility, 300);
   }
 
   function close(skipHistory) {
-    stopAutoplay();
-    reportDwell(current); // capture dwell time for whichever image was showing when closed
-    imageEnteredAt = 0;
-    const overlay = document.getElementById('gallery-overlay');
-    if (!overlay || !overlay.classList.contains('open')) return;
-    overlay.classList.remove('open');
+    stopCurrentVideo();
 
-    // Closed from outside (e.g. closeAllModules) while we still own a
-    // history entry — unwind it silently so back doesn't need an extra press.
-    // skipHistory=true bypasses history.go() when another module's open()
-    // is about to push a new state right after (tab switch) — see the
-    // matching comment in floorplan.js's close() for why that race matters.
-    if (!_popping && _historyDepth > 0) {
-      const n = _historyDepth;
-      _historyDepth = 0;
-      if (!skipHistory) history.go(-n);
-    }
-    document.querySelectorAll('.panel-slot').forEach(s => {
-      if (s.dataset.slot === 'gallery') s.classList.remove('active');
-    });
+    // Closed from outside (e.g. NavigationManager.closeCurrent()) while we
+    // still own a history entry — unwind it silently so back doesn't need
+    // an extra press. skipHistory=true bypasses history.go() when another
+    // module's open() is about to push a new state right after (tab switch).
+    NavigationManager.unwindSubState('gallery', 'gl', { skipGo: skipHistory });
+
+    const overlay = document.getElementById('gallery-overlay');
+    if (overlay) overlay.classList.remove('open');
+    // NAV-PATCH: BottomNavigation.update(), called by NavigationManager.open()
+    // for whichever module is opening next, is now the only code that
+    // touches .panel-slot/.active — gallery.js no longer reaches into it.
   }
 
-  return { open, close };
+  // cleanup() clears every timer/animation/temporary-DOM/listener side
+  // effect gallery.js can accumulate while open, per rule 7.
+  function cleanup() {
+    stopAutoplay();
+    stopCurrentVideo();
+    resetGalleryZoom();
+  }
+
+  // Called by NavigationManager's single popstate listener when gallery
+  // is the active module (rule 9 — only one popstate listener exists
+  // app-wide; every module reacts to it via this hook instead of its own).
+  function handlePopState(state) {
+    close();
+  }
+
+  return { open, close, cleanup, attachEvents, detachEvents, handlePopState };
 
 })();
+// Register with the central NavigationManager.
+if (window.NavigationManager) NavigationManager.register('gallery', window.GalleryModule);
