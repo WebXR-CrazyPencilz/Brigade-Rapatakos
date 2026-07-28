@@ -510,15 +510,25 @@ window.HomeModule = (function () {
         clip-path: inset(0 round 14px);
         -webkit-clip-path: inset(0 round 14px);
         background: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
       }
-      .unit-btn-thumb-frame iframe,
-      .unit-btn-thumb-frame img {
+      .unit-btn-thumb-frame iframe {
         position: absolute; top: 0; left: 0;
         width: 100%; height: 100%;
         border: none;
         border-radius: 14px;
         background: #ffffff;
         object-fit: cover;
+      }
+      .unit-btn-thumb-frame img {
+        max-width: 88%;
+        max-height: 88%;
+        width: auto;
+        height: auto;
+        object-fit: contain;
+        display: block;
       }
       .unit-btn-thumb-scrim {
         position: absolute; inset: 0;

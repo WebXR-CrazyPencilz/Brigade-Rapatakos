@@ -651,7 +651,7 @@ pointer-events: none;
       #fp-card.fp-topbar--sitemap #fp-sitemap-legend {
         display: none;
       }
-      @media (min-width: 1025px) {
+      @media (min-width: 1400px) {
         #fp-card.fp-topbar--sitemap #fp-sitemap-legend { display: block; }
       }
       #fp-sitemap-legend-title {
