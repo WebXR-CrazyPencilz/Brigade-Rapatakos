@@ -1706,11 +1706,15 @@ window.HomeModule = (function () {
       .landing-card.active .panel-slot-icon {
         color: #f5f0e8;
       }
-
       .landing-card-label {
         font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700;
         letter-spacing: .12em; text-transform: uppercase;
         color: #2b3a4a; transition: color .22s ease;
+        text-align: center;
+        min-height: 2.4em;
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
       }
       .landing-card:hover .landing-card-label,
       .landing-card:focus .landing-card-label,
@@ -1721,7 +1725,7 @@ window.HomeModule = (function () {
 
       @media (max-width: 640px) {
         #landing-tagline { font-size: 23px; font-weight: 600; letter-spacing: .14em; margin-top: -52px; margin-bottom: 26px; }
-        .landing-card-label { font-size: 16px; }
+        .landing-card-label { font-size: 16px; min-height: 2.3em; }
         #landing-cards {
           display: grid;
           grid-template-columns: repeat(2, 1fr);

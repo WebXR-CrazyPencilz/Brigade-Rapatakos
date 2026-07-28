@@ -57,43 +57,22 @@ window.FloorplanModule = (function () {
   const SITEMAP_LABEL_IMAGE   = './assets/png/sitemaptext.png';
 
   const SITEMAP = {
-    // NAV-PATCH: no longer a static image field — the sitemap now requests
-    // a different server-side CROP per breakpoint from Cloudinary (see
-    // SITEMAP_CLOUD_BASE / SITEMAP_CLOUD_PATH / buildSitemapImageUrl,
-    // further down this file) instead of loading one full image and
-    // CSS-scaling it. Change the source asset there, not here.
     towerTiles: [
-      // labelX/labelY (optional): moves just the TAG, independent of the
-      // clickable polygon above — use this to nudge a tag into open
-      // ground (a courtyard, walkway) instead of wherever the polygon's
-      // centroid happens to fall. Same 0–100 coordinate space as points.
-      //
-      // pointsMobile / labelXMobile / labelYMobile (optional): mobile-only
-      // overrides. When the active breakpoint is 'mobile' AND pointsMobile
-      // is set on a tile, computeSitemapPolyData() uses these instead of
-      // points/labelX/labelY for that tile. Leave them equal to the
-      // desktop values (as seeded below) until calibrated with
-      // SITEMAP_DEBUG_GRID=true at a ≤640px window width — see the
-      // "Calibrating mobile" note further down this file.
-      //
-      // NAV-PATCH (image swap to map_ntwd3e.jpg): these 4 zones are a
-      // FIRST-PASS estimate — a simple quadrant split (NE/SE/SW/NW) around
-      // the building cluster's center, eyeballed from a screenshot, not
-      // measured against the real 8001×8001 source file. tower-A/B/C/D are
-      // assigned to NE/SE/SW/NW respectively, carrying forward the old
-      // Tower1=A/Tower2=B/Tower3=C/Tower4=D convention. VERIFY each zone
-      // on the live page actually sits on the tower it's meant to, then
-      // adjust these four `points` (and labelX/labelY) to match — a wrong
-      // assignment here shows a visitor the wrong tower's floor plans.
-      { id: 'tower-A', label: 'Tower A', points: '48,10 56,10 56,49.5 48,49.5', labelX: 65,   labelY: 33.5,
-        pointsMobile: '49,28 57,28 57,64 49,64', labelXMobile: 65, labelYMobile: 33.5 },
+      { id: 'tower-A', label: 'Tower A', points: '48,10 56,10 56,49.5 48,49.5', labelX: 52,   labelY:5,
+        pointsMobile: '49,28 57,28 57,64 49,64', labelXMobile: 65, labelYMobile: 33.5,
+        pointsTablet: '22,9.5 83,9.5 83,82.5 22,82.5', labelXTablet: 65, labelYTablet: 33.5 },
+
       { id: 'tower-B', label: 'Tower B', points: '52.5,48 60,48 60,55 52.5,55', labelX: 65,   labelY: 72.5,
-        pointsMobile: '46.5,46.7 68.5,46.7 68.5,57 46.5,57', labelXMobile: 65, labelYMobile: 72.5 },
+        pointsMobile: '46.5,46.7 68.5,46.7 68.5,57 46.5,57', labelXMobile: 65, labelYMobile: 72.5,
+        pointsTablet: '24,43 90,43 90,60 24,60', labelXTablet: 65, labelYTablet: 72.5 },
 
       { id: 'tower-C', label: 'Tower C', points: '43,52.5 55,52.5 55,64.5 43,64.5', labelX: 41,   labelY: 72.5,
-        pointsMobile: '41.5,49 58,49 58,68 41.5,68', labelXMobile: 41, labelYMobile: 72.5 },
+        pointsMobile: '41.5,49 58,49 58,68 41.5,68', labelXMobile: 41, labelYMobile: 72.5,
+        pointsTablet: '43,52.5 57,52.5 57,64.5 43,64.5', labelXTablet: 41, labelYTablet: 72.5 },
+
       { id: 'tower-D', label: 'Tower D', points: '42,49 50,49 50,57 42,57', labelX: 41,   labelY: 33.5,
-        pointsMobile: '45.5,45.3 48,45.3 48,60 45.5,60', labelXMobile: 41, labelYMobile: 33.5 },
+        pointsMobile: '45.5,45.3 48,45.3 48,60 45.5,60', labelXMobile: 41, labelYMobile: 33.5,
+        pointsTablet: '41,47 53,47 53,58.5 41,58.5', labelXTablet: 41, labelYTablet: 33.5 },
     ],
   };
 
@@ -373,17 +352,6 @@ window.FloorplanModule = (function () {
         position: relative;
       }
 
-      /* ── ONE-TIME SHINE ──
-         A reusable diagonal light sweep, top-left to bottom-right,
-         attached to specific elements (GLB canvases, toggle switches)
-         via attachShineOnce() — each target plays it exactly once,
-         ever, the first time it appears. Class-based (not id-based)
-         since multiple instances can exist on screen at once (e.g. a
-         GLB canvas and a toggle switch both revealing at similar
-         times). Positioned/animated via top/left percentages rather
-         than transform, so the travel direction is true screen-space
-         top-left→bottom-right regardless of the gradient's internal
-         angle — no rotate+translate order ambiguity to worry about. */
       .fp-shine {
         position: absolute;
         inset: 0;
@@ -391,9 +359,6 @@ window.FloorplanModule = (function () {
         pointer-events: none;
         z-index: 50;
       }
-      /* Rounded targets (the pill-shaped toggle switches) need the
-         sweep clipped to the same shape, otherwise it'd flare past
-         the pill's rounded corners as a visible rectangle. */
       .fp-shine.fp-shine--pill {
         border-radius: 999px;
       }
@@ -423,10 +388,6 @@ window.FloorplanModule = (function () {
 
       :root { --fp-topbar-h: 56px; --fp-vh: 1vh; }
 
-      /* Mobile-first breakpoints — 360/480/768 covers the vast majority of
-         phone widths so the layout looks the same regardless of exact
-         device model. Base styles above already target the smallest
-         (360px) screens; these widen back out progressively. */
       @media (min-width: 481px) {
         .fp-parity-btn, .fp-toggle-btn { padding: 7px 14px; font-size: 9px; }
       }
@@ -458,7 +419,7 @@ window.FloorplanModule = (function () {
         display: flex; align-items: center; justify-content: center;
         cursor: pointer; opacity: 0; pointer-events: none;
         transition: opacity 0.22s ease; flex-shrink: 0;
-        width: 56px; min-width: 56px;   /* fixed width so spacer can mirror it exactly, never squeezed by flex */
+        width: 56px; min-width: 56px;
       }
       #fp-back.visible { opacity: 1; pointer-events: all; }
       #fp-back-arrow {
@@ -476,8 +437,6 @@ window.FloorplanModule = (function () {
         width:16px; height:16px; stroke: #ffffff;
         fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;
       }
-
-      /* #fp-title removed */
 
       #fp-toggles-row {
         flex: 1; display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -511,7 +470,6 @@ window.FloorplanModule = (function () {
         color: #7a3e1e; background: rgba(122,62,30,.10);
       }
 
-      /* Right spacer mirrors back button width so toggles stay perfectly centred */
       #fp-topbar-spacer { width: 56px; flex-shrink: 0; }
 
       .fp-panel {
@@ -522,7 +480,6 @@ window.FloorplanModule = (function () {
       .fp-panel.exit-l  { opacity: 0; transform: translateX(-32px); }
       .fp-panel.exit-r  { opacity: 0; transform: translateX( 32px); }
 
-      /* ── SITEMAP ── */
       #fp-panel-sitemap {
         display: flex; align-items: center; justify-content: center;
         background: #ffffff; transform: translateX(0);
@@ -568,16 +525,24 @@ window.FloorplanModule = (function () {
         fill: #f5f0e8;
       }
 
-      /* GLB tile labels — HTML overlay (crisper than a WebGL text sprite,
-         and scales with normal CSS across every phone). Pill tag +
-         leader line, anchored at the tower's centroid: the tag floats
-         above the roof, the leader connects it down to the building. */
+      /* ── Desktop tower labels: pinned to left/right edge, leader line ── */
       .fp-glb-label {
-        position: absolute; transform: translate(-50%, -100%);
-        pointer-events: none; z-index: 6; text-align: center;
-        white-space: nowrap; display: flex; flex-direction: column;
-        align-items: center;
+        position: absolute; pointer-events: none; z-index: 6;
+        transform: translateY(-50%);
+        white-space: nowrap;
       }
+      .fp-glb-label--left  { transform: translate(-100%, -50%); text-align: right; }
+      .fp-glb-label--right { transform: translate(0, -50%);      text-align: left; }
+      /* mobile/tablet fallback: tag centred above the tile (legacy layout) */
+      /* mobile/tablet fallback: tag centred above the tile (legacy layout) */
+      .fp-glb-label--above {
+        transform: translate(-50%, -100%);
+        text-align: center; display: flex; flex-direction: column; align-items: center;
+      }
+      /* mobile top/bottom stacked layout */
+      .fp-glb-label--top    { transform: translate(-50%, -100%); text-align: center; }
+      .fp-glb-label--bottom { transform: translate(-50%, 0);      text-align: center; }
+
       .fp-glb-tag {
         display: inline-flex; align-items: center; justify-content: center;
         padding: 6px 16px; border-radius: 999px;
@@ -592,22 +557,25 @@ window.FloorplanModule = (function () {
         width: 1px; height: 44px;
         background: rgba(122,62,30,.55);
       }
-      /* Blink "flash" state — toggled every 500ms by blinkRevealSitemap().
-         Same copper→white alternation as before, applied to the tag now. */
       .fp-glb-label--flash .fp-glb-tag {
         background: rgba(122,62,30,.92);
         color: #f5f0e8;
         border-color: rgba(122,62,30,1);
       }
+      #fp-sitemap-leader-svg {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; z-index: 5; overflow: visible;
+      }
+      .fp-sitemap-leader-line {
+        stroke: rgba(122,62,30,.55); stroke-width: 1.4;
+        fill: none; transition: stroke 0.15s ease;
+      }
+      .fp-sitemap-leader-line--flash { stroke: rgba(255,253,250,.95); }
       @media (max-width: 480px) {
         .fp-glb-tag    { padding: 5px 12px; font-size: 11px; }
         .fp-glb-leader { height: 30px; }
       }
 
-      /* Per-unit BHK labels at cluster level — e.g. "4BHK-C", "3BHK(L)-D",
-         pulled straight from each unit's GLB filename. Classic copper
-         italic serif, no background box — matches the tower-level label
-         style, just smaller since several sit close together on screen. */
       .fp-unit-label {
         position: absolute; transform: translate(-50%, -50%);
         pointer-events: none; z-index: 6; text-align: center;
@@ -620,8 +588,6 @@ window.FloorplanModule = (function () {
         text-shadow: 0 1px 2px rgba(0,0,0,.55), 0 0 2px rgba(122,62,30,.7);
         transition: color 0.15s ease, text-shadow 0.15s ease;
       }
-      /* Blink "flash" state — toggled every 500ms by blinkRevealZones(),
-         same white-alternating treatment as the tower labels. */
       .fp-unit-label--flash .fp-unit-label-text {
         color: #ffffff;
         text-shadow: 0 0 4px rgba(255,255,255,.85), 0 1px 2px rgba(0,0,0,.5);
@@ -636,13 +602,6 @@ window.FloorplanModule = (function () {
         color: rgba(80,50,30,.40); pointer-events: none; white-space: nowrap;
       }
 
-      /* ── Sitemap floating badges — compass (top-right) and
-         "SITE PLAN" label (top-left) are now TWO SEPARATE floating
-         cards, each with its own translucent/blurred background,
-         anchored independently to a corner — not sharing #fp-topbar's
-         bar shape or background anymore. Hidden by default, shown only
-         while the sitemap panel is active (see fp-topbar--sitemap,
-         now toggled on #fp-card so it reaches these siblings too). ── */
       #fp-sitemap-compass,
       #fp-sitemap-label {
         display: none;
@@ -674,7 +633,46 @@ window.FloorplanModule = (function () {
         #fp-sitemap-label   { height: 22px; padding: 5px 8px; }
       }
 
-      /* ── CLUSTER ── */
+      /* ── Desktop-only amenities legend, sits in the dead-map area to the
+         left of the development footprint. Hidden on tablet/mobile. ── */
+      #fp-sitemap-legend {
+  display: none;
+  position: absolute; z-index: 8;
+  top: 50%; left: 22%; transform: translate(-50%, -50%);
+  background: rgba(255,253,250,.95);
+  -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  border: 2px solid rgba(122,62,30,.55);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,.12);
+  padding: 22px 28px;
+width: 280px;
+pointer-events: none;
+}
+      #fp-card.fp-topbar--sitemap #fp-sitemap-legend {
+        display: none;
+      }
+      @media (min-width: 1025px) {
+        #fp-card.fp-topbar--sitemap #fp-sitemap-legend { display: block; }
+      }
+      #fp-sitemap-legend-title {
+        font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+        letter-spacing: .14em; text-transform: uppercase;
+        color: #7a3e1e; margin: 0 0 8px;
+      }
+    #fp-sitemap-legend ol {
+  margin: 0; padding-left: 18px; list-style: decimal;
+  font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 500;
+  line-height: 1.9; color: #3a2410;
+  columns: 1;
+}
+      #fp-sitemap-legend li { break-inside: avoid; padding-right: 4px; }
+      .fp-sitemap-legend-osr {
+        margin-top: 10px; padding-top: 8px;
+        border-top: 1px dashed rgba(122,62,30,.45);
+        font-family: 'Syne', sans-serif; font-size: 10px;
+        color: rgba(80,50,30,.65); line-height: 1.5;
+      }
+
       #fp-panel-cluster {
         display: flex; align-items: center; justify-content: center;
         background: #ffffff; transform: translateX(32px);
@@ -718,7 +716,6 @@ window.FloorplanModule = (function () {
       }
       #fp-cluster-hint.visible { opacity: 1; }
 
-      /* ── UNIT PANEL ── */
       #fp-panel-unit { display: flex; flex-direction: column; transform: translateX(32px); background: #ffffff; }
       #fp-plan-area {
         flex: 1; display: flex; align-items: center; justify-content: center;
@@ -749,7 +746,6 @@ window.FloorplanModule = (function () {
       #fp-unit-info-type { font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: rgba(122,62,30,.70); }
       #fp-unit-info-area { font-family: 'Syne', sans-serif; font-size: 9px; font-weight: 400; letter-spacing: .10em; color: rgba(80,50,30,.45); }
 
-      /* ── SPINNER ── */
       #fp-spinner {
         position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
         background: rgba(255,255,255,.60); opacity: 0; pointer-events: none;
@@ -770,6 +766,32 @@ window.FloorplanModule = (function () {
         <div id="fp-card">
           <img id="fp-sitemap-label" src="" alt="Site Plan" />
           <img id="fp-sitemap-compass" src="" alt="North direction" />
+          <div id="fp-sitemap-legend">
+            <div id="fp-sitemap-legend-title">Amenities</div>
+            <ol>
+              <li>Drop – off</li>
+              <li>Open Lawn</li>
+              <li>Yoga Deck</li>
+              <li>Outdoor Gym</li>
+              <li>Outdoor Fitness</li>
+              <li>Kids' Playground Area</li>
+              <li>Security Kiosk</li>
+              <li>Lobby</li>
+              <li>Half Basketball Court</li>
+              <li>BBQ Area</li>
+              <li>Rain Garden</li>
+              <li>Entry</li>
+              <li>Exit</li>
+              <li>Service Road Access</li>
+              <li>Seating Area</li>
+              <li>Lap Pool</li>
+              <li>Kids' Lap Pool</li>
+              <li>Pool Lounger</li>
+              <li>Garden Pavilion</li>
+              <li>Kids' Play Area</li>
+            </ol>
+            
+          </div>
           <div id="fp-topbar">
             <div id="fp-back">
               <div id="fp-back-arrow">
@@ -824,10 +846,6 @@ window.FloorplanModule = (function () {
     `);
 
     const sitemapImg = document.getElementById('fp-sitemap-img');
-    // NAV-PATCH: no longer setting a static src here — buildSitemapTiles()
-    // now requests a server-side-cropped image sized for the active
-    // breakpoint (see buildSitemapImageUrl), so the src is set there
-    // instead of eagerly loading the full master image on inject.
 
     const sitemapCompass = document.getElementById('fp-sitemap-compass');
     if (sitemapCompass) {
@@ -865,9 +883,6 @@ window.FloorplanModule = (function () {
       el.classList.remove('enter','exit-l','exit-r');
       el.classList.add(pid === id ? 'enter' : direction === 'forward' ? 'exit-l' : 'exit-r');
     });
-    // Compass/label badges only make sense on the sitemap panel — they're
-    // independent floating elements (siblings of #fp-topbar under
-    // #fp-card), so the visibility class is toggled on #fp-card.
     const card = document.getElementById('fp-card');
     if (card) {
       card.classList.toggle('fp-topbar--sitemap', id === 'fp-panel-sitemap');
@@ -877,7 +892,7 @@ window.FloorplanModule = (function () {
   function updateTitle() { /* fp-title removed — toggle row is centred via spacer */ }
 
   function resetToSitemap() {
-    _flipToken++; // cancels any in-flight Odd/Even swap — see swapParity
+    _flipToken++;
     disposeGltfCanvas();
     disposeSitemapCanvas();
     if (_sitemapRO) { _sitemapRO.disconnect(); _sitemapRO = null; }
@@ -891,9 +906,6 @@ window.FloorplanModule = (function () {
     if (clusterImg) {
       clusterImg.classList.remove('fading');
       clusterImg.removeAttribute('src');
-      // Clear any in-flight fade left over from swapParity — defensive
-      // reset so a stale inline opacity/transition can't linger onto
-      // the next time this element is reused.
       clusterImg.style.transition = '';
       clusterImg.style.transform  = '';
       clusterImg.style.opacity    = '';
@@ -913,19 +925,10 @@ window.FloorplanModule = (function () {
     showPanel('fp-panel-sitemap', 'back');
     updateTopbar();
     updateTitle();
-    // Only rebuild the sitemap canvas if the overlay is actually open (i.e. navigating
-    // back to L0, not closing). When close() triggers resetToSitemap the overlay is
-    // already marked closed, so we skip the wasteful GLB reload.
     if (overlayOpen) buildSitemapTiles();
   }
 
   // ─── SITEMAP GLTF TILES ──────────────────────────────────────
-  // GLB files: assets/sitemap/TOWER A.glb … TOWER D.glb
-  // Same approach as buildGltfZones: idle copper edge lines, white glow on
-  // hover. Falls back to SVG polygons if Three.js missing.
-  // ─────────────────────────────────────────────────────────────
-
-  // GLB file list — points derived from SITEMAP.towerTiles (single source of truth)
   const SITEMAP_MESH_FILES = {
     'tower-A': './assets/sitemap/tower1.glb',
     'tower-B': './assets/sitemap/tower2.glb',
@@ -940,6 +943,40 @@ window.FloorplanModule = (function () {
     labelX:  t.labelX,
     labelY:  t.labelY,
   }));
+
+  // NAV-PATCH: label side — which edge each tower's tag sits on. Applies to
+  // both 'desktop' and 'tablet' breakpoints; 'mobile' keeps the original
+  // above-tile label position untouched (smallest screen, no room to spare).
+ const SITEMAP_LABEL_SIDE = {
+    'tower-A': 'right',
+    'tower-B': 'right',
+    'tower-C': 'left',
+    'tower-D': 'left',
+  };
+  // Mobile-only override: tags stack above/below the plan instead of
+  // left/right of it (narrow screens don't have side-margin to spare).
+  // Tower 1 (tower-A) & Tower 4 (tower-D) sit on top; Tower 2 (tower-B) &
+  // Tower 3 (tower-C) sit on the bottom — matches the towers' actual
+  // north/south position in the site plan.
+  const SITEMAP_LABEL_SIDE_MOBILE = {
+    'tower-A': 'top',
+    'tower-B': 'bottom',
+    'tower-C': 'bottom',
+    'tower-D': 'top',
+  };
+
+  // How far outside the tower's own footprint (bbox edge) the tag sits, as a
+  // fraction of the sitemap image width. Small = short leader line hugging
+  // the building; this replaced pinning tags to the card's outer edge,
+  // which produced very long lines over empty map area.
+  const SITEMAP_LABEL_MARGIN = 0.045;
+  // Tablet override — null falls back to SITEMAP_LABEL_MARGIN. Tablet cards
+  // tend to be narrower, so a slightly smaller margin usually looks right;
+  // tune independently here without touching the desktop value.
+  const SITEMAP_LABEL_MARGIN_TABLET = 0.035;
+  // Mobile override — cards are narrowest here, so tags need to sit further
+  // out to clear the towers entirely, like the desktop/tablet edge layout.
+  const SITEMAP_LABEL_MARGIN_MOBILE = 0.14;
 
   let _sitemapRO        = null;
   let _sitemapROTimer   = null;
@@ -956,6 +993,10 @@ window.FloorplanModule = (function () {
     if (old) old.remove();
     Object.values(_sitemapLabelEls).forEach(el => el.remove());
     _sitemapLabelEls = {};
+    const leaderSvg = document.getElementById('fp-sitemap-leader-svg');
+    if (leaderSvg) leaderSvg.innerHTML = '';
+    const fallbackSvg = document.getElementById('fp-sitemap-poly-fallback');
+    if (fallbackSvg) fallbackSvg.remove();
   }
 
   function buildSitemapTiles() {
@@ -963,54 +1004,19 @@ window.FloorplanModule = (function () {
     const img  = document.getElementById('fp-sitemap-img');
     if (!wrap || !img) return;
 
-    // NAV-PATCH: determine which crop region this breakpoint should show,
-    // remap tower poly data into that region's own 0–100 space BEFORE
-    // building overlays, and request that exact crop from Cloudinary
-    // (server-side crop, not a CSS zoom) — see buildSitemapImageUrl.
     const bp = getSitemapBreakpoint();
 
-    // NAV-PATCH: fit to the LIVE panel aspect ratio for every breakpoint,
-    // not just desktop — the old fixed tablet/mobile regions had a fixed
-    // aspect ratio (~0.88, roughly square) that didn't match an actual
-    // phone screen's much taller shape, so the delivered crop ended up
-    // width-constrained with big empty gaps above/below. Using the same
-    // live-aspect fit as desktop (fitSitemapForPCMaxZoom — name kept for
-    // minimal diff, but it's breakpoint-agnostic: always crops to exactly
-    // match whatever container it's given, centered on the tower-safety
-    // box) means every breakpoint now fills its panel completely with no
-    // letterboxing, before the extra-zoom knob is even applied.
     const panel = document.getElementById('fp-panel-sitemap');
     const rect  = panel ? panel.getBoundingClientRect() : null;
     const containerAspect = (rect && rect.height > 0) ? (rect.width / rect.height) : 1.8;
     const fitted = fitSitemapForPCMaxZoom(containerAspect);
     const extraZoom = (bp === 'desktop') ? SITEMAP_PC_EXTRA_ZOOM : SITEMAP_EXTRA_ZOOM[bp];
-    // NAV-PATCH: pan/shift removed — it was an extra hidden offset between
-    // the crop region and what the tower `points` describe, which made
-    // manually matching zones to the image via the debug grid confusing
-    // (grid coordinates wouldn't quite match what ended up on screen).
-    // The zoom fit below is now the only thing between raw points and
-    // what's rendered.
-    // NAV-PATCH: while calibrating (SITEMAP_DEBUG_GRID on), skip the crop
-    // entirely — show the full, uncropped master image. This was the
-    // actual bug behind "I read the grid and typed those numbers in but
-    // the zone lands somewhere else": the grid was drawn in the CROPPED
-    // view's local 0–100 space, but SITEMAP.towerTiles points are in the
-    // FULL image's 0–100 space — two different scales. With no crop
-    // active, those two spaces are identical, so grid readings can be
-    // typed straight into `points` and land exactly where read. Once
-    // SITEMAP_DEBUG_GRID is set back to false, real per-breakpoint
-    // cropping resumes automatically.
     const region = SITEMAP_DEBUG_GRID
       ? { left: 0, top: 0, right: 100, bottom: 100 }
       : shrinkRegionAroundCenter(fitted, extraZoom);
 
     const targetUrl = buildSitemapImageUrl(region, computeSitemapDeliverWidth());
 
-
-    // NAV-PATCH: if this exact crop is already loaded and built, do
-    // nothing — avoids tearing down and rebuilding the whole GLB scene
-    // on every resize tick when the computed crop didn't actually change
-    // (e.g. a sub-pixel resize that rounds to the same delivered width).
     if (targetUrl === _sitemapLoadedUrl && (_sitemapRenderer || wrap.querySelector('.fp-sitemap-svg'))) {
       return;
     }
@@ -1020,13 +1026,10 @@ window.FloorplanModule = (function () {
     _sitemapActiveBreakpoint = bp;
     _sitemapLoadedUrl = targetUrl;
 
-    // Wait until the image has laid out before creating the canvas
     function tryBuild() {
       if (!img.offsetWidth || !img.offsetHeight) {
         requestAnimationFrame(tryBuild); return;
       }
-      // NAV-PATCH: controlled by SITEMAP_USE_GLB (top of file) — flip that
-      // one flag to switch between 3D GLB tiles and the flat SVG outline.
       if (SITEMAP_USE_GLB && typeof THREE !== 'undefined' && typeof THREE.GLTFLoader !== 'undefined') {
         _buildSitemapGltf(wrap, img);
       } else {
@@ -1042,7 +1045,6 @@ window.FloorplanModule = (function () {
       else img.addEventListener('load', tryBuild, { once: true });
     }
 
-    // Keep canvas locked to image on resize
     if (_sitemapRO) _sitemapRO.disconnect();
     _sitemapRO = new ResizeObserver(() => {
       clearTimeout(_sitemapROTimer);
@@ -1054,21 +1056,8 @@ window.FloorplanModule = (function () {
     _sitemapRO.observe(img);
   }
 
-  // ── Precomputed polygon data for sitemap tiles ────────────────
-  // NAV-PATCH: was a static, once-at-load computation from raw
-  // SITEMAP.towerTiles points. Now that the sitemap can display a
-  // server-side CROP of the master image (see buildSitemapImageUrl),
-  // raw points no longer correspond 1:1 to what's on screen — they need
-  // remapping into the active crop region's own 0–100 space first (see
-  // remapPercent/computeSitemapPolyData below). This is now populated by
-  // buildSitemapTiles() on every load, not once here.
   let _sitemapPolyData = {};
 
-  // Remaps a point from the FULL master image's 0–100 space into the
-  // ACTIVE crop region's own 0–100 space — i.e. "where does this point
-  // land within whatever sub-rectangle of the image is currently loaded."
-  // SITEMAP.towerTiles itself is never touched; this is computed fresh
-  // whenever the active region changes.
   function remapPercent(x, y, region) {
     return {
       x: (x - region.left) / (region.right - region.left) * 100,
@@ -1082,48 +1071,70 @@ window.FloorplanModule = (function () {
       return `${r.x},${r.y}`;
     }).join(' ');
   }
-  // NAV-PATCH: now breakpoint-aware — when `bp` is 'mobile' and a tile has
-  // pointsMobile/labelXMobile/labelYMobile set, those are used instead of
-  // the desktop points/labelX/labelY. Falls back to desktop values for any
-  // tile that doesn't define mobile overrides, so PC behavior (and any
-  // tower not yet calibrated for mobile) is completely unaffected.
   function computeSitemapPolyData(region, bp) {
     const out = {};
     SITEMAP.towerTiles.forEach(t => {
       const useMobile = bp === 'mobile' && t.pointsMobile;
-      const srcPoints = useMobile ? t.pointsMobile : t.points;
+      const useTablet = bp === 'tablet' && t.pointsTablet;
+
+      const srcPoints = useMobile ? t.pointsMobile
+                       : useTablet ? t.pointsTablet
+                       : t.points;
+
       const remappedPoints = remapPointsStr(srcPoints, region);
       const pts        = parsePoints(remappedPoints);
       const { cx, cy } = polyCentroid(pts);
       const bbox       = polyBBox(pts);
-      let labelX = cx, labelY = cy;
-      const lx = useMobile && t.labelXMobile !== undefined ? t.labelXMobile : t.labelX;
-      const ly = useMobile && t.labelYMobile !== undefined ? t.labelYMobile : t.labelY;
-      if (lx !== undefined && ly !== undefined) {
-        const rl = remapPercent(lx, ly, region);
-        labelX = rl.x; labelY = rl.y;
-      }
-      out[t.id] = { cx, cy, bbox, labelX, labelY, remappedPoints };
+
+      // Label now always anchors at the polygon centroid — no manual
+      // labelX/labelY to maintain. Vertical lift above the roof is
+      // handled purely in CSS via .fp-glb-label's transform + the
+      // leader line height, not here.
+      out[t.id] = { cx, cy, bbox, labelX: cx, labelY: cy, remappedPoints };
     });
     return out;
   }
 
-  // Shared resize sync — same maths as syncToImage in buildGltfZones
   let _sitemapRootList  = [];
   let _sitemapMeshMap   = {};
   let _sitemapCamera    = null;
   let _sitemapCanvas    = null;
-  let _sitemapLabelEls  = {}; // towerId → label DOM element
+  let _sitemapLabelEls  = {};
 
-  // Tower A/B/C/D → "Tower 1/2/3/4" for the customer-facing label
   const _towerDisplayNumber = {};
   SITEMAP.towerTiles.forEach((t, i) => { _towerDisplayNumber[t.id] = i + 1; });
 
+  // 'desktop' and 'tablet' both use the short edge-hugging tag + leader
+  // line; 'mobile' keeps the original above-tile layout.
+  function _sitemapUsesEdgeLayout() {
+    return true;
+  }
+
   function _addSitemapLabel(wrap, towerId) {
     if (_sitemapLabelEls[towerId]) return;
+
+    // ensure the leader-line SVG exists once
+    let leaderSvg = wrap.querySelector('#fp-sitemap-leader-svg');
+    if (!leaderSvg) {
+      leaderSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      leaderSvg.id = 'fp-sitemap-leader-svg';
+      wrap.appendChild(leaderSvg);
+    }
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('class', 'fp-sitemap-leader-line');
+    line.dataset.towerId = towerId;
+    leaderSvg.appendChild(line);
+
+    const useEdgeLayout = _sitemapUsesEdgeLayout();
+    const side = _sitemapActiveBreakpoint === 'mobile'
+      ? (SITEMAP_LABEL_SIDE_MOBILE[towerId] || 'top')
+      : (SITEMAP_LABEL_SIDE[towerId] || 'right');
+
     const el = document.createElement('div');
-    el.className = 'fp-glb-label';
-    el.innerHTML = `<div class="fp-glb-tag">Tower ${_towerDisplayNumber[towerId] || ''}</div><div class="fp-glb-leader"></div>`;
+    el.className = useEdgeLayout ? `fp-glb-label fp-glb-label--${side}` : 'fp-glb-label fp-glb-label--above';
+    el.innerHTML = useEdgeLayout
+      ? `<div class="fp-glb-tag">Tower ${_towerDisplayNumber[towerId] || ''}</div>`
+      : `<div class="fp-glb-tag">Tower ${_towerDisplayNumber[towerId] || ''}</div><div class="fp-glb-leader"></div>`;
     wrap.appendChild(el);
     _sitemapLabelEls[towerId] = el;
     _positionSitemapLabels();
@@ -1135,20 +1146,84 @@ window.FloorplanModule = (function () {
     const top  = parseFloat(_sitemapCanvas.style.top)   || 0;
     const W    = parseFloat(_sitemapCanvas.style.width)  || 0;
     const H    = parseFloat(_sitemapCanvas.style.height) || 0;
+    const leaderSvg = document.getElementById('fp-sitemap-leader-svg');
+    const useEdgeLayout = _sitemapUsesEdgeLayout();
+    const edgeMarginFrac = _sitemapActiveBreakpoint === 'tablet'
+      ? (SITEMAP_LABEL_MARGIN_TABLET != null ? SITEMAP_LABEL_MARGIN_TABLET : SITEMAP_LABEL_MARGIN)
+      : _sitemapActiveBreakpoint === 'mobile'
+      ? (SITEMAP_LABEL_MARGIN_MOBILE != null ? SITEMAP_LABEL_MARGIN_MOBILE : SITEMAP_LABEL_MARGIN)
+      : SITEMAP_LABEL_MARGIN;
+
+
+    // Mobile tags are wider than the small clamp padding used on desktop/tablet,
+    // and left-side tags extend LEFTWARD from their anchor point (translate(-100%)),
+    // so they need a much bigger clamp pad on mobile or they clip off the card edge.
+    const LABEL_EDGE_PAD = _sitemapActiveBreakpoint === 'mobile' ? 92 : 12;
+
     Object.entries(_sitemapLabelEls).forEach(([towerId, el]) => {
       const poly = _sitemapPolyData[towerId];
       if (!poly) return;
-      // Anchor at the tower's label point — labelX/labelY if the tower
-      // has a manual override set (see SITEMAP.towerTiles), otherwise
-      // the centroid. The polygon itself is a hit-test zone that extends
-      // well past the visible roof (walkways, pool decks, etc.), so its
-      // bounding-box top edge lands far from the actual building — the
-      // tag is lifted clear of the roof via the leader line's height
-      // instead (see .fp-glb-leader below), not by moving this anchor.
-      const anchorX = poly.labelX;
-      const anchorY = poly.labelY;
-      el.style.left = (left + (anchorX / 100) * W) + 'px';
-      el.style.top  = (top  + (anchorY / 100) * H) + 'px';
+
+      // Clamp the tower's remapped centroid into 0-100 before using it for
+      // label placement. The desktop/tablet crop can push a tower (most
+      // often the topmost one) partly outside the 0-100 remapped range; the
+      // 3D tile still renders because _syncSitemapToImage separately clamps
+      // mesh position back inside the frustum, but the label had no such
+      // clamp and could end up placed far off-canvas — effectively invisible.
+      const clampPct = v => Math.max(0, Math.min(100, v));
+      const ccx = clampPct(poly.cx);
+      const ccy = clampPct(poly.cy);
+
+      const cxPx = left + (ccx / 100) * W;
+      const cyPx = top  + (ccy / 100) * H;
+
+      let labelX, labelY;
+
+      if (useEdgeLayout) {
+        const side = _sitemapActiveBreakpoint === 'mobile'
+          ? (SITEMAP_LABEL_SIDE_MOBILE[towerId] || 'top')
+          : (SITEMAP_LABEL_SIDE[towerId] || 'right');
+        const isVertical = side === 'top' || side === 'bottom';
+        // Anchor off the tower's CENTROID, not its bbox edge — a bbox edge
+        // can get clipped to the crop's boundary (0 or 100) for whichever
+        // tower happens to sit near that edge, which silently defeats the
+        // margin value for that one tower/side while the others still
+        // respond normally. Centroid + fixed offset makes line length
+        // = edgeMarginFrac * canvas width on every tower, no exceptions.
+        if (isVertical) {
+          const offsetPy = H * edgeMarginFrac;
+          labelX = cxPx; // level with the tower's centroid
+          labelY = side === 'top' ? cyPx - offsetPy : cyPx + offsetPy;
+        } else {
+          const offsetPx = W * edgeMarginFrac;
+          labelX = side === 'left' ? cxPx - offsetPx : cxPx + offsetPx;
+          labelY = cyPx; // level with the tower's centroid
+        }
+        // final safety clamp: keep the tag within the visible canvas
+        labelX = Math.max(left + LABEL_EDGE_PAD, Math.min(left + W - LABEL_EDGE_PAD, labelX));
+        labelY = Math.max(top  + LABEL_EDGE_PAD, Math.min(top  + H - LABEL_EDGE_PAD, labelY));
+      } else {
+        // mobile only: keep the original above-tile behaviour
+        labelX = left + (clampPct(poly.labelX) / 100) * W;
+        labelY = top  + (clampPct(poly.labelY) / 100) * H;
+      }
+
+      el.style.left = labelX + 'px';
+      el.style.top  = labelY + 'px';
+
+      const line = leaderSvg && leaderSvg.querySelector(`line[data-tower-id="${towerId}"]`);
+      if (line) {
+        if (useEdgeLayout) {
+          line.setAttribute('x1', labelX);
+          line.setAttribute('y1', labelY);
+          line.setAttribute('x2', cxPx);
+          line.setAttribute('y2', cyPx);
+          line.style.display = '';
+        } else {
+          // mobile uses the CSS .fp-glb-leader stub instead of the SVG line
+          line.style.display = 'none';
+        }
+      }
     });
   }
 
@@ -1178,11 +1253,6 @@ window.FloorplanModule = (function () {
     _sitemapCamera.bottom = -0.5;
     _sitemapCamera.updateProjectionMatrix();
 
-    // NAV-PATCH: fixed constant now, not recomputed from live polygon
-    // data each time — frozen at the average of all 4 towers' boxes as
-    // they stood when this was set. Edit SITEMAP_GLB_TARGET_SIZE directly
-    // (further down this file) to change the shared GLB size; it won't
-    // silently shift anymore if the tower polygons are edited later.
     const uniformSz = SITEMAP_GLB_TARGET_SIZE;
 
     _sitemapRootList.forEach(({ root, towerId }) => {
@@ -1199,16 +1269,18 @@ window.FloorplanModule = (function () {
       const box1  = new THREE.Box3().setFromObject(root);
       const size1 = new THREE.Vector3(); box1.getSize(size1);
 
-      // NAV-PATCH: mobile-only scale override — SITEMAP_GLB_SCALE_MOBILE
-      // takes precedence when the active breakpoint is 'mobile' and that
-      // tower has a non-null override set; otherwise falls back to the
-      // existing desktop/shared SITEMAP_GLB_SCALE value (unaffected on
-      // PC/tablet, and on mobile for any tower left at null). Fixed
-      // number — does NOT change with window width within the mobile
-      // range, so it can't drift/grow as the window is resized.
+      // NAV-PATCH: mobile-only and tablet-only scale overrides —
+      // SITEMAP_GLB_SCALE_MOBILE/SITEMAP_GLB_SCALE_TABLET take precedence
+      // when the active breakpoint matches and that tower has a non-null
+      // override set; otherwise falls back to the shared desktop
+      // SITEMAP_GLB_SCALE value. Fixed numbers — don't change with window
+      // width within a breakpoint, so they can't drift/grow on resize.
       const mobileOverride = _sitemapActiveBreakpoint === 'mobile' ? SITEMAP_GLB_SCALE_MOBILE[towerId] : null;
+      const tabletOverride = _sitemapActiveBreakpoint === 'tablet' ? SITEMAP_GLB_SCALE_TABLET[towerId] : null;
       const glbScale = mobileOverride != null
         ? mobileOverride
+        : tabletOverride != null
+        ? tabletOverride
         : (SITEMAP_GLB_SCALE[towerId] != null ? SITEMAP_GLB_SCALE[towerId] : 1);
       const scaleX = (size1.x > 0.0001 ? sz.sw / size1.x : 1) * glbScale;
       const scaleY = (size1.y > 0.0001 ? sz.sh / size1.y : 1) * glbScale;
@@ -1219,13 +1291,6 @@ window.FloorplanModule = (function () {
       const ctr2 = new THREE.Vector3(); box2.getCenter(ctr2);
       root.position.set(sc.sx - ctr2.x, sc.sy - ctr2.y, 0);
 
-      // NAV-PATCH: keep the whole mesh on-screen — if any edge would
-      // render past the current viewport (camera frustum), nudge the
-      // whole mesh inward (position only, never resized) just enough to
-      // pull that edge back in. Was showing up as towers near a crop
-      // edge rendering half off-screen once zoom/pan got tight enough
-      // that a tower's uniform-size GLB no longer fully fit inside its
-      // own visible crop region.
       root.updateMatrixWorld(true);
       const box3 = new THREE.Box3().setFromObject(root);
       const frustumLeft = -aspect * 0.5, frustumRight = aspect * 0.5;
@@ -1237,7 +1302,6 @@ window.FloorplanModule = (function () {
       if (box3.max.y > frustumTop)    dy = frustumTop    - box3.max.y;
       if (dx || dy) root.position.set(root.position.x + dx, root.position.y + dy, 0);
 
-      // Re-register children in meshMap
       root.traverse(child => {
         if (!child.isMesh) return;
         const existing = _sitemapMeshMap[child.uuid] || {};
@@ -1247,28 +1311,21 @@ window.FloorplanModule = (function () {
   }
 
   function _buildSitemapGltf(wrap, img) {
-    // ── Canvas ──────────────────────────────────────────────────
     const canvas = document.createElement('canvas');
     canvas.id = 'fp-sitemap-canvas';
     Object.assign(canvas.style, {
       position: 'absolute', pointerEvents: 'all', zIndex: '5',
-      // Thin drop-shadow just to thicken the otherwise 1px WebGL lines
-      // (browsers ignore LineBasicMaterial linewidth) — no ambient glow.
-      // The white glow is applied only during the blink's "flash" phase,
-      // toggled dynamically in blinkRevealSitemap() below.
       filter: 'drop-shadow(0 0 0.6px rgba(0,0,0,0.5))',
       transition: 'filter 0.15s ease',
     });
     wrap.appendChild(canvas);
     _sitemapCanvas = canvas;
 
-    // ── Renderer ────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(1);
     renderer.setClearColor(0x000000, 0);
     _sitemapRenderer = renderer;
 
-    // ── Camera ──────────────────────────────────────────────────
     const camera = new THREE.OrthographicCamera(-1, 1, 0.5, -0.5, 0.1, 1000);
     camera.position.set(0, 0, 10);
     camera.lookAt(0, 0, 0);
@@ -1280,11 +1337,7 @@ window.FloorplanModule = (function () {
     _sitemapMeshMap  = {};
     _sitemapRootList = [];
 
-    // ── Colors & opacities ───────────────────────────────────────
-    // Idle: dark copper edges, faint fill — always visible, not just on
-    // hover (touch devices have no hover state at all).
-    // Hover: edges turn white and brighten.
-    const COLOR_IDLE  = 0x8a5a30; // matches blink copper (COPPER_HEX)
+    const COLOR_IDLE  = 0x8a5a30;
     const COLOR_HOVER = 0xffffff;
 
     const IDLE_FILL_OPACITY = 0.10;
@@ -1303,7 +1356,6 @@ window.FloorplanModule = (function () {
       });
     }
 
-    // ── Load each tower GLB ──────────────────────────────────────
     const loader = new THREE.GLTFLoader();
     let loaded = 0, failed = 0;
     const total = SITEMAP_MESHES.length;
@@ -1316,12 +1368,10 @@ window.FloorplanModule = (function () {
         root.position.set(0, 0, 0);
         root.updateMatrixWorld(true);
 
-        // Flip flat XZ meshes upright
         const box0  = new THREE.Box3().setFromObject(root);
         const size0 = new THREE.Vector3(); box0.getSize(size0);
         if (size0.y < 0.01) { root.rotation.x = Math.PI / 2; root.updateMatrixWorld(true); }
 
-        // Assign materials: idle copper fill + 3-layer edge lines
         root.traverse(child => {
           if (!child.isMesh) return;
           child.material = makeFill();
@@ -1358,18 +1408,25 @@ window.FloorplanModule = (function () {
         failed++;
         console.error('[SITEMAP GLTF] LOAD ERROR:', file, err);
         if (loaded + failed === total && loaded === 0) {
+          // every tower's GLB failed — fall back to the flat SVG sitemap entirely
           disposeSitemapCanvas();
           _buildSitemapSvg(wrap, img);
+        } else {
+          // only THIS tower's GLB failed — give it a flat SVG polygon + label
+          // of its own instead of silently vanishing from the sitemap.
+          _addSitemapPolyFallback(wrap, towerId);
+          _addSitemapLabel(wrap, towerId);
+          if (loaded + failed === total) {
+            console.log('[SITEMAP GLTF] DONE — Loaded:', loaded, '| Failed:', failed);
+            blinkRevealSitemap();
+          }
         }
       });
     });
 
-    // ── ResizeObserver ───────────────────────────────────────────
     _sitemapGltfRO = new ResizeObserver(() => _syncSitemapToImage(wrap, img));
     _sitemapGltfRO.observe(img);
 
-    // ── No hover glow — tiles render at a single steady idle state.
-    // Picking is still needed purely to know which tile was tapped/clicked.
     function pick(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
       mouse.x =  ((clientX - rect.left) / rect.width)  * 2 - 1;
@@ -1380,7 +1437,6 @@ window.FloorplanModule = (function () {
       return hits.length ? _sitemapMeshMap[hits[0].object.uuid] : null;
     }
 
-    // ── Mouse / touch events ─────────────────────────────────────
     canvas.addEventListener('mousemove',  e => {
       canvas.style.cursor = pick(e.clientX, e.clientY) ? 'pointer' : '';
     });
@@ -1393,7 +1449,7 @@ window.FloorplanModule = (function () {
 
     let touchMoved = false, touchHit = null;
     canvas.addEventListener('touchstart', e => {
-      if (e.touches.length > 1) { touchHit = null; return; } // multi-touch = pinch/pan, not a tap
+      if (e.touches.length > 1) { touchHit = null; return; }
       touchMoved = false;
       touchHit   = pick(e.touches[0].clientX, e.touches[0].clientY);
     }, { passive: true });
@@ -1403,24 +1459,17 @@ window.FloorplanModule = (function () {
       touchHit = null;
     });
 
-    // ── Render loop ──────────────────────────────────────────────
     (function loop() {
       _sitemapAnimId = requestAnimationFrame(loop);
       renderer.render(scene, camera);
     })();
   }
 
-  // ── Continuous blink — tower tiles + their "Tower N" labels alternate
-  // between steady copper and a bright white glow every 500ms for as
-  // long as the sitemap is open. The canvas has NO ambient glow filter
-  // at rest (see _buildSitemapGltf) — the glow only exists during the
-  // white "flash" half of each cycle, applied here directly. Cleared in
-  // disposeSitemapCanvas() whenever the panel is rebuilt/closed.
-  const COPPER_HEX  = 0x8a5a30; // matches label CSS copper tone
-  const FLASH_HEX    = 0xf3ead6; // soft warm cream instead of pure white — less harsh flash
+  const COPPER_HEX  = 0x8a5a30;
+  const FLASH_HEX    = 0xf3ead6;
   let _sitemapBlinkTimer = null;
-  const SITEMAP_BLINK_MS = 900; // was 500 — slower pulse
-  const GLOW_FILTER  = 'drop-shadow(0 0 0.8px rgba(255,255,255,0.45))'; // toned down from 1.2px/0.85
+  const SITEMAP_BLINK_MS = 900;
+  const GLOW_FILTER  = 'drop-shadow(0 0 0.8px rgba(255,255,255,0.45))';
   const IDLE_FILTER  = 'drop-shadow(0 0 0.6px rgba(0,0,0,0.5))';
 
   function blinkRevealSitemap() {
@@ -1432,21 +1481,20 @@ window.FloorplanModule = (function () {
       meshes.forEach(({ mesh, e1, e2, e3 }) => {
         mesh.material.opacity = 0.10;
         const c = on ? FLASH_HEX : COPPER_HEX;
-        // Flash-phase opacities are pulled down a notch from the idle
-        // ones so the "on" pulse reads as a gentle highlight rather than
-        // a hard white flash.
         if (e1) { e1.material.color.set(c); e1.material.opacity = on ? 0.75 : 1.0; }
         if (e2) { e2.material.color.set(c); e2.material.opacity = on ? 0.55 : 0.85; }
         if (e3) { e3.material.color.set(c); e3.material.opacity = on ? 0.40 : 0.60; }
       });
       if (_sitemapCanvas) _sitemapCanvas.style.filter = on ? GLOW_FILTER : IDLE_FILTER;
       Object.values(_sitemapLabelEls).forEach(el => el.classList.toggle('fp-glb-label--flash', on));
+      document.querySelectorAll('#fp-sitemap-leader-svg line').forEach(l =>
+        l.classList.toggle('fp-sitemap-leader-line--flash', on)
+      );
     }, SITEMAP_BLINK_MS);
   }
 
   function stopSitemapBlink() {
     if (_sitemapBlinkTimer) { clearInterval(_sitemapBlinkTimer); _sitemapBlinkTimer = null; }
-    // Leave tiles at steady idle (copper) appearance
     Object.values(_sitemapMeshMap).forEach(({ mesh, e1, e2, e3 }) => {
       if (!mesh) return;
       mesh.material.opacity = 0.10;
@@ -1456,10 +1504,37 @@ window.FloorplanModule = (function () {
     });
     if (_sitemapCanvas) _sitemapCanvas.style.filter = IDLE_FILTER;
     Object.values(_sitemapLabelEls).forEach(el => el.classList.remove('fp-glb-label--flash'));
+    document.querySelectorAll('#fp-sitemap-leader-svg line').forEach(l =>
+      l.classList.remove('fp-sitemap-leader-line--flash')
+    );
   }
 
+  // Flat SVG polygon for a single tower whose GLB failed to load — keeps
+  // that tower visible/clickable on the sitemap even when its 3D tile
+  // couldn't be built, instead of it just disappearing.
+  function _addSitemapPolyFallback(wrap, towerId) {
+    let svg = wrap.querySelector('#fp-sitemap-poly-fallback');
+    if (!svg) {
+      svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      svg.id = 'fp-sitemap-poly-fallback';
+      svg.setAttribute('viewBox', '0 0 100 100');
+      svg.setAttribute('preserveAspectRatio', 'none');
+      svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;z-index:4;';
+      wrap.appendChild(svg);
+    }
+    const poly = _sitemapPolyData[towerId];
+    const tile = SITEMAP.towerTiles.find(t => t.id === towerId);
+    if (!poly || !tile) return;
 
-  // ── SVG fallback (original polygon approach) ──────────────────
+    const el = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    el.setAttribute('class', 'fp-tower-poly');
+    el.setAttribute('points', poly.remappedPoints);
+    el.style.pointerEvents = 'all';
+    el.addEventListener('click', e => { if (e.detail === 0) return; drillToCluster(towerId); });
+    el.addEventListener('touchend', e => { e.preventDefault(); drillToCluster(towerId); });
+    svg.appendChild(el);
+  }
+
   function _buildSitemapSvg(wrap, img) {
     const old = wrap.querySelector('.fp-sitemap-svg');
     if (old) old.remove();
@@ -1470,13 +1545,6 @@ window.FloorplanModule = (function () {
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none;';
 
-    // NAV-PATCH: TEMPORARY calibration grid — set SITEMAP_DEBUG_GRID=false
-    // (further down this file) once the 4 tower zones are correctly
-    // positioned, to remove it. Draws lines every 10 units + coordinate
-    // labels in the SAME space the polygon points below are edited in
-    // (the active crop region's own 0–100), so you can read a building
-    // corner's x,y directly off the screen and put those exact numbers
-    // into SITEMAP.towerTiles — no more guessing from a screenshot.
     if (SITEMAP_DEBUG_GRID) {
       const gridG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       gridG.setAttribute('class', 'fp-debug-grid');
@@ -1514,12 +1582,6 @@ window.FloorplanModule = (function () {
 
       const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
       poly.setAttribute('class', 'fp-tower-poly');
-      // NAV-PATCH: use the remapped points (relative to the currently
-      // loaded crop region), not tile.points directly — tile.points is
-      // in the FULL master image's space, which no longer matches what's
-      // on screen once a crop is active. Falls back to raw points if
-      // _sitemapPolyData hasn't been populated for this tile for any
-      // reason, rather than silently drawing nothing.
       const remapped = (_sitemapPolyData[tile.id] && _sitemapPolyData[tile.id].remappedPoints) || tile.points;
       poly.setAttribute('points', remapped);
 
@@ -1527,14 +1589,11 @@ window.FloorplanModule = (function () {
       const { cx, cy } = polyCentroid(pts);
       const { minY }   = polyBBox(pts);
 
-      // ── TAG ── small pill anchored just above the tower, joined to its
-      // centroid by a short leader line — replaces the old cursive
-      // "Tower X / Explore" text that used to sit inside the polygon.
       const tagLabel   = `Tower ${i + 1}`;
-      const tagW       = 6 + tagLabel.length * 1.7; // rough width-per-char at this font size
+      const tagW       = 6 + tagLabel.length * 1.7;
       const tagH       = 4.6;
       const tagX       = cx;
-      const tagY       = Math.max(minY - 7, tagH / 2 + 1); // clamp so it doesn't run off the top edge
+      const tagY       = Math.max(minY - 7, tagH / 2 + 1);
       const leaderTopY = tagY + tagH / 2;
 
       const tagGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
@@ -1576,16 +1635,8 @@ window.FloorplanModule = (function () {
   }
 
   // ─── SWAP PARITY ─────────────────────────────────────────────
-  // Odd/Even toggle — instant image swap with a brief, subtle opacity
-  // fade (no 3D flip/rotate/perspective animation). Keeps the same
-  // in-flight-swap cancellation token (_flipToken — name kept as-is
-  // since drillToCluster/resetToSitemap already reference it to cancel
-  // a swap in progress) so rapid double-taps on Odd/Even still behave
-  // correctly: a newer swap safely supersedes a stale one instead of
-  // fighting over the element's opacity or triggering a stale GLB zone
-  // rebuild.
   const PARITY_FADE_MS = 130;
-  let _flipToken = 0; // bumped on every call — lets a newer swap cancel a stale one cleanly
+  let _flipToken = 0;
 
   function swapParity(newParity) {
     if (!activeTower || newParity === floorParity || level !== 1) return;
@@ -1600,9 +1651,6 @@ window.FloorplanModule = (function () {
     document.querySelectorAll('.fp-zone.selected').forEach(z => z.classList.remove('selected'));
     svg.innerHTML = '';
 
-    // Supersedes any swap already in flight — the stale one's callbacks
-    // check this token and become no-ops instead of fighting this one
-    // for control of the element.
     const myToken  = ++_flipToken;
     const reqTower = activeTower, reqParity = floorParity;
 
@@ -1610,22 +1658,14 @@ window.FloorplanModule = (function () {
     img.style.opacity    = '0.25';
 
     setTimeout(() => {
-      // A newer swap already took over — it owns the element now.
       if (myToken !== _flipToken) return;
       let done = false;
       let hardTimer = null;
       function finish() {
         if (done) return; done = true;
         clearTimeout(hardTimer);
-        // Superseded while the new image was loading — the newer swap
-        // is already handling this element; don't fight it.
         if (myToken !== _flipToken) return;
         img.style.opacity = '1';
-        // Rebuild the GLB zone canvas once the new image is visible. A
-        // plain opacity fade never changes layout size (unlike the old
-        // rotateY transform), so there's no skew/measurement risk to
-        // wait out — this short delay just lets the fade-in paint
-        // before buildGltfZones measures the image.
         setTimeout(() => {
           if (myToken !== _flipToken) return;
           buildGltfZones(reqTower, reqParity);
@@ -1633,24 +1673,11 @@ window.FloorplanModule = (function () {
       }
       img.addEventListener('load', finish, { once: true });
       img.addEventListener('error', finish, { once: true });
-      // Uses this swap's own captured tower/parity, not the live globals —
-      // if a second tap changed floorParity again before this fired, the
-      // wrong plan could otherwise load here.
       const newSrc = getClusterImage(reqTower, reqParity);
       img.src = newSrc;
-      // Guard against the img.complete/naturalWidth race: right after
-      // reassigning .src, some browsers don't synchronously reset
-      // `complete` to false, so checking it immediately here can resolve
-      // against the PREVIOUS image's loaded state and fire finish() before
-      // the new image has actually decoded. This bites asymmetrically
-      // depending on which parity's image happens to already be cached.
-      // Only take the fast path when currentSrc already matches the src
-      // we just requested.
       if (img.currentSrc && img.currentSrc.endsWith(newSrc.split('/').pop()) && img.complete && img.naturalWidth > 0) {
         finish();
       }
-      // Last-resort safety net: if for any reason neither load nor error
-      // ever fires, this guarantees the image can't stay invisible forever.
       hardTimer = setTimeout(finish, 4000);
     }, PARITY_FADE_MS);
   }
@@ -1658,7 +1685,7 @@ window.FloorplanModule = (function () {
   // ─── DRILL TO CLUSTER ────────────────────────────────────────
   function drillToCluster(towerId) {
     if (_transitioning) return;
-    _flipToken++; // cancels any in-flight Odd/Even swap — see swapParity
+    _flipToken++;
     activeUnit = null; viewMode = 'top'; floorParity = 'odd';
     const unitInfo = document.getElementById('fp-unit-info');
     if (unitInfo) unitInfo.classList.remove('visible');
@@ -1676,8 +1703,6 @@ window.FloorplanModule = (function () {
     const img = document.getElementById('fp-cluster-img');
     const svg = document.getElementById('fp-zone-svg');
     if (!img || !svg) return;
-    // Clear any in-flight fade left over from swapParity — defensive
-    // reset, same as the matching note in resetToSitemap.
     img.style.transition = '';
     img.style.transform  = '';
     img.style.opacity    = '';
@@ -1699,8 +1724,6 @@ window.FloorplanModule = (function () {
       img.addEventListener('error', () => img.classList.remove('fading'), { once: true });
       const newSrc = getClusterImage(towerId, floorParity);
       img.src = newSrc;
-      // Same currentSrc guard as swapParity — avoids finishing early off
-      // a stale img.complete/naturalWidth reading from the PREVIOUS image.
       if (img.currentSrc && img.currentSrc.endsWith(newSrc.split('/').pop()) && img.complete && img.naturalWidth > 0) {
         finish();
       }
@@ -1716,7 +1739,7 @@ window.FloorplanModule = (function () {
   let _gltfRenderer = null;
   let _gltfAnimId   = null;
   let _gltfRO       = null;
-  let _gltfBuildGen = 0; // bumped on every buildGltfZones() call — GLB loads can't be cancelled mid-flight, so late callbacks from a superseded odd/even (or tower) build check this and no-op instead of adding stale meshes/labels on top of the current one
+  let _gltfBuildGen = 0;
 
   function disposeGltfCanvas() {
     if (_gltfAnimId)   { cancelAnimationFrame(_gltfAnimId); _gltfAnimId = null; }
@@ -1729,22 +1752,15 @@ window.FloorplanModule = (function () {
     if (dbg) dbg.remove();
     const clusterHint = document.getElementById('fp-cluster-hint');
     if (clusterHint) clusterHint.classList.remove('visible');
-    Object.values(_clusterLabelEls).forEach(el => el.remove());
-    _clusterLabelEls = {};
+    
   }
 
-  // ─── UNIT BHK LABEL HELPERS ────────────────────────────────────
-  // Derives a readable label straight from the GLB filename, e.g.
-  // "./assets/typical_odd_tower_01/4BHK-C.glb" → "4BHK-C",
-  // "./assets/typical_odd_tower_02/3BHK(L)-D.glb" → "3BHK(L)-D".
-  // This is the single source of truth already used to load the mesh,
-  // so the label can never drift out of sync with which unit it's on.
   function bhkLabelFromFile(file) {
     if (!file) return '';
     return file.split('/').pop().replace(/\.glb$/i, '');
   }
 
-  let _clusterLabelEls = {}; // unitId → label DOM element, for the current cluster build
+  let _clusterLabelEls = {};
 
   function _positionClusterLabels(canvas, unitPolyData) {
     if (!canvas) return;
@@ -1783,13 +1799,11 @@ window.FloorplanModule = (function () {
       buildZones(towerId, parity); return;
     }
 
-    // ── unitId → unitData lookup ──────────────────────────────────
     const unitById = {};
     getUnits(towerId, parity).forEach(u => { unitById[u.unitId] = u; });
 
     const DEBUG_MARKERS = false;
 
-    // ── Precompute stable polygon data ──
     const unitPolyData = {};
     unitMeshList.forEach(({ unitId }) => {
       const ud = unitById[unitId] || null;
@@ -1800,28 +1814,22 @@ window.FloorplanModule = (function () {
       unitPolyData[unitId] = { cx, cy, bbox };
     });
 
-    // ── Create canvas ───────────────────────────────────────────
     const canvas = document.createElement('canvas');
     canvas.id = 'fp-gltf-canvas';
     Object.assign(canvas.style, {
       position: 'absolute',
       pointerEvents: 'all',
       zIndex: '5',
-      // Thin drop-shadow just to thicken the otherwise 1px WebGL lines —
-      // no ambient glow. White glow is applied only during the blink's
-      // "flash" phase, toggled dynamically in blinkRevealZones() below.
       filter: 'drop-shadow(0 0 0.6px rgba(0,0,0,0.5))',
       transition: 'filter 0.15s ease',
     });
     wrap.appendChild(canvas);
 
-    // ── Renderer ─────────────────────────────────────────────────
     const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
     renderer.setPixelRatio(1);
     renderer.setClearColor(0x000000, 0);
     _gltfRenderer = renderer;
 
-    // ── Camera ───────────────────────────────────────────────────
     const camera = new THREE.OrthographicCamera(-1, 1, 0.5, -0.5, 0.1, 1000);
     camera.position.set(0, 0, 10);
     camera.lookAt(0, 0, 0);
@@ -1830,22 +1838,15 @@ window.FloorplanModule = (function () {
     const raycaster = new THREE.Raycaster();
     const mouse     = new THREE.Vector2();
 
-    // meshMap  : child.uuid → { mesh, edgeLines, unitData }
-    // rootList : [{ root, unitData, idx }]
     const meshMap  = {};
     const rootList = [];
 
-    // ── Colors & opacities ───────────────────────────────────────
-    // Same pattern as the sitemap tiles: idle copper edges (always
-    // visible, not just on hover — touch devices have no hover state
-    // at all), turning white on hover.
-    const COLOR_IDLE  = 0x8a5a30; // matches blink copper (COPPER_HEX)
+    const COLOR_IDLE  = 0x8a5a30;
     const COLOR_HOVER = 0xffffff;
 
     const IDLE_FILL_OPACITY = 0.08;
     const IDLE_EDGE_OPACITY = 1.0;
 
-    // Fill: faint at rest, still raycasts
     function makeFillMaterial() {
       return new THREE.MeshBasicMaterial({
         color:       0xffffff,
@@ -1856,7 +1857,6 @@ window.FloorplanModule = (function () {
       });
     }
 
-    // Edge: idle copper, turns white on hover — see setHover() below
     function makeEdgeMaterial(opacity) {
       return new THREE.LineBasicMaterial({
         color:       COLOR_IDLE,
@@ -1868,7 +1868,6 @@ window.FloorplanModule = (function () {
       });
     }
 
-    // ── syncToImage ───────────────────────────────────────────────
     function syncToImage() {
       const imgRect  = img.getBoundingClientRect();
       const wrapRect = wrap.getBoundingClientRect();
@@ -1924,13 +1923,11 @@ window.FloorplanModule = (function () {
 
         root.traverse(child => {
           if (!child.isMesh) return;
-          // Preserve edgeLines refs — only update unitData lookup
           const existing = meshMap[child.uuid] || {};
           meshMap[child.uuid] = { ...existing, mesh: child, unitData };
         });
       });
 
-      // Rebuild debug SVG markers
       if (DEBUG_MARKERS) {
         const old = document.getElementById('fp-debug-svg');
         if (old) old.remove();
@@ -1982,11 +1979,9 @@ window.FloorplanModule = (function () {
       console.log('[GLTF] syncToImage — W:', W, 'H:', H, 'aspect:', aspect.toFixed(4));
     }
 
-    // ── ResizeObserver ────────────────────────────────────────────
     _gltfRO = new ResizeObserver(() => syncToImage());
     _gltfRO.observe(img);
 
-    // ── Load each unit GLB ────────────────────────────────────────
     console.log('[GLTF] Loading', unitMeshList.length, 'unit GLBs for', towerId);
     const loader = new THREE.GLTFLoader();
     let loaded = 0, failed = 0;
@@ -1996,7 +1991,7 @@ window.FloorplanModule = (function () {
       const unitData = unitById[unitId] || null;
 
       loader.load(file, (gltf) => {
-        if (myGen !== _gltfBuildGen) return; // a newer build (tower switch or Odd/Even flip) has superseded this one
+        if (myGen !== _gltfBuildGen) return;
         const root = gltf.scene;
 
         root.rotation.set(0, 0, 0);
@@ -2004,7 +1999,6 @@ window.FloorplanModule = (function () {
         root.position.set(0, 0, 0);
         root.updateMatrixWorld(true);
 
-        // Flip flat XZ meshes upright
         const box0  = new THREE.Box3().setFromObject(root);
         const size0 = new THREE.Vector3(); box0.getSize(size0);
         if (size0.y < 0.01) {
@@ -2012,18 +2006,11 @@ window.FloorplanModule = (function () {
           root.updateMatrixWorld(true);
         }
 
-        // ── Assign materials: faint idle fill + white glowing edges ──
         root.traverse(child => {
           if (!child.isMesh) return;
 
-          // Faint fill at rest — still receives raycasts
           child.material = makeFillMaterial();
 
-          // Stack 3 LineSegments layers for a strong glow bloom effect.
-          // Each layer uses additive blending so they accumulate brightness.
-          // Layer 1 stays faintly visible at rest; layers 2/3 stay fully
-          // hidden until hover, so the glow still reads as a clear step
-          // up from the idle state rather than "always maximally lit".
           const edgesGeo = new THREE.EdgesGeometry(child.geometry);
           const edgeLines = new THREE.LineSegments(edgesGeo, makeEdgeMaterial(IDLE_EDGE_OPACITY));
           edgeLines.renderOrder = 1;
@@ -2042,16 +2029,6 @@ window.FloorplanModule = (function () {
 
         rootList.push({ root, unitData, idx });
         scene.add(root);
-
-        // ── BHK label — one per unit, positioned at its centroid ──
-        if (unitData && unitPolyData[unitId] && !_clusterLabelEls[unitId]) {
-          const labelText = bhkLabelFromFile(file);
-          const el = document.createElement('div');
-          el.className = 'fp-unit-label';
-          el.innerHTML = `<span class="fp-unit-label-text">${labelText}</span>`;
-          wrap.appendChild(el);
-          _clusterLabelEls[unitId] = el;
-        }
 
         loaded++;
         console.log('[GLTF] ✔ "' + file.split('/').pop() + '" → ' + unitId + (unitData ? ' (' + unitData.unitId + ')' : ' (no unitData)'));
@@ -2072,7 +2049,7 @@ window.FloorplanModule = (function () {
           console.log('[GLTF] ' + file.split('/').pop() + ' ' + pct + '%');
         }
       }, (err) => {
-        if (myGen !== _gltfBuildGen) return; // stale — see note above
+        if (myGen !== _gltfBuildGen) return;
         failed++;
         console.error('[GLTF] LOAD ERROR:', file, err);
         if (loaded + failed === total && loaded === 0) {
@@ -2082,7 +2059,6 @@ window.FloorplanModule = (function () {
       });
     });
 
-    // ── Raycast helpers ───────────────────────────────────────────
     function pick(clientX, clientY) {
       const rect = canvas.getBoundingClientRect();
       mouse.x =  ((clientX - rect.left) / rect.width)  * 2 - 1;
@@ -2092,7 +2068,6 @@ window.FloorplanModule = (function () {
       return hits.length ? meshMap[hits[0].object.uuid] : null;
     }
 
-    // No hover glow — zones stay at a single steady idle appearance.
     canvas.addEventListener('mousemove', e => {
       canvas.style.cursor = pick(e.clientX, e.clientY) ? 'pointer' : '';
     });
@@ -2103,10 +2078,9 @@ window.FloorplanModule = (function () {
       drillToUnit(hit.unitData);
     });
 
-    // ── Touch events ──────────────────────────────────────────────
     let touchMoved = false, touchHit = null;
     canvas.addEventListener('touchstart', e => {
-      if (e.touches.length > 1) { touchHit = null; return; } // multi-touch = pinch/pan, not a tap
+      if (e.touches.length > 1) { touchHit = null; return; }
       touchMoved = false;
       touchHit   = pick(e.touches[0].clientX, e.touches[0].clientY);
     }, { passive: true });
@@ -2119,18 +2093,12 @@ window.FloorplanModule = (function () {
       touchHit = null;
     });
 
-    // ── Render loop ───────────────────────────────────────────────
     (function loop() {
       _gltfAnimId = requestAnimationFrame(loop);
       renderer.render(scene, camera);
     })();
   }
 
-  // ── Continuous blink for unit zones — same treatment as
-  // blinkRevealSitemap(): steady copper at rest, alternating to a
-  // bright white glow every 500ms for as long as this cluster view is
-  // open. Cleared in disposeGltfCanvas() whenever the cluster is
-  // rebuilt (parity swap, new tower, navigating away).
   let _zoneBlinkTimer = null;
   const ZONE_BLINK_MS = 500;
 
@@ -2147,7 +2115,6 @@ window.FloorplanModule = (function () {
         if (edgeLines3) { edgeLines3.material.color.set(c); edgeLines3.material.opacity = on ? 0.75 : 0; }
       });
       if (canvas) canvas.style.filter = on ? GLOW_FILTER : IDLE_FILTER;
-      // Blink the copper BHK labels (e.g. "4BHK-A") in sync with the mesh glow.
       Object.values(_clusterLabelEls).forEach(el => el.classList.toggle('fp-unit-label--flash', on));
     }, ZONE_BLINK_MS);
   }
@@ -2166,7 +2133,6 @@ window.FloorplanModule = (function () {
     if (canvas) canvas.style.filter = IDLE_FILTER;
     Object.values(_clusterLabelEls).forEach(el => el.classList.remove('fp-unit-label--flash'));
   }
-
 
   // ─── BUILD ZONES (SVG fallback) ──────────────────────────────
   function buildZones(towerId, parity) {
@@ -2241,12 +2207,10 @@ window.FloorplanModule = (function () {
   }
 
   // ─── DRILL TO UNIT ───────────────────────────────────────────
-  // Reports how long the previously active unit was on screen, then resets
-  // the timer. Call this right before switching away from a unit (back/close).
   function reportUnitDwell() {
     if (!unitEnteredAt || !activeUnit) return;
     const dwellMs = Date.now() - unitEnteredAt;
-    if (typeof gtag === 'function' && dwellMs > 200) { // ignore accidental sub-200ms flicks
+    if (typeof gtag === 'function' && dwellMs > 200) {
       gtag('event', 'unit_engagement', {
         unit_id: activeUnit.unitId,
         unit_label: activeUnit.label,
@@ -2258,11 +2222,10 @@ window.FloorplanModule = (function () {
 
   function drillToUnit(unitData) {
     if (_transitioning) return;
-    reportUnitDwell(); // in case a different unit was already open (rare, but be safe)
+    reportUnitDwell();
     activeUnit = unitData;
     viewMode   = 'top';
 
-    // Track which specific unit type gets explored
     if (typeof gtag === 'function') {
       gtag('event', 'unit_view', {
         unit_id: unitData.unitId,
@@ -2270,7 +2233,7 @@ window.FloorplanModule = (function () {
         unit_type: unitData.type
       });
     }
-    unitEnteredAt = Date.now(); // start the dwell-time clock for this unit
+    unitEnteredAt = Date.now();
     document.querySelectorAll('.fp-toggle-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.view === 'top');
     });
@@ -2318,13 +2281,7 @@ window.FloorplanModule = (function () {
     }, 280);
   }
 
-  // ─── PINCH-ZOOM ──────────────────────────────────────────────
   // ─── GENERIC ZOOM/PAN (pinch + drag + wheel) ──────────────────
-  // Reusable across Level 0 (sitemap), Level 1 (cluster), Level 2 (unit).
-  // Transforms `target` (translate+scale) inside `area`. Because CSS
-  // transforms are reflected in getBoundingClientRect(), the existing
-  // Three.js raycast pick() functions keep working correctly against
-  // the transformed canvas without any changes to the hit-testing code.
   function bindZoomPan(area, target, opts) {
     if (!area || !target) return () => {};
     const { maxScale = 4, minScale = 1, hintEl = null, onScaleChange = null, initialScale = null, initialFocus = null } = opts || {};
@@ -2389,7 +2346,6 @@ window.FloorplanModule = (function () {
     area.addEventListener('touchmove',  onTouchMove,  { passive: false });
     area.addEventListener('touchend',   onTouchEnd,   { passive: true });
 
-    // ── Desktop: mouse wheel to zoom, drag-to-pan when zoomed in ──
     function onWheel(e) {
       e.preventDefault();
       const rect = area.getBoundingClientRect();
@@ -2419,12 +2375,6 @@ window.FloorplanModule = (function () {
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
 
-    // NAV-PATCH: optional default starting zoom (e.g. sitemap crop) — same
-    // pivot-around-a-point math as onWheel above, just applied once at bind
-    // time instead of per scroll tick. initialFocus is {xFrac,yFrac}, 0–1
-    // fractions of target's own (untransformed) box. Falls back to the
-    // untouched scale=1/origin=(0,0) start when not provided, so every
-    // other bindZoomPan call site (unit plan, cluster) is unaffected.
     if (initialScale && initialFocus) {
       const rect0 = area.getBoundingClientRect();
       const pivotX = (initialFocus.xFrac - 0.5) * rect0.width;
@@ -2436,7 +2386,6 @@ window.FloorplanModule = (function () {
       applyTransform();
     }
 
-    // Returns a teardown fn so callers can unbind when a panel is rebuilt
     return function unbind() {
       area.removeEventListener('touchstart', onTouchStart);
       area.removeEventListener('touchmove',  onTouchMove);
@@ -2457,23 +2406,6 @@ window.FloorplanModule = (function () {
   }
 
   // ─── CAMERA VIEWPORT (sitemap) ─────────────────────────────────
-  // Each entry is a region of the FULL master image, in the same 0–100
-  // percentage space as SITEMAP.towerTiles points — { left, top, right,
-  // bottom }. Instead of loading the full image and CSS-scaling it up
-  // (which was the source of the quality loss), each breakpoint requests
-  // its OWN server-side crop from Cloudinary at native resolution — see
-  // buildSitemapImageUrl. SITEMAP.towerTiles itself is never touched;
-  // computeSitemapPolyData (above) remaps points into whichever region is
-  // active, fresh, every time buildSitemapTiles() runs.
-  //
-  // mobile is the ONLY entry actually used now — it's the required
-  // "must stay visible" bounding box (contains all 4 tower zones,
-  // so cropping to it can never clip a tower's tap zone), reused as the
-  // center/minimum-size anchor for fitSitemapForPCMaxZoom(), which now
-  // computes every breakpoint's actual crop live from the panel's real
-  // aspect ratio (see buildSitemapTiles). desktop/tablet entries below
-  // are unused leftovers, kept only so nothing else that might reference
-  // this object shape breaks — the live fit replaced them.
   const SITEMAP_VIEWPORT_REGIONS = {
     mobile:  { left: 29,   top: 25.5, right: 77,   bottom: 80  },
   };
@@ -2486,44 +2418,6 @@ window.FloorplanModule = (function () {
     return 'desktop';
   }
 
-  // ─── PC MAX-ZOOM FIT (desktop only) ────────────────────────────
-  // "Fill the entire browser width, crop top/bottom, zoom to the max
-  // level that still keeps the whole project visible." Computed live
-  // from the panel's actual aspect ratio (not a fixed crop) so it holds
-  // correctly across any desktop window size, and re-runs on resize.
-  //
-  // SITEMAP_VIEWPORT_REGIONS.mobile IS the exact bounding box already
-  // containing all 4 tower zones — reused here as "the required content
-  // that must never be clipped," so this can never cut off a tower no
-  // matter how the math below plays out.
-  //
-  // Assumes the source image is square (1:1) — matches the 8001×8001
-  // dimensions confirmed earlier for this project's site-plan renders.
-  // If a future source image isn't square, this aspect math would need
-  // the image's real pixel aspect ratio factored in, not just 0–100
-  // percentages, since those percentages are of width and height
-  // separately and only interchange cleanly on a square source.
-  // NAV-PATCH: pan/shift, on top of the zoom above — for "the view is
-  // centered wrong, nudge it left/right/up/down" without changing zoom
-  // level. Units are the same 0–100 image-percentage space as everything
-  // else. Sign convention is chosen to match what you'd expect visually,
-  // NOT raw crop-window direction (those are opposite — shifting the crop
-  // window left makes the content appear to shift right on screen, which
-  // is a very easy sign to get backwards, so it's handled once here):
-  //   x: positive = visible content moves RIGHT.  negative = LEFT.
-  //   y: positive = visible content moves DOWN.   negative = UP.
-  // NAV-PATCH: sitemap tower GLB meshes are sized to fit their polygon's
-  // area within the CURRENT crop — as the crop tightens (SITEMAP_EXTRA_ZOOM
-  // going up), that area is a bigger share of a smaller frame, so the mesh
-  // renders proportionally larger too. This scales it back down, applied
-  // on top of that fit — 1 = no change, lower = smaller mesh. Position
-  // (centered on the tower) is unaffected — only size shrinks. One entry
-  // per tower, not a single shared number — adjust each independently.
-  // NAV-PATCH: equalize GLB size across all 4 towers — every tower's mesh
-  // fits to THIS one shared box now, instead of its own individually
-  // sized/shaped polygon zone (which made same-scale towers still render
-  // at different absolute sizes). Fixed constant, not recalculated from
-  // live polygon data — won't shift if the tower points are edited later.
   // Units are Three.js scene units (frozen average of all 4 towers' boxes
   // at the time this was set) — raise both to make every tower bigger,
   // lower both to make them smaller; sw=width, sh=height.
@@ -2533,7 +2427,7 @@ window.FloorplanModule = (function () {
   // on PC/tablet, and on mobile for any tower whose
   // SITEMAP_GLB_SCALE_MOBILE entry is left at null (see below).
   const SITEMAP_GLB_SCALE = {
-    'tower-A':2.35,
+    'tower-A':2.25,
     'tower-B': 2.3,
     'tower-C': 2.6,
     'tower-D': 2.2,
@@ -2545,32 +2439,33 @@ window.FloorplanModule = (function () {
   // set a number here to size that tower's tile independently on mobile
   // without touching its desktop/tablet size.
   const SITEMAP_GLB_SCALE_MOBILE = {
-    'tower-A': 1.2,
+    'tower-A': 1.1,
     'tower-B': 1.2,
     'tower-C': 1.4,
     'tower-D': 1.15,
   };
 
+  // NAV-PATCH: tablet-only per-tower GLB scale override. Only takes effect
+  // when the active breakpoint is 'tablet' (see _syncSitemapToImage).
+  // null = falls back to SITEMAP_GLB_SCALE's PC value for that tower —
+  // set a number here to size that tower's tile independently on tablet
+  // without touching its desktop/mobile size.
+  const SITEMAP_GLB_SCALE_TABLET = {
+    'tower-A': 1.65,
+    'tower-B': 1.8,
+    'tower-C': 2,
+    'tower-D': 1.7,
+  };
+
   // NAV-PATCH: pan/shift system removed — see the note in buildSitemapTiles.
 
-  // NAV-PATCH: tablet/mobile extra zoom — same idea as SITEMAP_PC_EXTRA_ZOOM
-  // below, one number per breakpoint. 1 = the original fixed crop
-  // (SITEMAP_VIEWPORT_REGIONS[bp]) untouched. Raise mobile toward ~1.15–1.3
-  // to match "project fills ~80–85% of screen" — shrinks the crop toward
-  // its own center, so the towers stay centered as it tightens.
-  const SITEMAP_EXTRA_ZOOM = { tablet: 1, mobile: 2.1 };
+  // NAV-PATCH: tablet/mobile extra zoom — one number per breakpoint.
+  // 1 = the original fixed crop untouched.
+  const SITEMAP_EXTRA_ZOOM = { tablet: 2, mobile: 2.1 };
 
   // NAV-PATCH: PC-only extra zoom, on top of the max-zoom fit below.
-  // 1 = no extra zoom (the fit's natural max). 2 = roughly double the
-  // zoom (crop half the width/height, centered on the same point).
-  // This is the one number to change for "zoom PC in more" — it only
-  // affects desktop; SITEMAP_VIEWPORT_REGIONS.mobile (tablet/mobile crop,
-  // and the tower tap-zone safety box) is untouched by this.
   const SITEMAP_PC_EXTRA_ZOOM = 2;
 
-  // Shrinks a region toward its own center by `factor` (2 = half size),
-  // then shifts (never shrinks further) back inside [0,100] if that pushed
-  // an edge out of bounds.
   function shrinkRegionAroundCenter(region, factor) {
     if (!factor || factor <= 1) return region;
     const cx = (region.left + region.right) / 2;
@@ -2597,26 +2492,10 @@ window.FloorplanModule = (function () {
 
     let w, h;
     if (containerAspect >= reqW / reqH) {
-      // Container is wider (relative to height) than the required
-      // content box — keep the full required height (already the
-      // minimum needed to show every tower) and grow width to match the
-      // container's aspect, i.e. crop top/bottom to exactly this height,
-      // fill however much width the screen's shape calls for.
       h = reqH;
       w = Math.min(100, h * containerAspect);
-      // NAV-PATCH: when width hits the 100% ceiling (very wide windows),
-      // shrink h to EXACTLY match the container's aspect at that width —
-      // not clamped back up to reqH. Keeping h==reqH here made the
-      // delivered crop's aspect narrower than the container's, so the
-      // browser fit it to height and left empty margin on both sides
-      // (touching top/bottom, gap left/right) instead of filling edge to
-      // edge. This does mean extreme wide-window cases crop slightly
-      // tighter than the tower-label safety box — acceptable per "maximize
-      // the zoom."
       if (w >= 100) { w = 100; h = w / containerAspect; }
     } else {
-      // Rare: a narrower/taller "desktop" window — keep full required
-      // width, grow height to match instead.
       w = reqW;
       h = Math.min(100, w / containerAspect);
       if (h >= 100) { h = 100; w = h * containerAspect; }
@@ -2624,8 +2503,6 @@ window.FloorplanModule = (function () {
 
     let left = cx - w / 2, right = cx + w / 2;
     let top  = cy - h / 2, bottom = cy + h / 2;
-    // Shift (don't shrink) back into the image's own bounds if centering
-    // pushed an edge past 0/100 — shrinking here could re-clip a tower.
     if (left < 0)   { right -= left; left = 0; }
     if (right > 100) { left -= (right - 100); right = 100; }
     if (top < 0)    { bottom -= top; top = 0; }
@@ -2639,11 +2516,8 @@ window.FloorplanModule = (function () {
   const SITEMAP_CLOUD_BASE = 'https://res.cloudinary.com/dp5ifzgge/image/upload';
   const SITEMAP_CLOUD_PATH = 'v1784891078/mapgot_lnjjpp.jpg';
   const SITEMAP_DELIVER_MIN = 800;
-  const SITEMAP_DELIVER_MAX = 2400; // ceiling — sharp on retina without requesting absurd pixel counts
+  const SITEMAP_DELIVER_MAX = 2400;
 
-  // How many CSS pixels to actually deliver for the current crop — based
-  // on the panel's real on-screen size × device pixel ratio (capped),
-  // so we're never downloading more resolution than the screen can show.
   function computeSitemapDeliverWidth() {
     const area = document.getElementById('fp-panel-sitemap');
     const cssWidth = (area && area.clientWidth) || window.innerWidth || 800;
@@ -2651,11 +2525,6 @@ window.FloorplanModule = (function () {
     return Math.max(SITEMAP_DELIVER_MIN, Math.min(Math.round(cssWidth * dpr), SITEMAP_DELIVER_MAX));
   }
 
-  // Builds a Cloudinary URL that CROPS server-side (c_crop + fl_relative,
-  // fractional 0–1 coordinates of the source) before resizing — so the
-  // browser receives real pixels of "the building, zoomed in," not a
-  // stretched version of the whole map. Full-image regions (desktop) skip
-  // the crop segment entirely and just resize.
   function buildSitemapImageUrl(region, deliverWidth) {
     const isFull = region.left === 0 && region.top === 0 && region.right === 100 && region.bottom === 100;
     let cropSeg = '';
@@ -2678,13 +2547,6 @@ window.FloorplanModule = (function () {
       clearTimeout(_sitemapResizeTimer);
       _sitemapResizeTimer = setTimeout(() => {
         if (!overlayOpen || level !== 0) return;
-        // NAV-PATCH: always re-run (debounced), not just on breakpoint-name
-        // change — desktop's crop now depends on the live window aspect
-        // ratio (fitSitemapForPCMaxZoom), which can change within the
-        // "desktop" breakpoint itself as the window is resized/dragged.
-        // buildSitemapTiles()'s own img.src === targetUrl check already
-        // no-ops if the computed crop didn't actually change, so this
-        // stays cheap when nothing meaningful moved.
         buildSitemapTiles();
       }, 300);
     });
@@ -2696,10 +2558,6 @@ window.FloorplanModule = (function () {
   }
   let _sitemapResizeWatcherBound = false;
 
-  // Level 1 (cluster) zoom-pan is untouched — still interactive, still
-  // transform-based. The sitemap no longer uses bindZoomPan at all: no
-  // manual pinch/wheel/double-tap, and no CSS-transform "zoom" — the
-  // camera-viewport crop above is the only thing controlling framing.
   let _unbindClusterZoom = null;
 
   function bindClusterZoomPan() {
@@ -2730,25 +2588,9 @@ window.FloorplanModule = (function () {
   }
 
   // ─── BROWSER BACK BUTTON (mobile) ────────────────────────────
-  // Each drill-down pushes a history entry, so the phone's hardware
-  // back button / browser back gesture steps back through the viewer
-  // (unit → cluster → sitemap → close) instead of leaving the page.
-  //
-  // requestBack() is the single entry point used by the on-screen back
-  // arrow and swipe-back: it calls history.back() when we own a history
-  // entry, which fires popstate, which runs goBack()/close(). This keeps
-  // the history stack and the viewer state perfectly in sync.
   let _poppingState = false;
-  let _fpHistoryDepth = 0; // how many history entries the viewer currently owns
+  let _fpHistoryDepth = 0;
 
-  // replace=true is only passed by open() when it's being used as a
-  // TAB SWITCH (another module — Gallery/Map/360 — already owned the
-  // one history entry the overlay system uses). We relabel that entry
-  // via replaceState instead of pushing a new one, so entries never pile
-  // up as the user bounces between tabs. Drill-down navigation
-  // (drillToCluster / drillToUnit) never passes replace — those are real
-  // pushes so the on-screen back arrow / hardware back can step out one
-  // level at a time.
   function pushFpState(replace) {
     if (replace) {
       history.replaceState({ fp: true, level }, '');
@@ -2761,27 +2603,24 @@ window.FloorplanModule = (function () {
 
   function requestBack() {
     if (_fpHistoryDepth > 0) {
-      history.back();               // → popstate → goBack()/close()
+      history.back();
     } else {
-      // No history entry of ours (e.g. pushState unavailable) — navigate directly
       if (level > 0) goBack(); else close();
     }
   }
 
   function bindHistoryNav() {
     window.addEventListener('popstate', () => {
-      if (!overlayOpen || _fpHistoryDepth === 0) return; // not our entry — let browser handle it
+      if (!overlayOpen || _fpHistoryDepth === 0) return;
       _fpHistoryDepth--;
       _poppingState = true;
-      if (level > 0) goBack();      // unit → cluster, or cluster → sitemap
-      else close();                 // sitemap → close overlay, page stays
+      if (level > 0) goBack();
+      else close();
       _poppingState = false;
     });
 
-    // ── Keyboard back (PC): Backspace / Escape ──
     window.addEventListener('keydown', (e) => {
       if (!overlayOpen) return;
-      // Don't hijack Backspace while the user is typing in a form field
       const t = e.target;
       const typing = t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable);
       if (typing) return;
@@ -2838,18 +2677,9 @@ window.FloorplanModule = (function () {
   }
 
   // ─── OPEN / CLOSE ────────────────────────────────────────────
-  // ─── ONE-TIME SHINE ───────────────────────────────────────────
-  // A diagonal light sweep (top-left → bottom-right) attached to a
-  // specific element, playing exactly once, ever, per unique key —
-  // used for the GLB canvases (sitemap tower tiles, unit zones) and
-  // the toggle switches, NOT the whole page/card. Each target reveals
-  // itself once when it first appears; never repeats afterward.
   const _shinedKeys = new Set();
 
   function attachShineOnce(container, key, opts) {
-    // Shine sweep effect removed per request — kept as a no-op so the
-    // existing call sites (sitemap tiles, unit zones, toggle switches)
-    // don't need to be touched individually.
     return;
   }
 
@@ -2863,15 +2693,6 @@ window.FloorplanModule = (function () {
     shine.className = pill ? 'fp-shine fp-shine--pill' : 'fp-shine';
 
     if (matchRect) {
-      // Bound the shine to another element's exact rendered box (the
-      // GLB canvas) instead of filling `container`'s own bounds — the
-      // canvas is the actual "GLB plane"; the wrap around it also
-      // contains the full floorplan/cluster image, which is much
-      // bigger and reads as "the whole page" on a phone screen.
-      // matchRect.style.top/left/width/height are set in px by
-      // syncToImage()/_syncSitemapToImage() already, so this copies
-      // that same box exactly. Setting all four explicitly overrides
-      // the .fp-shine class's inset:0 for this instance.
       shine.style.position = 'absolute';
       shine.style.top    = matchRect.style.top;
       shine.style.left   = matchRect.style.left;
@@ -2884,8 +2705,6 @@ window.FloorplanModule = (function () {
 
     const band = shine.querySelector('.fp-shine-band');
     band.addEventListener('animationend', () => shine.remove(), { once: true });
-    // Safety fallback in case animationend doesn't fire for any reason
-    // (e.g. prefers-reduced-motion disables the animation entirely)
     setTimeout(() => shine.remove(), 2200);
   }
 
@@ -2895,8 +2714,6 @@ window.FloorplanModule = (function () {
     const fpOverlay = document.getElementById('fp-overlay');
     if (!fpOverlay) return;
 
-    // Track floorplan open in GA4 — real entry point since App.navigate()
-    // is never called for the Floor Plan button.
     if (typeof gtag === 'function') {
       gtag('event', 'floorplan_open', { floor_num: floorNum ?? null });
     }
@@ -2918,18 +2735,9 @@ window.FloorplanModule = (function () {
 
   function close(skipHistory) {
     if (!overlayOpen) return;
-    if (level === 2) { reportUnitDwell(); unitEnteredAt = 0; } // catch dwell if closed mid-unit-view
+    if (level === 2) { reportUnitDwell(); unitEnteredAt = 0; }
     overlayOpen = false;
 
-    // If the app closed the overlay directly (✕ button, nav elsewhere) while
-    // we still own history entries, unwind them silently so the browser back
-    // button doesn't need extra presses later. popstate will fire but the
-    // overlayOpen guard makes it a no-op.
-    // skipHistory=true bypasses the history.go() call entirely — used when
-    // the caller (e.g. home.js switching bottom-nav tabs) is about to open
-    // a different module immediately after, whose own pushState would
-    // otherwise race this async history.go() and intermittently bounce
-    // back to the home view.
     if (!_poppingState && _fpHistoryDepth > 0) {
       const n = _fpHistoryDepth;
       _fpHistoryDepth = 0;
