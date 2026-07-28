@@ -545,7 +545,7 @@ window.FloorplanModule = (function () {
 
       .fp-glb-tag {
         display: inline-flex; align-items: center; justify-content: center;
-        padding: 6px 16px; border-radius: 999px;
+        padding: 7px 24px; border-radius: 999px;
         background: rgba(255,253,250,.95);
         border: 1px solid rgba(122,62,30,.55);
         box-shadow: 0 2px 10px rgba(0,0,0,.20);
@@ -969,7 +969,7 @@ pointer-events: none;
   // fraction of the sitemap image width. Small = short leader line hugging
   // the building; this replaced pinning tags to the card's outer edge,
   // which produced very long lines over empty map area.
-  const SITEMAP_LABEL_MARGIN = 0.045;
+  const SITEMAP_LABEL_MARGIN = 0.08;
   // Tablet override — null falls back to SITEMAP_LABEL_MARGIN. Tablet cards
   // tend to be narrower, so a slightly smaller margin usually looks right;
   // tune independently here without touching the desktop value.

@@ -59,7 +59,7 @@ window.HomeModule = (function () {
       title: 'UNIT01',
       subtitle: '4BHK - F',
       towerLine: 'TOWER - 03 (EVEN)',
-      pillLabel: 'Unit 1',
+      pillLabel: '4BHK - F',
     },
     {
       id: 2,
@@ -67,7 +67,7 @@ window.HomeModule = (function () {
       title: 'UNIT02',
       subtitle: '3BHK(L) - C',
       towerLine: 'TOWER - 02',
-      pillLabel: 'Unit 2',
+      pillLabel: '3BHK - C',
     },
     {
       id: 3,
@@ -75,7 +75,7 @@ window.HomeModule = (function () {
       title: 'UNIT03',
       subtitle: '3BHK(S) - B',
       towerLine: 'TOWER - 03 (ODD)',
-      pillLabel: 'Unit 3',
+      pillLabel: '3BHK - B',
     },
   ];
 
@@ -263,15 +263,14 @@ window.HomeModule = (function () {
       #map-zoom-hint.visible { opacity: 1; }
 
       #map-gmaps-btn {
-        position: absolute; bottom: 8px; right: 0; z-index: 10;
-        width: 148px; height: 92px;
+        position: absolute; bottom: 90px; right: 16px; z-index: 10;
+        width: 260px; height: 160px;
         display: flex; align-items: flex-end;
         border: 1px solid #9a5327;
-        border-bottom: none; border-right: none;
-        border-radius: 10px 0 8px 0;
+        border-radius: 16px;
         overflow: hidden;
-        box-shadow: 0 -2px 10px rgba(0,0,0,.25);
-        transition: box-shadow .2s, transform .2s;
+        box-shadow: none;
+        transition: transform .2s;
         -webkit-tap-highlight-color: transparent;
         cursor: pointer;
         background: #1a1410;
@@ -281,23 +280,19 @@ window.HomeModule = (function () {
         width: 100%; height: 100%;
         border: none; pointer-events: none;
       }
-      #map-gmaps-btn::before {
-        content: '';
-        position: absolute; inset: 0; z-index: 1;
-        background: linear-gradient(to top, rgba(10,8,6,.85) 0%, rgba(10,8,6,.15) 55%, transparent 100%);
-      }
+      #map-gmaps-btn::before { display: none; }
       #map-gmaps-btn-label {
         position: relative; z-index: 2;
         display: flex; align-items: center; gap: 6px;
         font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700;
         letter-spacing: .06em; text-transform: uppercase;
-        color: #ffffff; padding: 8px 10px; width: 100%; box-sizing: border-box;
+        background: rgba(255,255,255,.92);
+        color: #4a2d18; padding: 8px 10px; width: 100%; box-sizing: border-box;
       }
-      #map-gmaps-btn-label svg { width: 12px; height: 12px; flex-shrink: 0; color: #d99a5e; }
-      #map-gmaps-btn:hover { box-shadow: 0 -4px 16px rgba(0,0,0,.35); }
+      #map-gmaps-btn-label svg { width: 12px; height: 12px; flex-shrink: 0; color: #7a3e1e; }
       #map-gmaps-btn:active { transform: scale(0.98); }
       @media (max-width: 520px) {
-        #map-gmaps-btn { width: 112px; height: 74px; }
+        #map-gmaps-btn { width: 190px; height: 118px; bottom: 84px; right: 12px; }
         #map-gmaps-btn-label { font-size: 9px; padding: 6px 8px; }
       }
       #map-spinner { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.22s; }
@@ -431,7 +426,7 @@ window.HomeModule = (function () {
         background: #f5f4f2;
       }
       .unit-plan-card {
-        width: 340px; display: flex; flex-direction: column; align-items: center; gap: 16px;
+        width: 40px; display: flex; flex-direction: column; align-items: center; gap: 2px;
       }
       .unit-plan-thumb {
         position: relative; width: 100%;
@@ -462,11 +457,11 @@ window.HomeModule = (function () {
         background: #c9762f; color: #ffffff;
       }
       @media (min-width: 641px) {
-        .unit-plan-card { width: 460px; }
+        .unit-plan-card { width: 540px; }
         .unit-plan-thumb { padding: 24px; box-sizing: border-box; }
       }
       @media (max-width: 640px) {
-        .unit-plan-card { width: 46%; min-width: 170px; }
+        .unit-plan-card { width: 52%; min-width: 190px; }
       }
 
       .unit-btn {
@@ -659,7 +654,7 @@ window.HomeModule = (function () {
           flex-direction: column;
           align-items: stretch;
           justify-content: flex-start;
-          gap: 14px;
+          gap: 1px;
           overflow: visible;
           border: none;
           border-radius: 0;
@@ -690,14 +685,18 @@ window.HomeModule = (function () {
         .unit-btn-overlay { background: transparent !important; }
         .unit-btn-label {
           position: static;
-          align-self: center;
-          padding: 8px 22px;
-          border-radius: 8px;
-          background: #ffffff;
-          border: 1px solid rgba(0,0,0,.08);
-          color: #7a5230;
-          font-size: 13px;
-          box-shadow: 0 4px 14px rgba(0,0,0,.08);
+    align-self: center;
+    padding: 8px 22px;
+    border-radius: 8px;
+    background: #ffffff;
+
+    border: 1px solid #c9762f;   /* Copper border */
+
+    color: #7a5230;
+    font-size: 13px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    box-shadow: 0 4px 14px rgba(0,0,0,.08);
         }
         .unit-btn.active .unit-btn-label { background: #8a4a22; border-color: #8a4a22; color: #ffffff; }
       }

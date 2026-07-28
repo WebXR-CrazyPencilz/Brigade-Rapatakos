@@ -284,7 +284,7 @@ function makeLabelSprite(text) {
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
   ctx.fillText('\u2191', PAD_L, H / 2);
 
-  ctx.fillStyle = '#2a1a0f'; ctx.font = `600 ${FONT_SIZE}px Arial`;
+  ctx.fillStyle = '#b87333'; ctx.font = `600 ${FONT_SIZE}px Arial`;
   ctx.fillText(text, PAD_L + ICON_W, H / 2 + 1);
 
   const tex = new THREE.CanvasTexture(canvas);
