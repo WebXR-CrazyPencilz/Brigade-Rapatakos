@@ -58,7 +58,7 @@ window.GalleryModule = (function () {
 
     if (_historyDepth > 0) history.back();
     else close();
-}
+  }
 
   // ─── CARD MEDIA (image vs. embedded video) ───────────────────────
   // Cards are reused/rotated DOM elements (see the 3-card carousel
@@ -70,7 +70,7 @@ window.GalleryModule = (function () {
   // hidden autoplaying iframe sitting in the background.
   function setCardMedia(cardEl, item, isCurrent) {
     if (item.type === 'video' && isCurrent) {
-      cardEl.innerHTML = `<iframe class="gl-video-frame" src="https://www.youtube.com/embed/${item.videoId}?rel=0" title="${item.caption || 'Video'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`;
+      cardEl.innerHTML = `<iframe class="gl-video-frame" src="https://www.youtube.com/embed/${item.videoId}?rel=0" title="${item.caption || 'Video'}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe>`;
     } else {
       cardEl.innerHTML = `<img src="${item.src}" alt="${item.caption || ''}"/>`;
     }
@@ -510,6 +510,7 @@ window.GalleryModule = (function () {
   }
 
   function cardTo(targetIdx, direction) {
+    stopCurrentVideo(); 
     if (isAnimating || targetIdx === current) return;
 
     stopCurrentVideo();
@@ -615,14 +616,14 @@ window.GalleryModule = (function () {
     console.log("POPSTATE", e);
     debugger;
 
-    const overlay = document.getElementById('gallery-overlay');
-    if (!overlay || !overlay.classList.contains('open') || _historyDepth === 0) return;
+      const overlay = document.getElementById('gallery-overlay');
+      if (!overlay || !overlay.classList.contains('open') || _historyDepth === 0) return;
 
-    _historyDepth--;
-    _popping = true;
-    close();
-    _popping = false;
-});
+      _historyDepth--;
+      _popping = true;
+      close();
+      _popping = false;
+    });
 
     document.getElementById('gl-arrow-prev').addEventListener('click', (e) => {
       e.stopPropagation();
@@ -774,7 +775,13 @@ window.GalleryModule = (function () {
   }
 
   function close(skipHistory) {
-    stopCurrentVideo();
+    stopCurrentVideo();  
+    stopAutoplay();
+    reportDwell(current); // capture dwell time for whichever image was showing when closed
+    imageEnteredAt = 0;
+    const overlay = document.getElementById('gallery-overlay');
+    if (!overlay || !overlay.classList.contains('open')) return;
+    overlay.classList.remove('open');
 
     // Closed from outside (e.g. closeAllModules) while we still own a
     // history entry — unwind it silently so back doesn't need an extra press.
