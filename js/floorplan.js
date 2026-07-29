@@ -617,20 +617,32 @@ window.FloorplanModule = (function () {
         display: block;
       }
       #fp-sitemap-compass {
-        top: 12px; right: 12px;
-        height: 46px; width: auto;
+        top: 140px; right: 260px;
+        height: 100px; width: auto;
       }
       #fp-sitemap-label {
-        top: 12px; left: 12px;
-        height: 34px; width: auto;
+        top: 85px; left: 575px;
+        height: 70px; width: auto;
       }
       @media (max-width: 640px) {
-        #fp-sitemap-compass { height: 36px; padding: 6px 10px; }
-        #fp-sitemap-label   { height: 26px; padding: 6px 10px; }
+        #fp-sitemap-compass {
+    top: 18px; right: 18px;
+    height: 76px; padding: 6px 10px;
+  }
+  #fp-sitemap-label {
+    top: 10px; left: 10px;
+    height: 55px; padding: 6px 10px;
+  }
       }
       @media (max-width: 400px) {
-        #fp-sitemap-compass { height: 30px; padding: 5px 8px; }
-        #fp-sitemap-label   { height: 22px; padding: 5px 8px; }
+       #fp-sitemap-compass {
+    top: 14px; right: 14px;
+    height: 60px; padding: 5px 8px;
+  }
+  #fp-sitemap-label {
+    top: 8px; left: 8px;
+    height: 46px; padding: 5px 8px;
+  }
       }
 
       /* ── Desktop-only amenities legend, sits in the dead-map area to the
