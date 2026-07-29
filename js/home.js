@@ -529,8 +529,9 @@ window.HomeModule = (function () {
         transform: translateY(100%); transition: transform .5s cubic-bezier(0.22,1,0.36,1);
         background: transparent; padding: 0; box-sizing: border-box;
         display: flex; flex-direction: column;
+        pointer-events: none;
       }
-      #unit-viewer-overlay.open { transform: translateY(0); }
+      #unit-viewer-overlay.open { transform: translateY(0); pointer-events: all; }
       #unit-viewer-card {
         flex: 1; height: 100%; border-radius: 0; overflow: hidden;
         box-shadow: none;
