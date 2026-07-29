@@ -2,23 +2,15 @@
 window.HomeModule = (function () {
 
   let unitRowVisible = false;
-  let current       = 0;
-  let autoTimer     = null;
-  let isAnimating   = false;
-  let startX        = 0;
-  let startY        = 0;
 
   // Dwell-time tracking state
-  let carouselSlideEnteredAt = 0;
-  let lightboxEnteredAt      = 0;
-  let lightboxIndex          = null;
   let unitViewerEnteredAt    = 0;
   let activeUnitNumber       = null;
   let unitLoadTimeout        = null; // safety net so the unit-viewer spinner never spins forever
   let _landingHideTimeout    = null; // NAV-PATCH: pending timeout for the landing screen's hide animation
 
   // ─── BROWSER/HARDWARE BACK SUPPORT ────────────────────────────────
-  const _hist = { map: 0, unit: 0, lb: 0, threeSixty: 0, gmap: 0 };
+  const _hist = { map: 0, unit: 0, threeSixty: 0, gmap: 0 };
   let _popping = false;
 
   function pushHist(key, replace) {
@@ -67,7 +59,7 @@ window.HomeModule = (function () {
       title: 'UNIT02',
       subtitle: '3BHK(L) - C',
       towerLine: 'TOWER - 02',
-      pillLabel: '3BHK - C',
+      pillLabel: '3BHK(L) - C',
     },
     {
       id: 3,
@@ -75,12 +67,8 @@ window.HomeModule = (function () {
       title: 'UNIT03',
       subtitle: '3BHK(S) - B',
       towerLine: 'TOWER - 03 (ODD)',
-      pillLabel: '3BHK - B',
+      pillLabel: '3BHK(S) - B',
     },
-  ];
-
-  const IMAGES = [
-    { src: 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781157224/01_abyzw2.jpg', label: 'View 1' },
   ];
 
   const MAP_IMAGE_SRC = 'https://res.cloudinary.com/dp5ifzgge/image/upload/v1781162438/locationmap_cvfs0z.jpg';
@@ -133,68 +121,6 @@ window.HomeModule = (function () {
       @keyframes rotateHint { 0%,100%{transform:rotate(0deg);}50%{transform:rotate(90deg);} }
       #rotate-prompt p { font-family:'Syne',sans-serif; font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:rgba(200,190,154,.55); margin:0; }
       @media (orientation:landscape) { #rotate-prompt { display:none !important; } }
-
-      #carousel {
-        position: fixed; inset: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px));
-        background: #e8e4dd;
-        display: flex; align-items: center; justify-content: center;
-        overflow: hidden; cursor: pointer;
-        padding: 24px; box-sizing: border-box;
-      }
-      #carousel-card {
-        position: relative; width: 100%; height: 100%;
-        border-radius: 12px; overflow: hidden;
-        box-shadow: 0 8px 40px rgba(0,0,0,.18);
-        background: #0a0805;
-      }
-      #carousel-img {
-        position: absolute; inset: 0;
-        width: 100%; height: 100%;
-        object-fit: cover; display: block;
-        pointer-events: none; user-select: none; -webkit-user-drag: none;
-        opacity: 1; transition: opacity 0.45s ease;
-      }
-      #carousel-img.fading { opacity: 0; }
-      #hc-vignette { display: none; }
-      #hc-dots {
-        position: absolute; bottom: 10px; left: 50%;
-        transform: translateX(-50%);
-        display: flex; gap: 6px; align-items: center;
-        pointer-events: none; z-index: 3;
-      }
-      .hc-dot {
-        height: 4px; width: 4px; border-radius: 2px;
-        background: rgba(200,190,154,.22);
-        transition: width .3s, background .3s; flex-shrink: 0;
-      }
-      .hc-dot.active { width: 18px; background: rgba(245,240,232,.80); }
-
-      #lightbox {
-        position: fixed; inset: 0; z-index: 500;
-        background: rgba(5,4,2,.96);
-        display: flex; align-items: center; justify-content: center;
-        opacity: 0; pointer-events: none; transition: opacity .3s;
-        overflow: hidden; touch-action: none;
-      }
-      #lightbox.open { opacity: 1; pointer-events: all; }
-      #lb-img {
-        max-width: calc(100vw - 40px); max-height: calc(100dvh - 80px);
-        object-fit: contain; transform-origin: center center;
-        will-change: transform; user-select: none; -webkit-user-drag: none;
-        pointer-events: none;
-      }
-      #lb-empty {
-        display: none; font-family: 'Cormorant Garamond', serif;
-        font-style: italic; color: rgba(200,185,165,.35); font-size: 16px;
-      }
-      #lb-close {
-        position: absolute; top: 16px; right: 16px;
-        width: 36px; height: 36px; border-radius: 8px;
-        border: 1px solid rgba(122,62,30,.30); background: rgba(122,62,30,.08);
-        display: flex; align-items: center; justify-content: center;
-        cursor: pointer; color: rgba(200,185,165,.80); font-size: 18px;
-        z-index: 2; -webkit-tap-highlight-color: transparent;
-      }
 
       #map-overlay {
         position: fixed; inset: 0; bottom: calc(62px + env(safe-area-inset-bottom, 0px)); z-index: 300;
@@ -705,10 +631,8 @@ window.HomeModule = (function () {
         .panel-slot { padding: 0 10px; gap: 5px; }
         .panel-slot-label { font-size: 9px; letter-spacing: .08em; }
         .panel-slot.active { margin: 8px 2px; }
-        #carousel { padding: 12px; }
         #map-overlay { padding: 12px; }
         #map-title { font-size: 13px; }
-        #lb-close { top: 12px; right: 12px; }
         #unit-row {
           padding: 12px;
           margin: 10px;
@@ -727,27 +651,10 @@ window.HomeModule = (function () {
     `;
     document.head.appendChild(style);
 
-    const dotsHTML = IMAGES.map((_, i) =>
-      `<div class="hc-dot${i === 0 ? ' active' : ''}"></div>`).join('');
-
     document.body.insertAdjacentHTML('beforeend', `
       <div id="rotate-prompt">
         <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2"/><path d="M9 21h6"/></svg>
         <p>Please rotate your device</p>
-      </div>
-
-      <div id="carousel">
-        <div id="carousel-card">
-          <img id="carousel-img" src="" alt="" />
-          <div id="hc-vignette"></div>
-          <div id="hc-dots">${dotsHTML}</div>
-        </div>
-      </div>
-
-      <div id="lightbox">
-        <img id="lb-img" src="" alt=""/>
-        <div id="lb-empty">Image coming soon</div>
-        <div id="lb-close">&#x2715;</div>
       </div>
 
       <div id="map-overlay">
@@ -868,197 +775,6 @@ window.HomeModule = (function () {
         </div>
       </div>
     `);
-
-    const carouselImg = document.getElementById('carousel-img');
-    if (carouselImg && IMAGES.length > 0) {
-      carouselImg.src = IMAGES[0].src;
-      carouselImg.alt = IMAGES[0].label || '';
-    }
-  }
-
-  function reportCarouselDwell(idx) {
-    if (!carouselSlideEnteredAt) return;
-    const dwellMs = Date.now() - carouselSlideEnteredAt;
-    if (typeof gtag === 'function' && dwellMs > 200) {
-      gtag('event', 'carousel_engagement', {
-        slide_index: idx,
-        slide_label: (IMAGES[idx] && IMAGES[idx].label) || null,
-        dwell_ms: dwellMs
-      });
-    }
-  }
-
-  function goTo(targetIdx) {
-    if (isAnimating || IMAGES.length <= 1) return;
-    isAnimating = true;
-
-    const img  = document.getElementById('carousel-img');
-    const next = IMAGES[targetIdx];
-
-    img.classList.add('fading');
-    setTimeout(() => {
-      img.src = next.src;
-      img.alt = next.label || '';
-      img.classList.remove('fading');
-      reportCarouselDwell(current);
-      current = targetIdx;
-      carouselSlideEnteredAt = Date.now();
-      updateDots();
-      isAnimating = false;
-    }, 450);
-  }
-
-  function updateDots() {
-    document.querySelectorAll('.hc-dot').forEach((d, i) =>
-      d.classList.toggle('active', i === current));
-  }
-
-  function startAuto() {
-    clearInterval(autoTimer);
-    if (IMAGES.length <= 1) return;
-    autoTimer = setInterval(() => {
-      if (!isAnimating) goTo((current + 1) % IMAGES.length);
-    }, 3000);
-  }
-
-  function stopAuto() {
-    clearInterval(autoTimer);
-    autoTimer = null;
-  }
-
-  function initCarousel() {
-    const carousel = document.getElementById('carousel');
-    carouselSlideEnteredAt = Date.now();
-
-    let tapMoved = false;
-    carousel.addEventListener('touchstart', e => {
-      startX   = e.touches[0].clientX;
-      startY   = e.touches[0].clientY;
-      tapMoved = false;
-    }, { passive: true });
-    carousel.addEventListener('touchmove', e => {
-      if (Math.abs(e.touches[0].clientX - startX) > 8) tapMoved = true;
-    }, { passive: true });
-    carousel.addEventListener('touchend', e => {
-      const dx = e.changedTouches[0].clientX - startX;
-      const dy = e.changedTouches[0].clientY - startY;
-      if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) {
-        goTo(dx < 0 ? (current + 1) % IMAGES.length : (current - 1 + IMAGES.length) % IMAGES.length);
-        startAuto();
-      } else if (!tapMoved) {
-        openLightbox(current);
-      }
-    }, { passive: true });
-
-    let mStart = 0, mDrag = false, mMoved = false;
-    carousel.addEventListener('mousedown', e => { mStart = e.clientX; mDrag = true; mMoved = false; });
-    window.addEventListener('mousemove',  e => { if (mDrag && Math.abs(e.clientX - mStart) > 8) mMoved = true; });
-    window.addEventListener('mouseup',    e => {
-      if (!mDrag) return;
-      mDrag = false;
-      const dx = e.clientX - mStart;
-      if (Math.abs(dx) > 50) {
-        goTo(dx < 0 ? (current + 1) % IMAGES.length : (current - 1 + IMAGES.length) % IMAGES.length);
-        startAuto();
-      } else if (!mMoved) {
-        openLightbox(current);
-      }
-    });
-
-    carousel.addEventListener('mouseenter', () => clearInterval(autoTimer));
-    carousel.addEventListener('mouseleave', startAuto);
-    startAuto();
-  }
-
-  let lbScale = 1, lbPanX = 0, lbPanY = 0, lbPinchDist = 0;
-  let lbPanStart = { x: 0, y: 0 };
-  const LB_MAX = 4;
-
-  function lbSetTransform(animate) {
-    const img = document.getElementById('lb-img');
-    img.style.transition = animate ? 'transform .25s ease' : 'none';
-    img.style.transform  = `scale(${lbScale}) translate(${lbPanX / lbScale}px, ${lbPanY / lbScale}px)`;
-  }
-  function lbReset(animate) { lbScale = 1; lbPanX = 0; lbPanY = 0; lbSetTransform(animate !== false); }
-
-  function openLightbox(index) {
-    const src = IMAGES[index].src;
-    const img = document.getElementById('lb-img');
-    img.src = src || '';
-    img.style.display = src ? '' : 'none';
-    document.getElementById('lb-empty').style.display  = src ? 'none' : 'block';
-    document.getElementById('lightbox').classList.add('open');
-    lbReset(false);
-    lightboxIndex     = index;
-    lightboxEnteredAt = Date.now();
-    if (!_popping) pushHist('lb');
-  }
-  function closeLightbox() {
-    const lbEl = document.getElementById('lightbox');
-    if (!lbEl || !lbEl.classList.contains('open')) return;
-    unwindHist('lb');
-    if (lightboxEnteredAt) {
-      const dwellMs = Date.now() - lightboxEnteredAt;
-      if (typeof gtag === 'function' && dwellMs > 200) {
-        gtag('event', 'lightbox_engagement', {
-          slide_index: lightboxIndex,
-          slide_label: (IMAGES[lightboxIndex] && IMAGES[lightboxIndex].label) || null,
-          dwell_ms: dwellMs
-        });
-      }
-    }
-    lightboxEnteredAt = 0;
-    lightboxIndex = null;
-    document.getElementById('lightbox').classList.remove('open');
-    lbReset(false);
-  }
-
-  function bindLightboxZoom() {
-    const lb = document.getElementById('lightbox');
-    let touches = [];
-
-    lb.addEventListener('touchstart', (e) => {
-      touches = Array.from(e.touches);
-      if (touches.length === 2) {
-        lbPinchDist = Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
-      } else if (touches.length === 1) {
-        lbPanStart = { x: touches[0].clientX - lbPanX, y: touches[0].clientY - lbPanY };
-      }
-    }, { passive: true });
-
-    lb.addEventListener('touchmove', (e) => {
-      e.preventDefault();
-      touches = Array.from(e.touches);
-      if (touches.length === 2) {
-        const dist = Math.hypot(touches[0].clientX - touches[1].clientX, touches[0].clientY - touches[1].clientY);
-        lbScale = Math.min(LB_MAX, Math.max(1, lbScale * (dist / lbPinchDist)));
-        lbPinchDist = dist;
-        if (lbScale === 1) { lbPanX = 0; lbPanY = 0; }
-        lbSetTransform(false);
-      } else if (touches.length === 1 && lbScale > 1) {
-        lbPanX = touches[0].clientX - lbPanStart.x;
-        lbPanY = touches[0].clientY - lbPanStart.y;
-        lbSetTransform(false);
-      }
-    }, { passive: false });
-
-    lb.addEventListener('touchend', (e) => {
-      touches = Array.from(e.touches);
-      if (touches.length === 1) lbPanStart = { x: touches[0].clientX - lbPanX, y: touches[0].clientY - lbPanY };
-    }, { passive: true });
-
-    let lastTap = 0;
-    lb.addEventListener('touchend', () => { const now = Date.now(); if (now - lastTap < 300) lbReset(true); lastTap = now; });
-    lb.addEventListener('dblclick', () => lbReset(true));
-    function requestLbBack() { requestHistBack('lb', closeLightbox); }
-    document.getElementById('lb-close').addEventListener('click', requestLbBack);
-    lb.addEventListener('click', (e) => { if (e.target === lb) requestLbBack(); });
-    document.addEventListener('keydown', e => {
-      if (!document.getElementById('lightbox').classList.contains('open')) return;
-      const t = e.target;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
-      if (e.key === 'Escape' || e.key === 'Backspace') { e.preventDefault(); requestLbBack(); }
-    });
   }
 
   let _mapLoaded = false;
@@ -1451,14 +1167,11 @@ window.HomeModule = (function () {
 
     window.addEventListener('popstate', () => {
       _popping = true;
-      const lb        = document.getElementById('lightbox');
       const gmapOvl    = document.getElementById('gmap-embed-overlay');
       const unitOvl    = document.getElementById('unit-viewer-overlay');
       const mapOvl     = document.getElementById('map-overlay');
 
-      if (lb && lb.classList.contains('open') && _hist.lb > 0) {
-        _hist.lb--; closeLightbox();
-      } else if (gmapOvl && gmapOvl.classList.contains('open') && _hist.gmap > 0) {
+      if (gmapOvl && gmapOvl.classList.contains('open') && _hist.gmap > 0) {
         _hist.gmap--; closeGmapEmbed();
       } else if (unitOvl && unitOvl.classList.contains('open') && _hist.unit > 0) {
         _hist.unit--; closeUnitViewer();
@@ -1471,7 +1184,6 @@ window.HomeModule = (function () {
         _hist.threeSixty--;
         unitRowVisible = false;
         document.getElementById('unit-row')?.classList.remove('visible');
-        document.getElementById('carousel').style.display = '';
         document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
         document.querySelectorAll('.panel-slot').forEach(s => s.classList.remove('active'));
         // NAV-PATCH: nothing else is open after 360 Viewer closes — surface Landing (home root).
@@ -1482,9 +1194,6 @@ window.HomeModule = (function () {
   }
 
   function closeAllModules(skipHistory, toLanding) {
-    stopAuto();
-    document.getElementById('carousel').style.display = '';
-
     closeGmapEmbed(skipHistory);
     closeUnitViewer(skipHistory);
     closeMap(skipHistory);
@@ -1498,8 +1207,6 @@ window.HomeModule = (function () {
     if (window.FloorplanModule && typeof FloorplanModule.close === 'function') FloorplanModule.close(skipHistory);
     setTimeout(() => { if (fpOverlay) fpOverlay.style.pointerEvents = ''; }, 420);
     if (window.GalleryModule && typeof GalleryModule.close === 'function') GalleryModule.close(skipHistory);
-
-    startAuto();
 
     // NAV-PATCH: only re-surface Landing when we're actually landing back at
     // the idle/root state (i.e. nothing new is about to open). Callers that
@@ -1580,13 +1287,11 @@ window.HomeModule = (function () {
       const row        = document.getElementById('unit-row');
       const overlay    = document.getElementById('unit-viewer-overlay');
       const fpOvl      = document.getElementById('fp-overlay');
-      const lb         = document.getElementById('lightbox');
       const mapOvl     = document.getElementById('map-overlay');
       const gmapOvl    = document.getElementById('gmap-embed-overlay');
       const sidePanel  = document.getElementById('side-panel');
       const sideToggle = document.getElementById('toggle');
 
-      if (lb      && lb.classList.contains('open'))                                    return;
       if (gmapOvl && gmapOvl.classList.contains('open') && gmapOvl.contains(e.target))  return;
       if (mapOvl  && mapOvl.classList.contains('open')  && mapOvl.contains(e.target))   return;
       if (overlay && overlay.classList.contains('open') && overlay.contains(e.target))  return;
@@ -1665,7 +1370,7 @@ window.HomeModule = (function () {
          >1 = zoom in. The 12% oversize gives headroom in both directions
          before any edge/gap would show. */
       #landing-bg {
-        position: absolute; inset: -6%; z-index: 0;
+        position: absolute; inset: -18%; z-index: 0;
         background: url('https://ik.imagekit.io/pwzaetheh/Home/landing.jpeg') center center / cover no-repeat;
         transform: scale(var(--landing-bg-zoom, 0.94));
       }
@@ -1804,15 +1509,11 @@ window.HomeModule = (function () {
     init() {
       injectHTML();
       injectLanding();
-      initCarousel();
-      bindLightboxZoom();
       bindMapEvents();
       bindPanelEvents();
       bindBackNav();
       bindOrientationCheck();
       if (window.App && typeof window.App.finishLoad === 'function') App.finishLoad();
-
-      stopAuto();
     },
     // NAV-PATCH: exposed so FloorplanModule/GalleryModule (files not in this
     // patch) can call HomeModule.showLanding() from their own back-button /
